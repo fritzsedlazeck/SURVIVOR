@@ -348,7 +348,6 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 	}
 	if (directions) {
 		for (std::vector<insertions>::reverse_iterator i = ins.rbegin(); i != ins.rend(); i++) {
-			std::cout << "ins: " << (*i).target.start << " " << (*i).seq.size() << std::endl;
 			genome[(*i).target.chr].insert((*i).target.start, (*i).seq);
 		}
 	} else {

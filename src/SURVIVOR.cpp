@@ -21,12 +21,13 @@
 #include "convert/Process_Lumpy.h"
 #include "convert/Convert_Pindel.h"
 #include "convert/ConvertMQ0Bed.h"
+#include "Summarize_SV.h"
 int main(int argc, char *argv[]) {
 	if (argc > 1) {
 		switch (atoi(argv[1])) {
 		case 1:
 			if (argc == 6) {
-				bool coordinates = bool(atoi(argv[4])==0);
+				bool coordinates = bool(atoi(argv[4]) == 0);
 				simulate_SV(std::string(argv[2]), std::string(argv[3]), coordinates, std::string(argv[5]));
 				std::cout << "SV simulated" << std::endl;
 			} else if (argc == 3) {
@@ -38,7 +39,7 @@ int main(int argc, char *argv[]) {
 				std::cerr << "To simulate SV:" << std::endl;
 				std::cerr << "1: Reference fasta file" << std::endl;
 				std::cerr << "2: Parameter file" << std::endl;
-				std::cerr << "3: 0/1 indicating if coordinates should be with respect to reference or new reads" << std::endl;
+				std::cerr << "3: 0= simulated reads; 1= real reads " << std::endl;
 				std::cerr << "4: output prefix" << std::endl;
 			}
 			break;
@@ -139,6 +140,16 @@ int main(int argc, char *argv[]) {
 				std::cerr << "cov MQ0 file" << std::endl;
 				std::cerr << "border size " << std::endl;
 				std::cerr << "min coverage to be considerd " << std::endl;
+			}
+			break;
+
+		case 11:
+			if (argc == 4) {
+				//Convert a MQ0 coverage file to bed file for filtering SV
+				summary_SV(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "vcf file" << std::endl;
+				std::cerr << "output summary file" << std::endl;
 			}
 			break;
 		default:

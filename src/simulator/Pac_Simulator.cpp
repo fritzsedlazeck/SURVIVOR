@@ -164,7 +164,7 @@ void simulate_reads(std::string name, std::string seq, FILE*& file, FILE*& sam, 
 
 			print_sam(sam, name, i, new_seq, ss.str(), strand);
 		}
-		i += 2000;
+		i += 286;
 	}
 }
 

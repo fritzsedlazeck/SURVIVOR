@@ -8,16 +8,44 @@
 #include "Summarize_SV.h"
 
 void adjust(std::vector<int> & vec, int dist) {
-	while (vec.size() < dist+1) {
+	while (vec.size() < dist + 1) {
 		vec.push_back(0);
 	}
 }
+
+/* Rcode:
+ if (!require("RColorBrewer")) {
+	#install.packages("RColorBrewer")
+	library(RColorBrewer)
+}
+cols=(brewer.pal(5,"Set1"))
+pdf('sniffels01_s5_len.pdf')
+t=read.table('sniffels01_s5_05_05_calls.summary',header=T)
+plot(log10(t[,1]),t[,2],xlab="log10(length(bp))",ylab="# of SVs",type='l',col=cols[1])
+lines(log10(t[,1]),t[,3],col=cols[2])
+lines(log10(t[,1]),t[,4],col=cols[3])
+lines(log10(t[,1]),t[,5],col=cols[4])
+legend('topright',legend=c('DEL','DUP','INV','INS'),lwd=2,col=cols)
+dev.off()
+
+pdf('sniffels01_s5_chr.pdf')
+t=read.table('sniffels01_s5_05_05_calls.summary_CHR',header=T)
+plot(c(1:length(t[,1])),t[,2],ylim=c(0,max(t[,c(2:5)])),ylab="# of SVs",col=cols[1],xlab="chromosome")
+points(c(1:length(t[,1]))-0.01,t[,3],col=cols[2])
+points(c(1:length(t[,1]))+0.01,t[,4],col=cols[3])
+points(c(1:length(t[,1]))+0.05,t[,5],col=cols[4])
+legend('topright',legend=c('DEL','DUP','INV','INS'),lwd=2,col=cols)
+dev.off()
+ *
+ *
+ */
 void summary_SV(std::string filename, std::string output) {
 	std::vector<int> len_Del;
 	std::vector<int> len_Dup;
 	std::vector<int> len_Inv;
+	std::vector<int> len_Ins;
 	int TRA = 0;
-
+	int step = 1000;
 	std::map<std::string, std::map<std::string, int> > SV_chrs;
 
 	size_t buffer_size = 2000000;
@@ -33,32 +61,28 @@ void summary_SV(std::string filename, std::string output) {
 		if (buffer[0] != '#') {
 			int count = 0;
 			std::string chr;
-			int start = 0;
-			int stop = 0;
+
+			int dist = 0;
 			std::string type;
 			//cout<<buffer<<endl;
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 				if (count == 0 && buffer[i] != '\t') {
 					chr += buffer[i];
 				}
-				if (count == 1 && buffer[i - 1] == '\t') {
-					start = atoi(&buffer[i]);
-				}
 				if (count == 4 && (buffer[i] != '\t' && (buffer[i] != '>' && buffer[i] != '<'))) {
 					type += buffer[i];
 				}
-				if (count == 7 && strncmp("END=", &buffer[i], 4) == 0) {
-					stop = atoi(&buffer[i + 4]);
+				if (count == 7 && strncmp("SVLEN=", &buffer[i], 6) == 0) {
+					dist = atoi(&buffer[i + 6]);
 					break;
 				}
-
 				if (buffer[i] == '\t') {
 					count++;
 				}
 			}
 
-			int step = 1000;
-			int dist = abs(stop - start) / step;
+
+			dist = dist / step;
 			//cout<<dist<<endl;
 			if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(type) != SV_chrs[chr].end()) {
 				SV_chrs[chr][type]++;
@@ -67,24 +91,17 @@ void summary_SV(std::string filename, std::string output) {
 			}
 
 			if (strcmp(type.c_str(), "DEL") == 0) {
-				if (dist > len_Del.size()) {
-				//	std::cout << type.c_str()<<" " << dist << endl;
-				}
 				adjust(len_Del, dist);
 				len_Del[dist]++;
 			} else if (strcmp(type.c_str(), "INV") == 0) {
-				if (dist > len_Inv.size()) {
-					//	std::cout << type.c_str()<<" " << dist << endl;
-					//	std::cout<<buffer<<std::endl;
-				}
 				adjust(len_Inv, dist);
 				len_Inv[dist]++;
 			} else if (strcmp(type.c_str(), "DUP") == 0) {
-				if (dist > len_Dup.size()) {
-				//			std::cout << type.c_str()<<" " << dist << endl;
-				}
 				adjust(len_Dup, dist);
 				len_Dup[dist]++;
+			} else if (strcmp(type.c_str(), "INS") == 0) {
+				adjust(len_Ins, dist);
+				len_Ins[dist]++;
 			} else if (strcmp(type.c_str(), "TRA") == 0) {
 				TRA++;
 			}
@@ -92,14 +109,16 @@ void summary_SV(std::string filename, std::string output) {
 		myfile.getline(buffer, buffer_size);
 	}
 
-	std::cout<<"Parsing done: "<<TRA<<endl;
+	std::cout << "Parsing done: " << TRA << endl;
 	myfile.close();
 
 	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()), (int) len_Inv.size());
 	FILE * file;
 	file = fopen(output.c_str(), "w");
-	fprintf(file, "%s", "Del(1kb)\tDup(1kb)\tInv(1kb)\tTRA(1kb)\n");
+	fprintf(file, "%s", "Len(max)\tDel(1kb)\tDup(1kb)\tInv(1kb)\tINS(1kb)\tTRA(1kb)\n");
 	for (size_t i = 0; i < maxim + 1; i++) {
+		fprintf(file, "%i",(int)(i+1)*step);
+		fprintf(file, "%c", '\t');
 		if (i < len_Del.size()) {
 			fprintf(file, "%i", len_Del[i]);
 		} else {
@@ -114,6 +133,12 @@ void summary_SV(std::string filename, std::string output) {
 		fprintf(file, "%c", '\t');
 		if (i < len_Inv.size()) {
 			fprintf(file, "%i", len_Inv[i]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\t');
+		if (i < len_Ins.size()) {
+			fprintf(file, "%i", len_Ins[i]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
@@ -135,12 +160,7 @@ void summary_SV(std::string filename, std::string output) {
 	for (std::map<std::string, std::map<std::string, int> >::iterator i = SV_chrs.begin(); i != SV_chrs.end(); i++) {
 
 		if (flag) { //print the header:
-			fprintf(file, "%s", "Chr");
-			for (std::map<std::string, int>::iterator j = (*i).second.begin(); j != (*i).second.end(); j++) {
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%s", (*j).first.c_str());
-			}
-			fprintf(file, "%c", '\n');
+			fprintf(file, "%s", "Chr\tDEL\tDUP\tINV\tINS\tTRA\n");
 			flag = false;
 		}
 

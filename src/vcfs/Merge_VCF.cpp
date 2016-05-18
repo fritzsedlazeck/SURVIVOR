@@ -16,8 +16,7 @@ std::vector<std::string> parse_filename(std::string filename) {
 
 	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "Annotation Parser: could not open file: "
-				<< filename.c_str() << std::endl;
+		std::cout << "Annotation Parser: could not open file: " << filename.c_str() << std::endl;
 		exit(0);
 	}
 
@@ -35,22 +34,22 @@ strcoordinate parse_stop(const char * buffer) {
 	size_t i = 0;
 	bool chr_flag = false;
 	strcoordinate pos;
-	pos.chr="";
-	while (buffer[i] != '\t') {
-		if (strncmp(&buffer[i],";END=",5)==0 ){
-			pos.pos = atoi(&buffer[i+5]);
+	pos.chr = "";
+	while (buffer[i] != '\t' && (buffer[i] != '\n' && buffer[i] != '\0')) {
+		if (strncmp(&buffer[i], ";END=", 5) == 0) {
+			pos.pos = atoi(&buffer[i + 5]);
 		}
-		if((strncmp(&buffer[i],"END=",4)==0&&i==0)){
-			pos.pos = atoi(&buffer[i+4]);
+		if ((strncmp(&buffer[i], "END=", 4) == 0 && i == 0)) {
+			pos.pos = atoi(&buffer[i + 4]);
 		}
-		if (strncmp(&buffer[i],"CHR2=",5)==0){
-			i=i+5;
-			chr_flag=true;
+		if (strncmp(&buffer[i], "CHR2=", 5) == 0) {
+			i = i + 5;
+			chr_flag = true;
 		}
-		if(buffer[i]==';'){
-			chr_flag=false;
+		if (buffer[i] == ';') {
+			chr_flag = false;
 		}
-		if(chr_flag){
+		if (chr_flag) {
 			pos.chr += buffer[i];
 		}
 
@@ -59,28 +58,28 @@ strcoordinate parse_stop(const char * buffer) {
 	//std::cout<<"end: "<<pos.chr<<" "<<pos.pos<<std::endl;
 	return pos;
 }
-std::pair <bool,bool>parse_strands(const char * buffer) {
-	std::pair<bool,bool> strands;
+std::pair<bool, bool> parse_strands(const char * buffer) {
+	std::pair<bool, bool> strands;
 	size_t i = 0;
-	while (buffer[i] != '\t') {
-		if (strncmp(&buffer[i],"3to5",4)==0){
-			strands.first=false;
-			strands.second=true;
+	while (buffer[i] != '\t' && (buffer[i] != '\n' && buffer[i] != '\0')) {
+		if (strncmp(&buffer[i], "3to5", 4) == 0) {
+			strands.first = false;
+			strands.second = true;
 			return strands;
 		}
-		if (strncmp(&buffer[i],"3to3",4)==0){
-			strands.first=false;
-			strands.second=false;
+		if (strncmp(&buffer[i], "3to3", 4) == 0) {
+			strands.first = false;
+			strands.second = false;
 			return strands;
 		}
-		if (strncmp(&buffer[i],"5to3",4)==0){
-			strands.first=true;
-			strands.second=false;
+		if (strncmp(&buffer[i], "5to3", 4) == 0) {
+			strands.first = true;
+			strands.second = false;
 			return strands;
 		}
-		if (strncmp(&buffer[i],"5to5",4)==0){
-			strands.first=true;
-			strands.second=true;
+		if (strncmp(&buffer[i], "5to5", 4) == 0) {
+			strands.first = true;
+			strands.second = true;
 			return strands;
 		}
 		i++;
@@ -95,16 +94,28 @@ short get_type(std::string type) {
 		return 1;
 	} else if (strncmp(type.c_str(), "INV", 3) == 0) {
 		return 2;
-	} else if (strncmp(type.c_str(), "TRA", 3) == 0) {
+	} else if (strncmp(type.c_str(), "TRA", 3) == 0 || strncmp(type.c_str(), "BND", 3) == 0) {
 		return 3;
 	} else if (strncmp(type.c_str(), "INS", 3) == 0) {
 		return 4;
 	} else {
-		std::cerr << "Unknown type!" <<type<< std::endl;
+		std::cerr << "Unknown type!" << type << std::endl;
 
 	}
 	return -1;
 }
+
+strcoordinate parse_pos(char * buffer) {
+	std::string tmp = std::string(buffer);
+	size_t found = tmp.find(':');
+	strcoordinate pos;
+	pos.chr = tmp.substr(0, found);
+	found++;
+	pos.pos = atoi(&tmp[found]);
+	//std::cout << pos.chr << "| " << pos.pos << "|" << std::endl;
+	return pos;
+}
+
 //for each file parse the entries
 std::vector<strvcfentry> parse_vcf(std::string filename) {
 	size_t buffer_size = 2000000;
@@ -113,21 +124,22 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 
 	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "VCF Parser: could not open file: "
-				<< filename.c_str() << std::endl;
+		std::cout << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
 		exit(0);
 	}
+
 	std::vector<strvcfentry> calls;
 	myfile.getline(buffer, buffer_size);
+
 	while (!myfile.eof()) {
 		if (buffer[0] != '#') {
 			int count = 0;
 			strvcfentry tmp;
-			tmp.sup_lumpy=0;
+			tmp.sup_lumpy = 0;
+			tmp.stop.pos = -1;
+			tmp.type = -1;
 			//std::cout<<buffer<<std::endl;
-			for (size_t i = 0;
-					i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n';
-					i++) {
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 
 				if (count == 0 && buffer[i] != '\t') {
 					tmp.start.chr += buffer[i];
@@ -136,19 +148,24 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 					tmp.start.pos = atoi(&buffer[i]);
 					//std::cout<<tmp.start.pos<<std::endl;
 				}
-				if (count == 7 && buffer[i - 1] == '\t') {
+				if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
 					tmp.stop = parse_stop(&buffer[i]);
-					tmp.strands=parse_strands(&buffer[i]);
+					tmp.strands = parse_strands(&buffer[i]);
 					//std::cout<<tmp.stop.chr<<std::endl;
 				}
-				if (count == 4 && buffer[i - 1] == '<') {
-
+				if (count == 7 && std::strncmp(&buffer[i], "SVTYPE=", 7) == 0) {
+					i += 7;
 					tmp.type = get_type(std::string(&buffer[i]));
 				}
+				if (count == 4 && buffer[i - 1] == '<') {
+					tmp.type = get_type(std::string(&buffer[i]));
+				}
+				if (tmp.stop.pos == -1 && (count == 4 && (buffer[i - 1] == '[' || buffer[i - 1] == ']'))) {
+					tmp.stop = parse_pos(&buffer[i]);
+				}
+
 				if (count == 9 && buffer[i - 1] == '\t') {
 					tmp.calls[filename] = std::string(&buffer[i]);
-					//std::cout<<std::string(&buffer[i])<<std::endl;
-					//std::cout<<tmp.calls[filename]<<std::endl;
 					break;
 				}
 
@@ -159,29 +176,29 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 					count++;
 				}
 			}
+			if (tmp.stop.chr.empty()) {
+				tmp.stop.chr = tmp.start.chr;
+			}
 			calls.push_back(tmp);
 			tmp.calls.clear();
+		} else {
+
 		}
 		myfile.getline(buffer, buffer_size);
 	}
 	myfile.close();
-	std::cout<<calls.size()<<std::endl;
+	//std::cout << calls.size() << std::endl;
 	return calls;
 }
 
-int overlap(strvcfentry tmp, std::vector<strvcfentry> & final_vcf,
-		int max_dist) {
+int overlap(strvcfentry tmp, std::vector<strvcfentry> & final_vcf, int max_dist) {
 	for (size_t i = 0; i < final_vcf.size(); i++) {
 		//check type:
 		if (final_vcf[i].type == tmp.type) {
 			//check chrs:
-			if (strcmp(final_vcf[i].stop.chr.c_str(), tmp.stop.chr.c_str()) == 0
-					&& strcmp(final_vcf[i].start.chr.c_str(),
-							tmp.start.chr.c_str()) == 0) {
+			if (strcmp(final_vcf[i].stop.chr.c_str(), tmp.stop.chr.c_str()) == 0 && strcmp(final_vcf[i].start.chr.c_str(), tmp.start.chr.c_str()) == 0) {
 				//check coordinates:
-				if (abs(final_vcf[i].stop.pos - tmp.stop.pos) < max_dist
-						&& abs(final_vcf[i].start.pos - tmp.start.pos)
-								< max_dist) {
+				if (abs(final_vcf[i].stop.pos - tmp.stop.pos) < max_dist && abs(final_vcf[i].start.pos - tmp.start.pos) < max_dist) {
 					return i;
 				}
 			}
@@ -191,8 +208,7 @@ int overlap(strvcfentry tmp, std::vector<strvcfentry> & final_vcf,
 }
 
 //detect overlap and merge:
-void merge_entries(std::string filename, int max_dist,
-		std::vector<strvcfentry> & final_vcf) {
+void merge_entries(std::string filename, int max_dist, std::vector<strvcfentry> & final_vcf) {
 	//get new entries
 	std::vector<strvcfentry> new_entries = parse_vcf(filename);
 	//merge entires:
@@ -215,8 +231,7 @@ std::string get_header(std::vector<std::string> names) {
 
 	myfile.open(names[0].c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "Annotation Parser: could not open file: "
-				<< names[0].c_str() << std::endl;
+		std::cout << "Annotation Parser: could not open file: " << names[0].c_str() << std::endl;
 		exit(0);
 	}
 	std::string header;
@@ -227,9 +242,7 @@ std::string get_header(std::vector<std::string> names) {
 			header += '\n';
 		} else if (buffer[0] == '#') {
 			int count = 0;
-			for (size_t i = 0;
-					i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n';
-					i++) {
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 				if (count < 9) {
 					header += buffer[i];
 				}
@@ -254,8 +267,7 @@ std::string get_header(std::vector<std::string> names) {
 	return header;
 }
 
-void print_merged_vcf(std::string outputfile, std::string header,
-		std::vector<strvcfentry> &final_vcf, std::vector<std::string> names) {
+void print_merged_vcf(std::string outputfile, std::string header, std::vector<strvcfentry> &final_vcf, std::vector<std::string> names) {
 	FILE *file;
 	file = fopen(outputfile.c_str(), "w");
 

@@ -46,8 +46,8 @@ std::string get_names(const char * buffer) {
 	//std::cout<<name<<std::endl;
 	//return name;
 ///seq/schatz/fritz/UCL/real//JB1113_dist1000_overlap.vcf_dist1000_overlap.vcf.regionfilt2_20reads.vcf
-	int start = name.find_last_of("/") + 1;
-	int stop = name.find_first_of("_");
+//	int start = name.find_last_of("/") + 1;
+//	int stop = name.find_first_of("_");
 	//std::cout<<start<<" "<<stop<<" "<<name<<std::endl;
 	return name;	//.substr(start,stop-start);
 }
@@ -225,7 +225,7 @@ void convert_vcf_bede(std::string vcffile,int min_length, std::string output) {
 			"Chr1\tStart\tStop\tChr2\tStart\tStop\tID\teval\tstrand1\tstrand2\ttype\tNumReadsSupport\tAlleleFreq\n");
 	for (size_t i = 0; i < entries.size(); i++) {
 		if(strcmp(entries[i].start.chr.c_str(),entries[i].stop.chr.c_str())!=0 || abs(entries[i].start.pos-entries[i].stop.pos) > min_length){
-			bool flag = false;
+		//	bool flag = false;
 			//int score=strcmp(entries[i].start.chr.c_str(),entries[i].stop.chr.c_str());
 			//if(score<0 || (score==0 && entries[i].start.pos<entries[i].stop.pos)){
 				fprintf(file, "%s", entries[i].start.chr.c_str());

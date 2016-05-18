@@ -195,6 +195,10 @@ void eval_calls(std::vector<strvcfentry> entries, std::vector<strsimul> simul,
 	out+="addition.vcf";
 	addition=fopen(out.c_str(), "w");
 
+	//for (size_t i = 0; i < entries.size(); i++) {
+	//	std::cout<<entries[i].start.chr<<" "<<entries[i].start.pos<<" "<<entries[i].stop.chr<<" "<<entries[i].stop.pos<<" "<<entries[i].type<<std::endl;
+	//}
+
 	// std::cout<<"type dv"<<" "<<"rv"<<" "<<"dr"<<" "<<"rr"<<" "<<"gq"<<std::endl;
 	for (size_t i = 0; i < entries.size(); i++) {
 		bool found = false;
@@ -237,12 +241,38 @@ void eval_calls(std::vector<strvcfentry> entries, std::vector<strsimul> simul,
 			<< " " << print_report(notfound) << " "
 			<< print_report(additional) << std::endl;
 }
+void summarize_simul(std::vector<strsimul> simul){
+	std::vector<double> svs;
+	std::vector<double> svs_length;
+	for(size_t i=0;i<6;i++){
+		svs.push_back(0);
+		svs_length.push_back(0);
+	}
+
+	for(size_t i =0;i<simul.size();i++){
+		svs[simul[i].type]++;
+		if(simul[i].type!=3){ //No TRA
+			svs_length[simul[i].type]+=simul[i].stop.pos-simul[i].start.pos;
+		}
+	}
+
+	std::cout<<"Simulated:"<<std::endl;
+	std::cout<<"type\t#events\tavg. length\n"<<std::endl;
+	std::cout<<"DEL\t"<<svs[0]<<"\t"<<svs_length[0]/svs[0]<<std::endl;
+	std::cout<<"DUP\t"<<svs[1]<<"\t"<<svs_length[1]/svs[1]<<std::endl;
+	std::cout<<"INV\t"<<svs[2]<<"\t"<<svs_length[2]/svs[2]<<std::endl;
+	std::cout<<"TRA\t"<<svs[3]<<"\t"<<svs_length[3]/svs[3]<<std::endl;
+	std::cout<<"INS\t"<<svs[4]<<"\t"<<svs_length[4]/svs[4]<<std::endl;
+
+}
 
 void eval_vcf(std::string vcf_file, std::string bed_file, int max_allowed_dist,
 		std::string output) {
 	std::vector<strvcfentry> entries = parse_vcf(vcf_file);
 	//prase simulated
 	std::vector<strsimul> simul = parse_bed_simul(bed_file);
+	summarize_simul(simul);
+
 	//compare overlap
 	eval_calls(entries, simul, max_allowed_dist, output);
 }
