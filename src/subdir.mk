@@ -4,29 +4,29 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/convert/ConvertMQ0Bed.cpp \
-../src/convert/Convert_Assemblytics.cpp \
-../src/convert/Convert_Pindel.cpp \
-../src/convert/Convert_VCF_to_BED.cpp \
-../src/convert/Process_Lumpy.cpp 
+../src/CorrectAllele.cpp \
+../src/DetectDif.cpp \
+../src/Extract_Seq.cpp \
+../src/SURVIVOR.cpp \
+../src/Summarize_SV.cpp 
 
 OBJS += \
-./src/convert/ConvertMQ0Bed.o \
-./src/convert/Convert_Assemblytics.o \
-./src/convert/Convert_Pindel.o \
-./src/convert/Convert_VCF_to_BED.o \
-./src/convert/Process_Lumpy.o 
+./src/CorrectAllele.o \
+./src/DetectDif.o \
+./src/Extract_Seq.o \
+./src/SURVIVOR.o \
+./src/Summarize_SV.o 
 
 CPP_DEPS += \
-./src/convert/ConvertMQ0Bed.d \
-./src/convert/Convert_Assemblytics.d \
-./src/convert/Convert_Pindel.d \
-./src/convert/Convert_VCF_to_BED.d \
-./src/convert/Process_Lumpy.d 
+./src/CorrectAllele.d \
+./src/DetectDif.d \
+./src/Extract_Seq.d \
+./src/SURVIVOR.d \
+./src/Summarize_SV.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
-src/convert/%.o: ../src/convert/%.cpp
+src/%.o: ../src/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross G++ Compiler'
 	g++ -O3 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"

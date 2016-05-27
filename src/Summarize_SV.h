@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "vcfs/Merge_VCF.h"
+
 using namespace std;
 void summary_SV(std::string filename, std::string output);
 

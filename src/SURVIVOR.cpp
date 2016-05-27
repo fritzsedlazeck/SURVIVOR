@@ -22,6 +22,8 @@
 #include "convert/Convert_Pindel.h"
 #include "convert/ConvertMQ0Bed.h"
 #include "Summarize_SV.h"
+#include "convert/Convert_Assemblytics.h"
+
 int main(int argc, char *argv[]) {
 	if (argc > 1) {
 		switch (atoi(argv[1])) {
@@ -131,8 +133,16 @@ int main(int argc, char *argv[]) {
 				std::cerr << "Output vcf file" << std::endl;
 			}
 			break;
-
 		case 10:
+			if (argc == 4) {
+				//convert Pindel to VCF
+				process_Assemblytics(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "Bed file from Assemblytics" << std::endl;
+				std::cerr << "Output vcf file" << std::endl;
+			}
+			break;
+		case 11:
 			if (argc == 5) {
 				//Convert a MQ0 coverage file to bed file for filtering SV
 				comp_mq0bed(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]));
@@ -143,15 +153,17 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 
-		case 11:
+		case 12:
 			if (argc == 4) {
 				//Convert a MQ0 coverage file to bed file for filtering SV
 				summary_SV(std::string(argv[2]), std::string(argv[3]));
+				std::cout << "You can find an R script in the src/R-scripts/ to create plots given the summary output files." << std::endl;
 			} else {
 				std::cerr << "vcf file" << std::endl;
 				std::cerr << "output summary file" << std::endl;
 			}
 			break;
+
 		default:
 			break;
 		}
@@ -167,7 +179,9 @@ int main(int argc, char *argv[]) {
 		std::cerr << "7: Filter and convert SV calls from Delly" << std::endl;
 		std::cerr << "8: Filter and convert SV calls from Lumpy" << std::endl;
 		std::cerr << "9: Filter and convert SV calls from Pindel" << std::endl;
-		std::cerr << "10: Summarize MQ 0 coverage to bed file" << std::endl;
+		std::cerr << "10: Convert SV calls from Assemblytics" << std::endl;
+		std::cerr << "11: Summarize MQ 0 coverage to bed file" << std::endl;
+		std::cerr << "12: Summarize SVs events in VCF file" << std::endl;
 	}
 	return 0;
 }

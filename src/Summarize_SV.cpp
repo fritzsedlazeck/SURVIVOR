@@ -15,109 +15,74 @@ void adjust(std::vector<int> & vec, int dist) {
 
 /* Rcode:
  if (!require("RColorBrewer")) {
-	#install.packages("RColorBrewer")
-	library(RColorBrewer)
-}
-cols=(brewer.pal(5,"Set1"))
-pdf('sniffels01_s5_len.pdf')
-t=read.table('sniffels01_s5_05_05_calls.summary',header=T)
-plot(log10(t[,1]),t[,2],xlab="log10(length(bp))",ylab="# of SVs",type='l',col=cols[1])
-lines(log10(t[,1]),t[,3],col=cols[2])
-lines(log10(t[,1]),t[,4],col=cols[3])
-lines(log10(t[,1]),t[,5],col=cols[4])
-legend('topright',legend=c('DEL','DUP','INV','INS'),lwd=2,col=cols)
-dev.off()
+ #install.packages("RColorBrewer")
+ library(RColorBrewer)
+ }
+ cols=(brewer.pal(5,"Set1"))
+ pdf('sniffels01_s5_len.pdf')
+ t=read.table('sniffels01_s5_05_05_calls.summary',header=T)
+ plot(log10(t[,1]),t[,2],xlab="log10(length(bp))",ylab="# of SVs",type='l',col=cols[1])
+ lines(log10(t[,1]),t[,3],col=cols[2])
+ lines(log10(t[,1]),t[,4],col=cols[3])
+ lines(log10(t[,1]),t[,5],col=cols[4])
+ legend('topright',legend=c('DEL','DUP','INV','INS'),lwd=2,col=cols)
+ dev.off()
 
-pdf('sniffels01_s5_chr.pdf')
-t=read.table('sniffels01_s5_05_05_calls.summary_CHR',header=T)
-plot(c(1:length(t[,1])),t[,2],ylim=c(0,max(t[,c(2:5)])),ylab="# of SVs",col=cols[1],xlab="chromosome")
-points(c(1:length(t[,1]))-0.01,t[,3],col=cols[2])
-points(c(1:length(t[,1]))+0.01,t[,4],col=cols[3])
-points(c(1:length(t[,1]))+0.05,t[,5],col=cols[4])
-legend('topright',legend=c('DEL','DUP','INV','INS'),lwd=2,col=cols)
-dev.off()
+ pdf('sniffels01_s5_chr.pdf')
+ t=read.table('sniffels01_s5_05_05_calls.summary_CHR',header=T)
+ plot(c(1:length(t[,1])),t[,2],ylim=c(0,max(t[,c(2:5)])),ylab="# of SVs",col=cols[1],xlab="chromosome")
+ points(c(1:length(t[,1]))-0.01,t[,3],col=cols[2])
+ points(c(1:length(t[,1]))+0.01,t[,4],col=cols[3])
+ points(c(1:length(t[,1]))+0.05,t[,5],col=cols[4])
+ legend('topright',legend=c('DEL','DUP','INV','INS'),lwd=2,col=cols)
+ dev.off()
  *
  *
  */
-void summary_SV(std::string filename, std::string output) {
+void summary_SV(std::string vcf_file, std::string output) {
 	std::vector<int> len_Del;
 	std::vector<int> len_Dup;
 	std::vector<int> len_Inv;
 	std::vector<int> len_Ins;
 	int TRA = 0;
 	int step = 1000;
-	std::map<std::string, std::map<std::string, int> > SV_chrs;
+	std::map<std::string, std::map<int, int> > SV_chrs;
 
-	size_t buffer_size = 2000000;
-	char*buffer = new char[buffer_size];
-	std::ifstream myfile;
-	myfile.open(filename.c_str(), std::ifstream::in);
-	if (!myfile.good()) {
-		std::cout << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
-		exit(0);
-	}
-	myfile.getline(buffer, buffer_size);
-	while (!myfile.eof()) {
-		if (buffer[0] != '#') {
-			int count = 0;
-			std::string chr;
+	std::vector<strvcfentry> entries = parse_vcf(vcf_file);
 
-			int dist = 0;
-			std::string type;
-			//cout<<buffer<<endl;
-			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-				if (count == 0 && buffer[i] != '\t') {
-					chr += buffer[i];
-				}
-				if (count == 4 && (buffer[i] != '\t' && (buffer[i] != '>' && buffer[i] != '<'))) {
-					type += buffer[i];
-				}
-				if (count == 7 && strncmp("SVLEN=", &buffer[i], 6) == 0) {
-					dist = atoi(&buffer[i + 6]);
-					break;
-				}
-				if (buffer[i] == '\t') {
-					count++;
-				}
-			}
-
-
-			dist = dist / step;
-			//cout<<dist<<endl;
-			if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(type) != SV_chrs[chr].end()) {
-				SV_chrs[chr][type]++;
-			} else {
-				SV_chrs[chr][type] = 1;
-			}
-
-			if (strcmp(type.c_str(), "DEL") == 0) {
-				adjust(len_Del, dist);
-				len_Del[dist]++;
-			} else if (strcmp(type.c_str(), "INV") == 0) {
-				adjust(len_Inv, dist);
-				len_Inv[dist]++;
-			} else if (strcmp(type.c_str(), "DUP") == 0) {
-				adjust(len_Dup, dist);
-				len_Dup[dist]++;
-			} else if (strcmp(type.c_str(), "INS") == 0) {
-				adjust(len_Ins, dist);
-				len_Ins[dist]++;
-			} else if (strcmp(type.c_str(), "TRA") == 0) {
-				TRA++;
-			}
+	for (size_t i = 0; i < entries.size(); i++) {
+		int dist = abs(entries[i].stop.pos - entries[i].start.pos)/ step;
+		if (entries[i].type == 0) {
+			adjust(len_Del, dist);
+			len_Del[dist]++;
+		} else if (entries[i].type == 1) {
+			adjust(len_Inv, dist);
+			len_Inv[dist]++;
+		} else if (entries[i].type == 2) {
+			adjust(len_Dup, dist);
+			len_Dup[dist]++;
+		} else if (entries[i].type == 4) {
+			adjust(len_Ins, dist);
+			len_Ins[dist]++;
+		} else if (entries[i].type == 3) {
+			TRA++;
 		}
-		myfile.getline(buffer, buffer_size);
+		std::string chr=entries[i].start.chr;
+		if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(entries[i].type) != SV_chrs[chr].end()) {
+			SV_chrs[chr][entries[i].type ]++;
+		} else {
+			SV_chrs[chr][entries[i].type] = 1;
+		}
 	}
 
 	std::cout << "Parsing done: " << TRA << endl;
-	myfile.close();
 
 	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()), (int) len_Inv.size());
 	FILE * file;
 	file = fopen(output.c_str(), "w");
 	fprintf(file, "%s", "Len(max)\tDel(1kb)\tDup(1kb)\tInv(1kb)\tINS(1kb)\tTRA(1kb)\n");
 	for (size_t i = 0; i < maxim + 1; i++) {
-		fprintf(file, "%i",(int)(i+1)*step);
+		fprintf(file, "%i", (int) (i + 1) * step);
 		fprintf(file, "%c", '\t');
 		if (i < len_Del.size()) {
 			fprintf(file, "%i", len_Del[i]);
@@ -157,7 +122,7 @@ void summary_SV(std::string filename, std::string output) {
 	out += "_CHR";
 	file = fopen(out.c_str(), "w");
 	bool flag = true;
-	for (std::map<std::string, std::map<std::string, int> >::iterator i = SV_chrs.begin(); i != SV_chrs.end(); i++) {
+	for (std::map<std::string, std::map<int, int> >::iterator i = SV_chrs.begin(); i != SV_chrs.end(); i++) {
 
 		if (flag) { //print the header:
 			fprintf(file, "%s", "Chr\tDEL\tDUP\tINV\tINS\tTRA\n");
@@ -166,33 +131,33 @@ void summary_SV(std::string filename, std::string output) {
 
 		fprintf(file, "%s", (*i).first.c_str());
 		fprintf(file, "%c", '\t');
-		if ((*i).second.find("DEL") != (*i).second.end()) {
-			fprintf(file, "%i", (*i).second["DEL"]);
+		if ((*i).second.find(0) != (*i).second.end()) {
+			fprintf(file, "%i", (*i).second[0]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if ((*i).second.find("DUP") != (*i).second.end()) {
-			fprintf(file, "%i", (*i).second["DUP"]);
+		if ((*i).second.find(1) != (*i).second.end()) {
+			fprintf(file, "%i", (*i).second[1]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
 
 		fprintf(file, "%c", '\t');
-		if ((*i).second.find("INV") != (*i).second.end()) {
-			fprintf(file, "%i", (*i).second["INV"]);
+		if ((*i).second.find(2) != (*i).second.end()) {
+			fprintf(file, "%i", (*i).second[2]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if ((*i).second.find("INS") != (*i).second.end()) {
-			fprintf(file, "%i", (*i).second["INS"]);
+		if ((*i).second.find(4) != (*i).second.end()) {
+			fprintf(file, "%i", (*i).second[4]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if ((*i).second.find("TRA") != (*i).second.end()) {
-			fprintf(file, "%i", (*i).second["TRA"]);
+		if ((*i).second.find(3) != (*i).second.end()) {
+			fprintf(file, "%i", (*i).second[3]);
 		} else {
 			fprintf(file, "%i", 0);
 		}

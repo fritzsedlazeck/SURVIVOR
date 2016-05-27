@@ -153,7 +153,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 					tmp.strands = parse_strands(&buffer[i]);
 					//std::cout<<tmp.stop.chr<<std::endl;
 				}
-				if (count == 7 && std::strncmp(&buffer[i], "SVTYPE=", 7) == 0) {
+				if (count == 7 && strncmp(&buffer[i], "SVTYPE=", 7) == 0) {
 					i += 7;
 					tmp.type = get_type(std::string(&buffer[i]));
 				}

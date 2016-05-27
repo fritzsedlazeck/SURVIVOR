@@ -180,11 +180,26 @@ void add_to_report(strreport & report, short type) {
 		break;
 	}
 }
+
+double sum_report(strreport report){
+	return (report.del+report.dup+report.ins+report.inv+report.tra);
+}
+double get_TP(int simulated,strreport found){
+	//return sum_report(found) / (sum_report(found) + sum_report(additionl))
+	return sum_report(found)/(double)simulated;
+}
+double get_FP(strreport found,strreport additional){
+
+	double tmp=sum_report(additional);
+	return tmp/(sum_report(found)+tmp);
+}
 void eval_calls(std::vector<strvcfentry> entries, std::vector<strsimul> simul,
 		int max_allowed_dist, std::string output) {
 
 	strreport notfound = init_report();
 	strreport additional = init_report();
+	strreport found=init_report();
+
 	FILE * right;
 	FILE * addition;
 	std::string out=output;
@@ -229,17 +244,16 @@ void eval_calls(std::vector<strvcfentry> entries, std::vector<strsimul> simul,
 		}
 	}
 
-	int refound = 0;
 	for (size_t j = 0; j < simul.size(); j++) {
 		if (!simul[j].identified) {
 			add_to_report(notfound, simul[j].type);
 		} else {
-			refound++;
+			add_to_report(found,simul[j].type);
 		}
 	}
-	std::cout << " Overall: " << simul.size() << " " << refound
+	std::cout << " Overall: " << simul.size() << " " << print_report(found)
 			<< " " << print_report(notfound) << " "
-			<< print_report(additional) << std::endl;
+			<< print_report(additional) <<" "<< get_TP(simul.size(),found)<<" "<<get_FP(found,additional)<<std::endl;
 }
 void summarize_simul(std::vector<strsimul> simul){
 	std::vector<double> svs;
