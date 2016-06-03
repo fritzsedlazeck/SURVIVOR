@@ -16,10 +16,9 @@ std::vector<std::string> parse_filename(std::string filename) {
 
 	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "Annotation Parser: could not open file: " << filename.c_str() << std::endl;
+		std::cout << "File Parser: could not open file: " << filename.c_str() << std::endl;
 		exit(0);
 	}
-
 	myfile.getline(buffer, buffer_size);
 	while (!myfile.eof()) {
 		names.push_back(std::string(buffer));
@@ -154,8 +153,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 					//std::cout<<tmp.stop.chr<<std::endl;
 				}
 				if (count == 7 && strncmp(&buffer[i], "SVTYPE=", 7) == 0) {
-					i += 7;
-					tmp.type = get_type(std::string(&buffer[i]));
+					tmp.type = get_type(std::string(&buffer[i+7]));
 				}
 				if (count == 4 && buffer[i - 1] == '<') {
 					tmp.type = get_type(std::string(&buffer[i]));
@@ -169,7 +167,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 					break;
 				}
 
-				if (count >= 0 && count < 9) {
+				if (count < 9) {
 					tmp.header += buffer[i];
 				}
 				if (buffer[i] == '\t') {

@@ -24,4 +24,6 @@ short get_type(std::string type) ;
 int overlap(strvcfentry tmp, std::vector<strvcfentry> & final_vcf,int max_dist);
 strcoordinate parse_stop(const char * buffer);
 std::pair <bool,bool>parse_strands(const char * buffer);
+std::vector<std::string> parse_filename(std::string filename);
+
 #endif /* MERGE_VCF_H_ */

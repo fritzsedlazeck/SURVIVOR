@@ -27,6 +27,7 @@ struct strvcfentry{
 	std::map<std::string,std::string> calls;
 	int sup_lumpy;
 	int caller_id;
+	std::vector<int> caller_supports;
 	std::pair<bool,bool> strands;
 };
 

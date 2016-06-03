@@ -11,6 +11,6 @@
 #include "Compoverlap_VCF.h"
 
 void combine_calls(std::string vcf_delly, std::string vcf_lumpy,std::string vcf_pindel,int max_dist,std::string output);
-
+void combine_calls_new(std::string files, int max_dist, std::string output);
 
 #endif /* COMBINE_3_VCF_H_ */

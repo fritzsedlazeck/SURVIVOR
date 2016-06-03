@@ -134,11 +134,12 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 10:
-			if (argc == 4) {
-				//convert Pindel to VCF
-				process_Assemblytics(std::string(argv[2]), std::string(argv[3]));
+			if (argc == 5) {
+				//convert Assemblytics to VCF
+				process_Assemblytics(std::string(argv[2]),atoi(argv[3]), std::string(argv[4]));
 			} else {
 				std::cerr << "Bed file from Assemblytics" << std::endl;
+				std::cerr << "Min size to keep" <<std::endl;
 				std::cerr << "Output vcf file" << std::endl;
 			}
 			break;
@@ -163,7 +164,16 @@ int main(int argc, char *argv[]) {
 				std::cerr << "output summary file" << std::endl;
 			}
 			break;
-
+		case 13:
+			if (argc == 5) {
+				//merge 3 SV calls from the same strain
+				combine_calls_new(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
+			} else {
+				std::cerr << "Tab file with names" << std::endl;
+				std::cerr << "max dist" << std::endl;
+				std::cerr << "Output prefix" << std::endl;
+			}
+			break;
 		default:
 			break;
 		}

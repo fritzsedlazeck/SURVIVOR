@@ -40,7 +40,7 @@ void print_sam(FILE*& file, std::string name, int pos, std::string new_seq, std:
 	fprintf(file, "%s", "\t*\t0\t0\t");
 	fprintf(file, "%s", new_seq.c_str());
 	fprintf(file, "%c", '\t');
-	for (size_t pos = 1; pos <= new_seq.size(); pos++) {
+	for (size_t pos = 0; pos < new_seq.size(); pos++) {
 		fprintf(file, "%c", 'H');
 	}
 	fprintf(file, "%s", "\tNM:i:4");
@@ -95,7 +95,7 @@ void simulate_reads(std::string name, std::string seq, FILE*& file, FILE*& sam, 
 				strand = false;
 				rev_comp(read);
 			}
-			std::string new_seq;
+			std::string new_seq="";
 			int tmp = 1;
 			std::stringstream ss;
 
@@ -144,21 +144,14 @@ void simulate_reads(std::string name, std::string seq, FILE*& file, FILE*& sam, 
 				ss << tmp - 1;
 				ss << mod;
 			}
-			for (size_t pos = 1; pos <= new_seq.size(); pos++) {
-				fprintf(file, "%c", new_seq[pos - 1]);
-				fprintf(file2, "%c", new_seq[pos - 1]);
-				if (pos > 0 && pos % 100 == 0) {
-					fprintf(file, "%c", '\n');
-					fprintf(file2, "%c", '\n');
-				}
+			for (size_t pos = 0; pos < new_seq.size(); pos++) {
+				fprintf(file, "%c", new_seq[pos]);
+				fprintf(file2, "%c", new_seq[pos]);
 			}
 			fprintf(file, "%s", "\n+\n");
 			fprintf(file2, "%s", "\n");
-			for (size_t pos = 1; pos <= new_seq.size(); pos++) {
+			for (size_t pos = 0; pos < new_seq.size(); pos++) {
 				fprintf(file, "%c", 'H');
-				if (pos % 100 == 0) {
-					fprintf(file, "%c", '\n');
-				}
 			}
 			fprintf(file, "%c", '\n');
 
@@ -200,6 +193,8 @@ void simulate_pac(std::string genome, std::string output) {
 		if (buffer[0] == '>') {
 			if (!seq.empty()) {
 				simulate_reads(name, seq, file, sam, file2);
+				name.clear();
+				seq.clear();
 			}
 			for (size_t i = 1; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n' && buffer[i] != ' '; i++) {
 				name += buffer[i];

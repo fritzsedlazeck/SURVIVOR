@@ -7,17 +7,17 @@
 
 #include "SV_Simulator.h"
 
-bool is_valid(char base){
-	return (((base =='A' || base =='C') || (base=='R' || base =='X'))||((base =='T'||base =='G')|| (base =='N' || base =='M')) );
+bool is_valid(char base) {
+	return (((base == 'A' || base == 'C') || (base == 'R' || base == 'X')) || ((base == 'T' || base == 'G') || (base == 'N' || base == 'M')));
 }
 
-void check_genome(std::map<std::string, std::string> &genome,std::string msg){
-	std::cout<<msg<<" Genome checking:"<<std::endl;
+void check_genome(std::map<std::string, std::string> &genome, std::string msg) {
+	std::cout << msg << " Genome checking:" << std::endl;
 
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 		for (size_t j = 1; j < (*i).second.size() + 1; j++) {
-			if(!is_valid((*i).second[j - 1])){
-				std::cout<<"err! "<<(*i).second[j - 1] <<std::endl;
+			if (!is_valid((*i).second[j - 1])) {
+				std::cout << "err! " << (*i).second[j - 1] << std::endl;
 			}
 		}
 	}
@@ -81,6 +81,16 @@ parameter parse_param(std::string filename) {
 	tmp.inv_max = parse_value(buffer, buffer_size);
 	myfile.getline(buffer, buffer_size);
 	tmp.inv_num = parse_value(buffer, buffer_size);
+	myfile.getline(buffer, buffer_size);
+	tmp.inv_del_num =0;
+
+	if(!myfile.eof()){
+		tmp.inv_del_min = parse_value(buffer, buffer_size);
+		myfile.getline(buffer, buffer_size);
+		tmp.inv_del_max = parse_value(buffer, buffer_size);
+		myfile.getline(buffer, buffer_size);
+		tmp.inv_del_num = parse_value(buffer, buffer_size);
+	}
 	myfile.close();
 	return tmp;
 }
@@ -142,16 +152,16 @@ void sort_svs(std::vector<struct_var> svs) {
 		if (!(*i).second.empty()) {
 			tmp.push_back((*i).second[0]);
 			for (size_t j = 0; j < (*i).second.size(); i++) {
-				std::cout<<(*i).second[j].pos.chr.c_str()<<" "<<(*i).second[j].pos.start<<std::endl;
-				size_t t=0;
-				while(tmp[t].pos.start <(*i).second[j].pos.start){
+				std::cout << (*i).second[j].pos.chr.c_str() << " " << (*i).second[j].pos.start << std::endl;
+				size_t t = 0;
+				while (tmp[t].pos.start < (*i).second[j].pos.start) {
 					t++;
 				}
-				tmp.insert(tmp.begin()+t,(*i).second[j]);
+				tmp.insert(tmp.begin() + t, (*i).second[j]);
 			}
 		}
-		for(size_t j=0;j<tmp.size();j++){
-			std::cout<<tmp[j].pos.chr.c_str()<<" "<<tmp[j].pos.start<<std::endl;
+		for (size_t j = 0; j < tmp.size(); j++) {
+			std::cout << tmp[j].pos.chr.c_str() << " " << tmp[j].pos.start << std::endl;
 		}
 	}
 }
@@ -177,27 +187,51 @@ position get_pos(std::map<std::string, std::string> genome, int min_pos, int max
 
 	int num = 0;
 
-	while ((*chr).second.size() < tmp.stop && num < 50) { //choose chr,start, stop such that the mutation fits. Allow max 50 iterations!
-		tmp.start = rand() % (((*chr).second.size() - max_pos));//choose random start pos within chr length
+	while ((*chr).second.size() < tmp.stop && num < 100) { //choose chr,start, stop such that the mutation fits. Allow max 50 iterations!
+		tmp.start = rand() % (((*chr).second.size() - max_pos)); //choose random start pos within chr length
 		tmp.stop = tmp.start + min_pos + (rand() % (max_pos - min_pos)); // choose stop location
 		num++;
 	}
-	if (num == 50) {
+	if (num == 100) {
 		std::cerr << "Simulations are hindered by the two small chr size. " << std::endl;
 		tmp.stop = -2;
 	}
 	return tmp;
 }
+
+bool is_overlapping(position curr, std::vector<struct_var> svs) {
+
+	for (size_t i = 0; i < svs.size(); i++) {
+		if (strcmp(svs[i].pos.chr.c_str(), curr.chr.c_str()) == 0) {
+			if (svs[i].pos.stop >= curr.start && svs[i].pos.start <= curr.stop) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+position choose_pos(std::map<std::string, std::string> genome, int min, int max, std::vector<struct_var>& svs) {
+	position pos = get_pos(genome, min, max);
+	int num = 0;
+	while (is_overlapping(pos, svs) && num < 100) {
+		pos = get_pos(genome, min, max);
+		num++;
+	}
+	if (num == 100) {
+		std::cerr << "Terminate program as it could not find a non overlapping region" << std::endl;
+		exit(0);
+	}
+	return pos;
+}
 std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<std::string, std::string> genome) {
 	parameter par = parse_param(parameter_file);
-
 	std::vector<struct_var> svs;
 //duplications
 	struct_var mut;
 	for (int i = 0; i < par.dup_num; i++) {
 		mut.type = 0;
 		//get_start location;
-		mut.pos = get_pos(genome, par.dup_min, par.dup_max);
+		mut.pos = choose_pos(genome, par.dup_min, par.dup_max, svs);
 		//get_opposit location
 		svs.push_back(mut);
 	}
@@ -205,21 +239,19 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 	for (int i = 0; i < par.indel_num; i++) {
 		//std::cout << "indel" << std::endl;
 		if (rand() % 100 <= 50) {
-			mut.type = 1;
-			mut.pos = get_pos(genome, par.indel_min, par.indel_max);
-			mut.target = mut.pos;
+			mut.type = 1; //insertion
 		} else {
-			mut.type = 4;
-			mut.pos = get_pos(genome, par.indel_min, par.indel_max);
-			mut.target = mut.pos;
+			mut.type = 4; //deletion
 		}
+		mut.pos = choose_pos(genome, par.indel_min, par.indel_max, svs);
+		mut.target = mut.pos;
 		svs.push_back(mut);
 	}
 	//inv
 	for (int i = 0; i < par.inv_num; i++) {
-	//	std::cout << "inv" << std::endl;
+		//	std::cout << "inv" << std::endl;
 		mut.type = 2;
-		mut.pos = get_pos(genome, par.inv_min, par.inv_max);
+		mut.pos = choose_pos(genome, par.inv_min, par.inv_max, svs);
 		mut.target = mut.pos;
 		mut.target.start = mut.pos.stop;
 		mut.target.stop = mut.pos.start;
@@ -227,24 +259,53 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 	}
 	//tra
 	for (int i = 0; i < par.translocations_num; i++) {
-	//	std::cout << "tra" << std::endl;
+		//	std::cout << "tra" << std::endl;
 		mut.type = 3;
-		mut.pos = get_pos(genome, par.translocations_min, par.translocations_max);
+		mut.pos = choose_pos(genome, par.translocations_min, par.translocations_max, svs);
 		//std::cout<<"size: "<<mut.pos.stop-mut.pos.start<<std::endl;
-		mut.target = get_pos(genome, mut.pos.stop-mut.pos.start, (mut.pos.stop-mut.pos.start)+1); //TRA has to be of the same size!
+		mut.target = choose_pos(genome, mut.pos.stop - mut.pos.start, (mut.pos.stop - mut.pos.start) + 1, svs); //TRA has to be of the same size!
 		while (strcmp(mut.target.chr.c_str(), mut.pos.chr.c_str()) == 0) {
-			mut.target = get_pos(genome, mut.pos.stop-mut.pos.start, (mut.pos.stop-mut.pos.start)+1);
+			mut.target = choose_pos(genome, mut.pos.stop - mut.pos.start, (mut.pos.stop - mut.pos.start) + 1, svs);
 		}
 
 		//I need to be sure about the same lenght of the tra!:
-		int size1=mut.pos.stop-mut.pos.start;
-		int size2=mut.target.stop-mut.target.start;
+		int size1 = mut.pos.stop - mut.pos.start;
+		int size2 = mut.target.stop - mut.target.start;
 
-		mut.pos.stop=mut.pos.start+std::min(size1,size2);
-		mut.target.stop=mut.target.start+std::min(size1,size2);
+		mut.pos.stop = mut.pos.start + std::min(size1, size2);
+		mut.target.stop = mut.target.start + std::min(size1, size2);
 		svs.push_back(mut);
 	}
+	//complex inv_del
+	for (int i = 0; i < par.inv_del_num; i++) {
+		//1. sim:
+		mut.type = 2;
+		mut.pos = choose_pos(genome, par.inv_del_min, par.inv_del_max, svs);
+		//2. determin size of del:
+		int len = (mut.pos.stop - mut.pos.start) / 10; //dels are ~20% ofthe size!
+		mut.pos.start += len;
+		mut.pos.stop -= len;
+		mut.target = mut.pos;
+		mut.target.start = mut.pos.stop;
+		mut.target.stop = mut.pos.start;
 
+		svs.push_back(mut);
+
+		struct_var del;
+		//the del infront:
+		del.type = 4;
+		del.pos.chr=mut.pos.chr;
+		del.pos.stop = mut.pos.start;
+		del.pos.start = del.pos.stop - len;
+		del.target = del.pos;
+		svs.push_back(del);
+
+		//the del behind:
+		del.pos.start = mut.pos.stop;
+		del.pos.stop = del.pos.start + len;
+		del.target = del.pos;
+		svs.push_back(del);
+	}
 //	sort_svs(svs);
 	return svs;
 }
@@ -291,16 +352,16 @@ std::string rand_seq(int length) {
 	for (int i = 0; i < length; i++) {
 		switch (rand() % 4) {
 		case 0:
-			tmp+= 'A';
+			tmp += 'A';
 			break;
 		case 1:
-			tmp+= 'C';
+			tmp += 'C';
 			break;
 		case 2:
-			tmp+= 'G';
+			tmp += 'G';
 			break;
 		case 3:
-			tmp+= 'T';
+			tmp += 'T';
 			break;
 		}
 	}
@@ -335,17 +396,16 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 		case 2:
 			//inversion
 			tmp = genome[svs[i].pos.chr].substr(svs[i].pos.start, (svs[i].pos.stop - svs[i].pos.start));
-
+			//std::cout<<"INV: "<<tmp.size()<<std::endl;
 			invert(tmp);
-
-			genome[svs[i].pos.chr].erase(svs[i].pos.start, (svs[i].pos.stop - svs[i].pos.start));
+			genome[svs[i].pos.chr].erase(svs[i].pos.start, tmp.size());
 			genome[svs[i].pos.chr].insert(svs[i].pos.start, tmp);
 			break;
 		case 3:
 			//translocations
 			seq1 = genome[svs[i].pos.chr].substr(svs[i].pos.start, (svs[i].pos.stop - svs[i].pos.start));
 			seq2 = genome[svs[i].target.chr].substr(svs[i].target.start, (svs[i].target.stop - svs[i].target.start));
-		//	std::cout<<"TRA: "<<seq1.size()<<" "<<seq2.size()<<std::endl;
+			//	std::cout<<"TRA: "<<seq1.size()<<" "<<seq2.size()<<std::endl;
 
 			pos = 0;
 			for (int j = svs[i].target.start; j < svs[i].target.stop; j++) {
@@ -358,12 +418,12 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 				pos++;
 			}
 			break;
-		case 4:
-			svs[i].type = 4;
-			//deletion: //just mark those regions
-		//	std::cout << "size: " << genome[svs[i].pos.chr].size() << " " << svs[i].pos.start << " " << (svs[i].pos.stop - svs[i].pos.start) << std::endl;
-			genome[svs[i].pos.chr].erase(svs[i].pos.start, (svs[i].pos.stop - svs[i].pos.start));
-			genome[svs[i].pos.chr].insert(svs[i].pos.start, (svs[i].pos.stop - svs[i].pos.start), 'X');
+		case 4: //deletion: //just mark those regions
+			//std::cout<<"DEL: "<<svs[i].pos.chr<<" "<<svs[i].pos.start <<" "<<svs[i].pos.stop<<" g: "<< genome[svs[i].pos.chr].size()<<std::endl;
+			//	std::cout << "size: " << genome[svs[i].pos.chr].size() << " " << svs[i].pos.start << " " << (svs[i].pos.stop - svs[i].pos.start) << std::endl;
+			for(size_t j=svs[i].pos.start;j<svs[i].pos.stop;j++){
+				genome[svs[i].pos.chr][j]='X';
+			}
 			break;
 		default:
 			break;
@@ -396,8 +456,8 @@ void write_fasta(std::string output_prefix, std::map<std::string, std::string> g
 		fprintf(file2, "%c", '\n');
 		int len = 0;
 		for (size_t j = 1; j < (*i).second.size() + 1; j++) {
-			if(!is_valid((*i).second[j - 1])){
-				std::cout<<"err! "<<(*i).second[j - 1] <<std::endl;
+			if (!is_valid((*i).second[j - 1])) {
+				std::cout << "err! " << (*i).second[j - 1] << std::endl;
 			}
 			if ((*i).second[j - 1] != 'X') {
 				fprintf(file2, "%c", (*i).second[j - 1]);
@@ -412,7 +472,7 @@ void write_fasta(std::string output_prefix, std::map<std::string, std::string> g
 			fprintf(file2, "%c", '\n');
 		}
 	}
-	std::cout << std::endl;
+	//std::cout << std::endl;
 	fclose(file2);
 }
 void write_sv(std::string output_prefix, std::vector<struct_var> svs) {
@@ -509,16 +569,12 @@ void simulate_SV(std::string ref_file, std::string parameter_file, bool coordina
 	parameter par = parse_param(parameter_file);
 	int min_chr_len = std::max(std::max(par.dup_max, par.indel_max), std::max(par.inv_max, par.translocations_max));
 	std::map<std::string, std::string> genome = read_fasta(ref_file, min_chr_len);
-
 	check_genome(genome,"First:");
 	std::cout << "generate SV" << std::endl;
 	std::vector<struct_var> svs = generate_mutations(parameter_file, genome);
-	check_genome(genome,"Sec:");
-	/*for (size_t i = 0; i < svs.size(); i++) {
-		std::cout << svs[i].type << " " << svs[i].pos.chr.c_str() << " " << svs[i].pos.start << " " << svs[i].pos.stop << std::endl;
-	}*/
+	check_genome(genome, "Sec:");
 	apply_mutations(genome, svs, coordinates);	//problem: We need two different coordinates. Simulate once for one and then for the other???
-	check_genome(genome,"Last:");
+	check_genome(genome, "Last:");
 	std::cout << "write genome" << std::endl;
 	write_fasta(output_prefix, genome);
 	std::cout << "write SV" << std::endl;
@@ -548,6 +604,10 @@ void generate_parameter_file(std::string parameter_file) {
 	fprintf(file2, "%s", "INVERSION_minimum_length: 600\n");
 	fprintf(file2, "%s", "INVERSION_maximum_length: 800\n");
 	fprintf(file2, "%s", "INVERSION_number: 4\n");
+
+	fprintf(file2, "%s", "INV_del_minimum_length: 600\n");
+	fprintf(file2, "%s", "INV_del_maximum_length: 800\n");
+	fprintf(file2, "%s", "INV_del_number: 2\n");
 
 	fclose(file2);
 }

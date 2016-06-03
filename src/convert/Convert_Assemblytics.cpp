@@ -8,16 +8,18 @@
 #include "Convert_Assemblytics.h"
 
 short get_type_assemblytics(std::string type) {
-	if (strncmp(type.c_str(), "Deletion", 3) == 0 || strncmp(type.c_str(), "Repeat_contraction", 3) == 0 ) {
+	if(strcmp(type.c_str(), "Tandem_expansion") == 0){
+		return 1;
+	}else if (strcmp(type.c_str(), "Deletion") == 0 || (strcmp(type.c_str(), "Repeat_contraction") == 0 || strcmp(type.c_str(), "Tandem_contraction") == 0)) {
 		return 0;
-	} else if (strncmp(type.c_str(), "Insertion", 3) == 0 || strncmp(type.c_str(), "Repeat_expansion", 3) == 0 ) {
+	} else if (strcmp(type.c_str(), "Insertion") == 0 || strcmp(type.c_str(), "Repeat_expansion") == 0 ) {
 		return 4;
 	} else {
 		std::cerr << "Unknown type! " << type << std::endl;
 	}
 	return -1;
 }
-void parse_assemblytics(std::string assemblytics, std::vector<strvcfentry> & entries) {
+void parse_assemblytics(std::string assemblytics,int minlen, std::vector<strvcfentry> & entries) {
 	size_t buffer_size = 2000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
@@ -29,10 +31,11 @@ void parse_assemblytics(std::string assemblytics, std::vector<strvcfentry> & ent
 	myfile.getline(buffer, buffer_size); //avoid header
 	myfile.getline(buffer, buffer_size);
 	while (!myfile.eof()) {
-	//	std::cout<<buffer<<std::endl;
+		//	std::cout<<buffer<<std::endl;
 		int count = 0;
 		strvcfentry tmp;
 		std::string type;
+		int dist=0;
 		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 			if (count == 0 && buffer[i] != '\t') {
 				tmp.start.chr += buffer[i];
@@ -42,20 +45,28 @@ void parse_assemblytics(std::string assemblytics, std::vector<strvcfentry> & ent
 				tmp.start.pos = atoi(&buffer[i]);
 			}
 			if (count == 2 && buffer[i - 1] == '\t') {
-				tmp.start.pos = atoi(&buffer[i]);
+				tmp.stop.pos = atoi(&buffer[i]);
 			}
 			if (count == 6 && buffer[i] != '\t') {
 				type += buffer[i];
 			}
-			if (count == 8 && buffer[i - 1] == '\t') {
-				tmp.start.pos += atoi(&buffer[i]);
+			//if (count == 7 && buffer[i - 1] == '\t') {
+			//	dist= abs(atoi(&buffer[i]));
+			//}
+			if (count == 4 && buffer[i - 1] == '\t') {
+				dist= abs(atoi(&buffer[i]));
 			}
 			if (buffer[i] == '\t') {
 				count++;
 			}
 		}
 		tmp.type = get_type_assemblytics(type);
-		entries.push_back(tmp);
+		if(tmp.type!=0 && tmp.type!=1){
+			tmp.stop.pos+=dist;
+		}
+		if(tmp.stop.pos-tmp.start.pos > minlen){
+			entries.push_back(tmp);
+		}
 		myfile.getline(buffer, buffer_size);
 	}
 }
@@ -92,10 +103,10 @@ std::string print_entry(strvcfentry & region) {
 	return convert.str();
 }
 
-void process_Assemblytics(std::string assemblytics, std::string output) {
+void process_Assemblytics(std::string assemblytics,int minlen, std::string output) {
 
 	std::vector<strvcfentry> entries;
-	parse_assemblytics(assemblytics, entries);
+	parse_assemblytics(assemblytics,minlen, entries);
 	FILE *file;
 	file = fopen(output.c_str(), "w");
 	for (size_t i = 0; i < entries.size(); i++) {

@@ -34,6 +34,10 @@ struct parameter {
 	int inv_min;
 	int inv_max;
 	int inv_num;
+
+	int inv_del_min;
+	int inv_del_max;
+	int inv_del_num;
 };
 
 struct position {

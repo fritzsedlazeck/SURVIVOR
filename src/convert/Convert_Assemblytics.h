@@ -11,7 +11,7 @@
 
 #include "Process_Lumpy.h"
 
-void process_Assemblytics( std::string assemblytics,std::string output);
+void process_Assemblytics( std::string assemblytics, int minlen, std::string output);
 
 
 
