@@ -38,6 +38,14 @@ struct parameter {
 	int inv_del_min;
 	int inv_del_max;
 	int inv_del_num;
+
+	int inv_dup_min;
+	int inv_dup_max;
+	int inv_dup_num;
+
+	int intrachr_num;
+	int intrachr_min;
+	int intrachr_max;
 };
 
 struct position {

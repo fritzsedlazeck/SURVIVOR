@@ -29,6 +29,7 @@ struct strvcfentry{
 	int caller_id;
 	std::vector<int> caller_supports;
 	std::pair<bool,bool> strands;
+	int num_reads;
 };
 
 
@@ -48,6 +49,7 @@ struct strsimul{
 	strcoordinate stop;
 	short type;
 	bool identified;
+	bool wrong;
 };
 
 struct strgene{

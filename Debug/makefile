@@ -10,6 +10,7 @@ RM := rm -rf
 -include sources.mk
 -include src/vcfs/subdir.mk
 -include src/simulator/subdir.mk
+-include src/merge_vcf/subdir.mk
 -include src/convert/subdir.mk
 -include src/subdir.mk
 -include subdir.mk

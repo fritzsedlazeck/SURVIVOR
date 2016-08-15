@@ -1,25 +1,31 @@
 /*
- * Convert_Assemblytics.cpp
+ * Convert_Honey_tails.cpp
  *
- *  Created on: May 26, 2016
+ *  Created on: Jun 6, 2016
  *      Author: fsedlaze
  */
+#include "Convert_Honey_tails.h"
 
-#include "Convert_Assemblytics.h"
+short get_type_honey(std::string type){
 
-short get_type_assemblytics(std::string type) {
-	if(strcmp(type.c_str(), "Tandem_expansion") == 0){
-		return 1;
-	}else if (strcmp(type.c_str(), "Deletion") == 0 || (strcmp(type.c_str(), "Repeat_contraction") == 0 || strcmp(type.c_str(), "Tandem_contraction") == 0)) {
+	if (strncmp(type.c_str(), "DEL", 3) == 0 ) {
 		return 0;
-	} else if (strcmp(type.c_str(), "Insertion") == 0 || strcmp(type.c_str(), "Repeat_expansion") == 0 ) {
+	} else if (strncmp(type.c_str(), "DUP", 3) == 0) {
+		return 1;
+	} else if (strncmp(type.c_str(), "INV", 3) == 0) {
+		return 2;
+	} else if (strncmp(type.c_str(), "TLOC", 4) == 0) {
+		return 3;
+	} else if (strncmp(type.c_str(), "INS", 3) == 0) {
 		return 4;
 	} else {
-		std::cerr << "Unknown type! " << type << std::endl;
+		std::cerr << "Unknown type! "<<type << std::endl;
 	}
 	return -1;
+
 }
-void parse_assemblytics(std::string assemblytics,int minlen, std::vector<strvcfentry> & entries) {
+
+void parse_honey_tails(std::string assemblytics,int minlen, std::vector<strvcfentry> & entries) {
 	size_t buffer_size = 2000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
@@ -30,6 +36,7 @@ void parse_assemblytics(std::string assemblytics,int minlen, std::vector<strvcfe
 	}
 	myfile.getline(buffer, buffer_size); //avoid header
 	myfile.getline(buffer, buffer_size);
+	myfile.getline(buffer, buffer_size);
 	while (!myfile.eof()) {
 		//	std::cout<<buffer<<std::endl;
 		int count = 0;
@@ -37,17 +44,20 @@ void parse_assemblytics(std::string assemblytics,int minlen, std::vector<strvcfe
 		std::string type;
 		int dist=0;
 		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-			if (count == 0 && buffer[i] != '\t') {
+			if (count == 2 && buffer[i] != '\t') {
 				tmp.start.chr += buffer[i];
+			}
+
+			if (count == 5 && buffer[i] != '\t') {
 				tmp.stop.chr += buffer[i];
 			}
-			if (count == 1 && buffer[i - 1] == '\t') {
+			if (count == 3 && buffer[i - 1] == '\t') {
 				tmp.start.pos = atoi(&buffer[i]);
 			}
-			if (count == 2 && buffer[i - 1] == '\t') {
+			if (count == 6 && buffer[i - 1] == '\t') {
 				tmp.stop.pos = atoi(&buffer[i]);
 			}
-			if (count == 6 && buffer[i] != '\t') {
+			if (count == 9 && buffer[i] != '\t') {
 				type += buffer[i];
 			}
 			//if (count == 7 && buffer[i - 1] == '\t') {
@@ -60,19 +70,15 @@ void parse_assemblytics(std::string assemblytics,int minlen, std::vector<strvcfe
 				count++;
 			}
 		}
-		tmp.type = get_type_assemblytics(type);
-		if(tmp.type!=0 && tmp.type!=1){
-			tmp.stop.pos+=dist;
-		}
+		tmp.type = get_type_honey(type);
 		if(tmp.stop.pos-tmp.start.pos > minlen){
 			entries.push_back(tmp);
 		}
 		myfile.getline(buffer, buffer_size);
 	}
-	myfile.close();
 }
 
-std::string print_entry(strvcfentry & region) {
+std::string print_entry_honey(strvcfentry & region) {
 
 //	III     5104    DEL00000002     N       <DEL>   .       LowQual IMPRECISE;CIEND=-305,305;CIPOS=-305,305;SVTYPE=DEL;SVMETHOD=EMBL.DELLYv0.5.9;CHR2=III;END=15991;SVLEN=10887;CT=3to5;PE=2;MAPQ=60        GT:GL:GQ:FT:RC:DR:DV:RR:RV      1/1:-12,-0.602059,0:6:LowQual:816:0:2:0:0
 
@@ -83,11 +89,11 @@ std::string print_entry(strvcfentry & region) {
 	convert << "\t";
 	convert << trans_type(region.type);
 	convert << "00";
-	convert << "Assym\tN\t<";
+	convert << "Honey\tN\t<";
 	convert << trans_type(region.type);
 	convert << ">\t.\tLowQual\tIMPRECISE;SVTYPE=";
 	convert << trans_type(region.type);
-	convert << ";SVMETHOD=PINDELv0.2.5a8;CHR2=";
+	convert << ";SVMETHOD=Honey_tails;CHR2=";
 	convert << region.stop.chr;
 	convert << ";END=";
 	convert << region.stop.pos;
@@ -104,17 +110,15 @@ std::string print_entry(strvcfentry & region) {
 	return convert.str();
 }
 
-void process_Assemblytics(std::string assemblytics,int minlen, std::string output) {
-
+void process_Honey(std::string assemblytics, int minlen, std::string output) {
 	std::vector<strvcfentry> entries;
-	parse_assemblytics(assemblytics,minlen, entries);
+	parse_honey_tails(assemblytics, minlen, entries);
 	FILE *file;
 	file = fopen(output.c_str(), "w");
 	for (size_t i = 0; i < entries.size(); i++) {
-		fprintf(file, "%s", print_entry(entries[i]).c_str());
+		fprintf(file, "%s", print_entry_honey(entries[i]).c_str());
 		fprintf(file, "%c", '\n');
 	}
 
 	fclose(file);
-
 }

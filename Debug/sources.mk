@@ -25,6 +25,7 @@ CPP_DEPS :=
 SUBDIRS := \
 src/vcfs \
 src/simulator \
+src/merge_vcf \
 src/convert \
 src \
 

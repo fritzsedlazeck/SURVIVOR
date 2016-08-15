@@ -34,6 +34,7 @@ strcoordinate parse_stop(const char * buffer) {
 	bool chr_flag = false;
 	strcoordinate pos;
 	pos.chr = "";
+	pos.pos = -1;
 	while (buffer[i] != '\t' && (buffer[i] != '\n' && buffer[i] != '\0')) {
 		if (strncmp(&buffer[i], ";END=", 5) == 0) {
 			pos.pos = atoi(&buffer[i + 5]);
@@ -85,6 +86,20 @@ std::pair<bool, bool> parse_strands(const char * buffer) {
 	}
 	return strands;
 }
+std::vector<int> parse_callers(char* buffer) {
+	size_t i = 0;
+	std::vector<int> entries;
+	//std::cout<<buffer[i]<<std::endl;
+	entries.push_back(atoi(&buffer[i]));
+	while (buffer[i] != ';' && buffer[i] != '\0') {
+		if (buffer[i] == ',') {
+			entries.push_back(atoi(&buffer[i + 1]));
+		}
+		i++;
+	}
+	//std::cout<<entries.size()<<std::endl;
+	return entries;
+}
 
 short get_type(std::string type) {
 	if (strncmp(type.c_str(), "DEL", 3) == 0) {
@@ -115,6 +130,22 @@ strcoordinate parse_pos(char * buffer) {
 	return pos;
 }
 
+int parse_support(char * buffer) {
+	size_t i = 0;
+	int support = 0;
+	while (buffer[i] != '\t' && buffer[i] != '\0') {
+
+		if ( strncmp(&buffer[i], "VT_AC=", 6) == 0) {
+			support= atoi(&buffer[i + 6]);
+		}
+		if ((strncmp(&buffer[i], ";SU=", 4) == 0 || strncmp(&buffer[i], ";RE=", 4) == 0) ||(strncmp(&buffer[i], ";PE=", 4) == 0 || strncmp(&buffer[i], ";SR=", 4) == 0) ) { // SU: Lumpy, RE: Sniffles
+			support += atoi(&buffer[i + 4]);
+		}
+//TOOD extned for the tags that other caller use!
+		i++;
+	}
+}
+
 //for each file parse the entries
 std::vector<strvcfentry> parse_vcf(std::string filename) {
 	size_t buffer_size = 2000000;
@@ -137,6 +168,10 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 			tmp.sup_lumpy = 0;
 			tmp.stop.pos = -1;
 			tmp.type = -1;
+
+			std::string ref;
+			std::string alt;
+			tmp.num_reads = -1;
 			//std::cout<<buffer<<std::endl;
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 
@@ -147,13 +182,19 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 					tmp.start.pos = atoi(&buffer[i]);
 					//std::cout<<tmp.start.pos<<std::endl;
 				}
+				if (count == 3 && buffer[i] != '\t') {
+					ref += buffer[i];
+				}
+				if (count == 4 && buffer[i] != '\t') {
+					alt += buffer[i];
+				}
 				if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
 					tmp.stop = parse_stop(&buffer[i]);
 					tmp.strands = parse_strands(&buffer[i]);
 					//std::cout<<tmp.stop.chr<<std::endl;
 				}
 				if (count == 7 && strncmp(&buffer[i], "SVTYPE=", 7) == 0) {
-					tmp.type = get_type(std::string(&buffer[i+7]));
+					tmp.type = get_type(std::string(&buffer[i + 7]));
 				}
 				if (count == 4 && buffer[i - 1] == '<') {
 					tmp.type = get_type(std::string(&buffer[i]));
@@ -172,6 +213,17 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 				}
 				if (buffer[i] == '\t') {
 					count++;
+				}
+			}
+
+			if (tmp.stop.pos == -1) {
+				tmp.stop.chr = tmp.start.chr;
+				int len = (int) ref.size() - (int) alt.size();
+				tmp.stop.pos = tmp.start.pos + abs(len);
+				if (len > 0) {
+					tmp.type = 0;
+				} else if (len < 0) {
+					tmp.type = 1;
 				}
 			}
 			if (tmp.stop.chr.empty()) {

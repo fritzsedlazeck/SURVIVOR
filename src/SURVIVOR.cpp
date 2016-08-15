@@ -22,8 +22,13 @@
 #include "convert/Convert_Pindel.h"
 #include "convert/ConvertMQ0Bed.h"
 #include "Summarize_SV.h"
+#include "convert/Convert_Honey_tails.h"
 #include "convert/Convert_Assemblytics.h"
-
+#include "convert/Convert_Bionano.h"
+#include "convert/Convert_VCF_to_BED.h"
+#include "merge_vcf/Paramer.h"
+#include "merge_vcf/combine_svs.h"
+Parameter* Parameter::m_pInstance = NULL;
 int main(int argc, char *argv[]) {
 	if (argc > 1) {
 		switch (atoi(argv[1])) {
@@ -123,27 +128,37 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 9:
-			if (argc == 6) {
+			if (argc == 5) {
 				//convert Pindel to VCF
-				process_Pindel(std::string(argv[2]), atoi(argv[3]), atof(argv[4]), std::string(argv[5]));
+				process_bed_file(std::string(argv[2]),std::string(argv[3]),std::string(argv[4]));
+				//process_Pindel(std::string(argv[2]), atoi(argv[3]), atof(argv[4]), std::string(argv[5]));
 			} else {
-				std::cerr << "Bede file from Lumpy" << std::endl;
-				std::cerr << "Min number of supporting reads" << std::endl;
-				std::cerr << "Min length" << std::endl;
+				std::cerr << "Bed file" << std::endl;
+				std::cerr << "Type" << std::endl;
 				std::cerr << "Output vcf file" << std::endl;
 			}
 			break;
 		case 10:
 			if (argc == 5) {
-				//convert Assemblytics to VCF
-				process_Assemblytics(std::string(argv[2]),atoi(argv[3]), std::string(argv[4]));
+				//merge 3 SV calls from the same strain
+				process_Honey(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
 			} else {
-				std::cerr << "Bed file from Assemblytics" << std::endl;
-				std::cerr << "Min size to keep" <<std::endl;
-				std::cerr << "Output vcf file" << std::endl;
+				std::cerr << "Honey tails file" << std::endl;
+				std::cerr << "min size" << std::endl;
+				std::cerr << "Output" << std::endl;
 			}
 			break;
 		case 11:
+			if (argc == 5) {
+				//convert Assemblytics to VCF
+				process_Assemblytics(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
+			} else {
+				std::cerr << "Bed file from Assemblytics" << std::endl;
+				std::cerr << "Min size to keep" << std::endl;
+				std::cerr << "Output vcf file" << std::endl;
+			}
+			break;
+		case 12:
 			if (argc == 5) {
 				//Convert a MQ0 coverage file to bed file for filtering SV
 				comp_mq0bed(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]));
@@ -154,7 +169,7 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 
-		case 12:
+		case 13:
 			if (argc == 4) {
 				//Convert a MQ0 coverage file to bed file for filtering SV
 				summary_SV(std::string(argv[2]), std::string(argv[3]));
@@ -164,20 +179,42 @@ int main(int argc, char *argv[]) {
 				std::cerr << "output summary file" << std::endl;
 			}
 			break;
-		case 13:
-			if (argc == 5) {
+
+		case 14:
+			if (argc == 7) {
 				//merge 3 SV calls from the same strain
-				combine_calls_new(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
+			//	combine_calls_new(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
+				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
 			} else {
 				std::cerr << "Tab file with names" << std::endl;
-				std::cerr << "max dist" << std::endl;
+				std::cerr << "max distance between breakpoints" << std::endl;
+				std::cerr << "Minimum number of supporting caller" << std::endl;
+				std::cerr << "Take the type into account (1==yes, else no)"<<std::endl;
 				std::cerr << "Output prefix" << std::endl;
+			}
+			break;
+		case 15:
+			if (argc == 5) {
+				//eval calls paper
+				eval_paper(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]));
+			} else {
+				std::cerr << "vcf file" << std::endl;
+				std::cerr << "Tab file with names" << std::endl;
+				std::cerr << "max dist" << std::endl;
+			}
+			break;
+		case 16:
+			if (argc == 4) {
+				//eval calls paper
+				process_Bionano(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "vcf file" << std::endl;
+				std::cerr << "Tab file with names" << std::endl;
 			}
 			break;
 		default:
 			break;
 		}
-
 	} else {
 		std::cerr << "Possible options" << std::endl;
 		std::cerr << "1: Simulate SV on genome" << std::endl;
@@ -189,9 +226,11 @@ int main(int argc, char *argv[]) {
 		std::cerr << "7: Filter and convert SV calls from Delly" << std::endl;
 		std::cerr << "8: Filter and convert SV calls from Lumpy" << std::endl;
 		std::cerr << "9: Filter and convert SV calls from Pindel" << std::endl;
-		std::cerr << "10: Convert SV calls from Assemblytics" << std::endl;
-		std::cerr << "11: Summarize MQ 0 coverage to bed file" << std::endl;
-		std::cerr << "12: Summarize SVs events in VCF file" << std::endl;
+		std::cerr << "10: Convert SV calls from PBHoney (tails)" << std::endl;
+		std::cerr << "11: Convert SV calls from Assemblytics" << std::endl;
+		std::cerr << "12: Summarize MQ 0 coverage to bed file" << std::endl;
+		std::cerr << "13: Summarize SVs events in VCF file" << std::endl;
+		std::cerr << "14: Combine calls from different vcf files" << std::endl;
 	}
 	return 0;
 }

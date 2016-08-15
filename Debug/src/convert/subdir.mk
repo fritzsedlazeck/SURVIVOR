@@ -6,6 +6,8 @@
 CPP_SRCS += \
 ../src/convert/ConvertMQ0Bed.cpp \
 ../src/convert/Convert_Assemblytics.cpp \
+../src/convert/Convert_Bionano.cpp \
+../src/convert/Convert_Honey_tails.cpp \
 ../src/convert/Convert_Pindel.cpp \
 ../src/convert/Convert_VCF_to_BED.cpp \
 ../src/convert/Process_Lumpy.cpp 
@@ -13,6 +15,8 @@ CPP_SRCS += \
 OBJS += \
 ./src/convert/ConvertMQ0Bed.o \
 ./src/convert/Convert_Assemblytics.o \
+./src/convert/Convert_Bionano.o \
+./src/convert/Convert_Honey_tails.o \
 ./src/convert/Convert_Pindel.o \
 ./src/convert/Convert_VCF_to_BED.o \
 ./src/convert/Process_Lumpy.o 
@@ -20,6 +24,8 @@ OBJS += \
 CPP_DEPS += \
 ./src/convert/ConvertMQ0Bed.d \
 ./src/convert/Convert_Assemblytics.d \
+./src/convert/Convert_Bionano.d \
+./src/convert/Convert_Honey_tails.d \
 ./src/convert/Convert_Pindel.d \
 ./src/convert/Convert_VCF_to_BED.d \
 ./src/convert/Process_Lumpy.d 

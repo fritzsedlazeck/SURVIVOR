@@ -39,11 +39,21 @@ void adjust(std::vector<int> & vec, int dist) {
  *
  *
  */
+int get_support(vector<int> support) {
+	int count = 0;
+	for (size_t i = 0; i < support.size(); i++) {
+		if (support[i] > 0) {
+			count++;
+		}
+	}
+	return count;
+}
 void summary_SV(std::string vcf_file, std::string output) {
 	std::vector<int> len_Del;
 	std::vector<int> len_Dup;
 	std::vector<int> len_Inv;
 	std::vector<int> len_Ins;
+	std::vector<int> support;
 	int TRA = 0;
 	int step = 1000;
 	std::map<std::string, std::map<int, int> > SV_chrs;
@@ -51,7 +61,18 @@ void summary_SV(std::string vcf_file, std::string output) {
 	std::vector<strvcfentry> entries = parse_vcf(vcf_file);
 
 	for (size_t i = 0; i < entries.size(); i++) {
-		int dist = abs(entries[i].stop.pos - entries[i].start.pos)/ step;
+		//summarize the support:
+		int id = get_support(entries[i].caller_supports);
+		if (id != 0) {
+			while (id >= support.size()) {
+				support.push_back(0);
+			}
+			if(id==1){
+				std::cout<<entries[i].start.pos<<std::endl;
+			}
+			support[id]++;
+		}
+		int dist = abs(entries[i].stop.pos - entries[i].start.pos) / step;
 		if (entries[i].type == 0) {
 			adjust(len_Del, dist);
 			len_Del[dist]++;
@@ -67,18 +88,26 @@ void summary_SV(std::string vcf_file, std::string output) {
 		} else if (entries[i].type == 3) {
 			TRA++;
 		}
-		std::string chr=entries[i].start.chr;
+		std::string chr = entries[i].start.chr;
 		if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(entries[i].type) != SV_chrs[chr].end()) {
-			SV_chrs[chr][entries[i].type ]++;
+			SV_chrs[chr][entries[i].type]++;
 		} else {
 			SV_chrs[chr][entries[i].type] = 1;
 		}
 	}
-
 	std::cout << "Parsing done: " << TRA << endl;
-
-	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()), (int) len_Inv.size());
 	FILE * file;
+	std::string out = output;
+	out += "support";
+	file = fopen(out.c_str(), "w");
+	for (size_t i = 0; i < support.size(); i++) {
+		fprintf(file, "%i", (int) (i));
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", support[i]);
+		fprintf(file, "%c", '\n');
+	}
+	fclose(file);
+	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()), (int) len_Inv.size());
 	file = fopen(output.c_str(), "w");
 	fprintf(file, "%s", "Len(max)\tDel(1kb)\tDup(1kb)\tInv(1kb)\tINS(1kb)\tTRA(1kb)\n");
 	for (size_t i = 0; i < maxim + 1; i++) {
@@ -118,7 +147,7 @@ void summary_SV(std::string vcf_file, std::string output) {
 	}
 	fclose(file);
 
-	std::string out = output;
+	out = output;
 	out += "_CHR";
 	file = fopen(out.c_str(), "w");
 	bool flag = true;

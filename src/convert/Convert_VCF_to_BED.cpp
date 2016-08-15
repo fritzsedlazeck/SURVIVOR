@@ -1,4 +1,5 @@
 /*
+
  * Convert_VCF_to_BED.cpp
  *
  *  Created on: Mar 3, 2015
@@ -10,8 +11,7 @@
 std::vector<int> get_strains(strvcfentry entry) {
 	std::cout << "start" << std::endl;
 	std::vector<int> names;
-	for (std::map<std::string, std::string>::iterator i = entry.calls.begin();
-			i != entry.calls.end(); i++) {
+	for (std::map<std::string, std::string>::iterator i = entry.calls.begin(); i != entry.calls.end(); i++) {
 		//it should always be just one entry;
 		const char *line = (*i).second.c_str();
 		int id = 0;
@@ -21,8 +21,7 @@ std::vector<int> get_strains(strvcfentry entry) {
 			//names.push_back(id);
 			//	id++;
 			//}else
-			if (strncmp("0/0", &line[pos], 3) == 0
-					|| strncmp("./.", &line[pos], 3) == 0) {
+			if (strncmp("0/0", &line[pos], 3) == 0 || strncmp("./.", &line[pos], 3) == 0) {
 				id++;
 			} else if (pos == 0 || (*i).second[pos - 1] == '\t') {
 				names.push_back(id);
@@ -58,8 +57,7 @@ std::vector<std::string> parse_names(std::string vcf_file) {
 	std::ifstream myfile;
 	myfile.open(vcf_file.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "GTF Parser: could not open file: " << vcf_file.c_str()
-				<< std::endl;
+		std::cout << "GTF Parser: could not open file: " << vcf_file.c_str() << std::endl;
 		exit(0);
 	}
 	myfile.getline(buffer, buffer_size);
@@ -67,9 +65,7 @@ std::vector<std::string> parse_names(std::string vcf_file) {
 		if (buffer[0] == '#' && buffer[1] == 'C') {
 
 			int count = 0;
-			for (size_t i = 0;
-					i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n';
-					i++) {
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 				if (count > 9 && buffer[i - 1] == '\t') {
 					//std::cout<<"Hit"<<std::endl;
 					names.push_back(get_names(&buffer[i]));
@@ -106,8 +102,7 @@ void convert_vcf(std::string vcf_file, std::string output) {
 		fprintf(file, "%c", '\t');
 		fprintf(file, "%i", entries[i].start.pos);
 		fprintf(file, "%c", '\t');
-		if (strcmp(entries[i].start.chr.c_str(), entries[i].stop.chr.c_str())
-				== 0) {
+		if (strcmp(entries[i].start.chr.c_str(), entries[i].stop.chr.c_str()) == 0) {
 			fprintf(file, "%i", entries[i].stop.pos);
 		} else {
 			flag = true;
@@ -157,8 +152,7 @@ std::vector<strvcfentry> parse_vcf_slim(std::string filename) {
 
 	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "VCF Parser: could not open file: "
-				<< filename.c_str() << std::endl;
+		std::cout << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
 		exit(0);
 	}
 	std::vector<strvcfentry> calls;
@@ -167,12 +161,10 @@ std::vector<strvcfentry> parse_vcf_slim(std::string filename) {
 		if (buffer[0] != '#') {
 			int count = 0;
 			strvcfentry tmp;
-			tmp.sup_lumpy=0;
-			tmp.caller_id=0;
+			tmp.sup_lumpy = 0;
+			tmp.caller_id = 0;
 			//std::cout<<buffer<<std::endl;
-			for (size_t i = 0;
-					i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n';
-					i++) {
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 
 				if (count == 0 && buffer[i] != '\t') {
 					tmp.start.chr += buffer[i];
@@ -183,14 +175,14 @@ std::vector<strvcfentry> parse_vcf_slim(std::string filename) {
 				}
 				if (count == 7 && buffer[i - 1] == '\t') {
 					tmp.stop = parse_stop(&buffer[i]);
-					if(tmp.stop.chr.empty()){
-						tmp.stop.chr=tmp.start.chr;
+					if (tmp.stop.chr.empty()) {
+						tmp.stop.chr = tmp.start.chr;
 					}
-					tmp.strands=parse_strands(&buffer[i]);
+					tmp.strands = parse_strands(&buffer[i]);
 					//std::cout<<tmp.stop.chr<<std::endl;
 				}
-				if(count>9 && buffer[i-1]=='\t'){
-					if(buffer[i+2]=='1'){
+				if (count > 9 && buffer[i - 1] == '\t') {
+					if (buffer[i + 2] == '1') {
 						tmp.sup_lumpy++;
 					}
 					tmp.caller_id++;
@@ -212,69 +204,160 @@ std::vector<strvcfentry> parse_vcf_slim(std::string filename) {
 		myfile.getline(buffer, buffer_size);
 	}
 	myfile.close();
-	std::cout<<calls.size()<<std::endl;
+	std::cout << calls.size() << std::endl;
 	return calls;
 }
-void convert_vcf_bede(std::string vcffile,int min_length, std::string output) {
+void convert_vcf_bede(std::string vcffile, int min_length, std::string output) {
 	std::vector<strvcfentry> entries = parse_vcf_slim(vcffile);
-	std::cout<<"ENT: "<<entries.size()<<std::endl;
+	std::cout << "ENT: " << entries.size() << std::endl;
 	FILE *file;
 	file = fopen(output.c_str(), "w");
-	int id=1;
-	fprintf(file, "%s",
-			"Chr1\tStart\tStop\tChr2\tStart\tStop\tID\teval\tstrand1\tstrand2\ttype\tNumReadsSupport\tAlleleFreq\n");
+	int id = 1;
+	fprintf(file, "%s", "Chr1\tStart\tStop\tChr2\tStart\tStop\tID\teval\tstrand1\tstrand2\ttype\tNumReadsSupport\tAlleleFreq\n");
 	for (size_t i = 0; i < entries.size(); i++) {
-		if(strcmp(entries[i].start.chr.c_str(),entries[i].stop.chr.c_str())!=0 || abs(entries[i].start.pos-entries[i].stop.pos) > min_length){
-		//	bool flag = false;
+		if (strcmp(entries[i].start.chr.c_str(), entries[i].stop.chr.c_str()) != 0 || abs(entries[i].start.pos - entries[i].stop.pos) > min_length) {
+			//	bool flag = false;
 			//int score=strcmp(entries[i].start.chr.c_str(),entries[i].stop.chr.c_str());
 			//if(score<0 || (score==0 && entries[i].start.pos<entries[i].stop.pos)){
-				fprintf(file, "%s", entries[i].start.chr.c_str());
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%i", entries[i].start.pos);
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%i", entries[i].start.pos);
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%s", entries[i].stop.chr.c_str());
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%i", entries[i].stop.pos);
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%i", entries[i].stop.pos);
+			fprintf(file, "%s", entries[i].start.chr.c_str());
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].start.pos);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].start.pos);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%s", entries[i].stop.chr.c_str());
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].stop.pos);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].stop.pos);
 			//}else{
 			/*	fprintf(file, "%s", entries[i].stop.chr.c_str());
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%i", entries[i].stop.pos);
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%i", entries[i].stop.pos);
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%s", entries[i].start.chr.c_str());
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%i", entries[i].start.pos);
-				fprintf(file, "%c", '\t');
-				fprintf(file, "%i", entries[i].start.pos);
-			}*/
+			 fprintf(file, "%c", '\t');
+			 fprintf(file, "%i", entries[i].stop.pos);
+			 fprintf(file, "%c", '\t');
+			 fprintf(file, "%i", entries[i].stop.pos);
+			 fprintf(file, "%c", '\t');
+			 fprintf(file, "%s", entries[i].start.chr.c_str());
+			 fprintf(file, "%c", '\t');
+			 fprintf(file, "%i", entries[i].start.pos);
+			 fprintf(file, "%c", '\t');
+			 fprintf(file, "%i", entries[i].start.pos);
+			 }*/
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i",id);
+			fprintf(file, "%i", id);
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i",-1);
+			fprintf(file, "%i", -1);
 			fprintf(file, "%c", '\t');
-			if(!entries[i].strands.first){
+			if (!entries[i].strands.first) {
 				fprintf(file, "%c", '+');
-			}else{
+			} else {
 				fprintf(file, "%c", '-');
 			}
 			fprintf(file, "%c", '\t');
-			if(!entries[i].strands.second){
+			if (!entries[i].strands.second) {
 				fprintf(file, "%c", '+');
-			}else{
+			} else {
 				fprintf(file, "%c", '-');
 			}
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", trans_type(entries[i].type).c_str());
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%f", (double) entries[i].sup_lumpy/(double)entries[i].caller_id);
+			fprintf(file, "%f", (double) entries[i].sup_lumpy / (double) entries[i].caller_id);
 
 			fprintf(file, "%c", '\n');
 		}
 		id++;
 	}
+}
+
+short get_type_bed(std::string type){
+	if (strncmp(type.c_str(), "DEL", 3) == 0 ) {
+		return 0;
+	} else if (strncmp(type.c_str(), "DUP", 3) == 0) {
+		return 1;
+	} else if (strncmp(type.c_str(), "INV", 3) == 0) {
+		return 2;
+	} else if (strncmp(type.c_str(), "INS", 3) == 0) {
+		return 4;
+	} else {
+		std::cerr << "Unknown type! "<<type << std::endl;
+	}
+	return -1;
+
+}
+
+
+std::string print_entry_bed(strvcfentry & region) {
+
+//	III     5104    DEL00000002     N       <DEL>   .       LowQual IMPRECISE;CIEND=-305,305;CIPOS=-305,305;SVTYPE=DEL;SVMETHOD=EMBL.DELLYv0.5.9;CHR2=III;END=15991;SVLEN=10887;CT=3to5;PE=2;MAPQ=60        GT:GL:GQ:FT:RC:DR:DV:RR:RV      1/1:-12,-0.602059,0:6:LowQual:816:0:2:0:0
+
+	std::ostringstream convert;   // stream used for the conversion
+	convert << region.start.chr;
+	convert << "\t";
+	convert << region.start.pos;      // insert the textual representation of 'Number' in the characters in the stream
+	convert << "\t";
+	convert << trans_type(region.type);
+	convert << "00";
+	convert << "BED\tN\t<";
+	convert << trans_type(region.type);
+	convert << ">\t.\tLowQual\tIMPRECISE;SVTYPE=";
+	convert << trans_type(region.type);
+	convert << ";SVMETHOD=BEDFILE;CHR2=";
+	convert << region.stop.chr;
+	convert << ";END=";
+	convert << region.stop.pos;
+	convert << ";SVLEN=";
+	convert << region.stop.pos - region.start.pos;
+	convert << ";PE=";
+	convert << 1;
+	convert << "\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t";
+	std::stringstream s;
+	s << "1/1:0,0,0:0:PASS:0:0:";
+	s << 1;
+	s << ":0:0";
+	//std::cout<<convert.str()<<std::endl;
+	return convert.str();
+}
+
+
+void process_bed_file(std::string bedfile, std::string type, std::string output) {
+	size_t buffer_size = 2000000;
+	char*buffer = new char[buffer_size];
+	std::ifstream myfile;
+
+	myfile.open(bedfile.c_str(), std::ifstream::in);
+	if (!myfile.good()) {
+		std::cout << "VCF Parser: could not open file: " << bedfile.c_str() << std::endl;
+		exit(0);
+	}
+	FILE *file;
+	file = fopen(output.c_str(), "w");
+
+	myfile.getline(buffer, buffer_size);
+	while (!myfile.eof()) {
+		int count = 0;
+		strvcfentry region;
+		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+			if (count == 0 && buffer[i] != '\t') {
+				region.start.chr += buffer[i];
+				region.stop.chr += buffer[i];
+			}
+			if (count == 1 && buffer[i - 1] == '\t') {
+				region.start.pos = atoi(&buffer[i]);
+			}
+			if (count == 2 && buffer[i - 1] == '\t') {
+				region.stop.pos = atoi(&buffer[i]);
+				break;
+			}
+			if (buffer[i] == '\t') {
+				count++;
+			}
+		}
+		region.type=get_type_bed(type);
+		fprintf(file, "%s",print_entry_bed(region).c_str());
+		fprintf(file, "%c",'\n');
+		myfile.getline(buffer, buffer_size);
+	}
+	myfile.close();
+	fclose(file);
 }

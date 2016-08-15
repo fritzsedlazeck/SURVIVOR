@@ -57,10 +57,18 @@ void print_entry(strvcfentry entry, FILE *& out) {
 		if (count == 7&&tmp[i-1]=='\t') {
 			if(!entry.caller_supports.empty()){
 				fprintf(out, "%s", "SUP=");
-				fprintf(out, "%i", entry.caller_supports[0]);
+				if(entry.caller_supports[0]>0){
+					fprintf(out, "%i", entry.caller_supports[0]);
+				}else{
+					fprintf(out, "%c", '.');
+				}
 				for (size_t j = 1; j < entry.caller_supports.size(); j++) {
 					fprintf(out, "%c", ',');
-					fprintf(out, "%i", entry.caller_supports[j]);
+					if(entry.caller_supports[j]>0){
+						fprintf(out, "%i", entry.caller_supports[j]);
+					}else{
+						fprintf(out, "%c", '.');
+					}
 				}
 				fprintf(out, "%c", ';');
 			}
