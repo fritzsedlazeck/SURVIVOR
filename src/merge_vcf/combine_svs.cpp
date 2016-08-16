@@ -191,7 +191,6 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	}
 	fprintf(file,"%s","\n");
 	for (size_t i = 0; i < points.size(); i++) {
-
 		for (size_t j = 0; j < points[i]->caller_info.size(); j++) {
 			if(!points[i]->caller_info[j]->starts.empty()){
 				fprintf(file,"%i",1);

@@ -135,15 +135,37 @@ int parse_support(char * buffer) {
 	int support = 0;
 	while (buffer[i] != '\t' && buffer[i] != '\0') {
 
-		if ( strncmp(&buffer[i], "VT_AC=", 6) == 0) {
-			support= atoi(&buffer[i + 6]);
+		if (strncmp(&buffer[i], "VT_AC=", 6) == 0) {
+			support = atoi(&buffer[i + 6]);
 		}
-		if ((strncmp(&buffer[i], ";SU=", 4) == 0 || strncmp(&buffer[i], ";RE=", 4) == 0) ||(strncmp(&buffer[i], ";PE=", 4) == 0 || strncmp(&buffer[i], ";SR=", 4) == 0) ) { // SU: Lumpy, RE: Sniffles
+		if ((strncmp(&buffer[i], ";SU=", 4) == 0 || strncmp(&buffer[i], ";RE=", 4) == 0) || (strncmp(&buffer[i], ";PE=", 4) == 0 || strncmp(&buffer[i], ";SR=", 4) == 0)) { // SU: Lumpy, RE: Sniffles
 			support += atoi(&buffer[i + 4]);
 		}
 //TOOD extned for the tags that other caller use!
 		i++;
 	}
+	return support;
+}
+
+std::string get_most_effect(std::string alt, int ref) {
+	size_t i = 0;
+	std::string most_alt = "";
+
+	std::string tmp = "";
+	while (i < alt.size()) {
+		if (alt[i] == ',') {
+			int size = most_alt.size();
+			int curr = tmp.size();
+			if (abs(ref - curr) > abs(ref - size)) {
+				most_alt = tmp;
+			}
+			tmp.clear();
+		} else {
+			tmp += alt[i];
+		}
+		i++;
+	}
+	return most_alt;
 }
 
 //for each file parse the entries
@@ -217,6 +239,11 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 			}
 
 			if (tmp.stop.pos == -1) {
+
+				std::size_t found = alt.find(",");
+				if (found != std::string::npos) {
+					alt = get_most_effect(alt, (int) ref.size());
+				}
 				tmp.stop.chr = tmp.start.chr;
 				int len = (int) ref.size() - (int) alt.size();
 				tmp.stop.pos = tmp.start.pos + abs(len);

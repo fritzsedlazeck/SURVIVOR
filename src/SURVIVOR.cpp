@@ -208,8 +208,8 @@ int main(int argc, char *argv[]) {
 				//eval calls paper
 				process_Bionano(std::string(argv[2]), std::string(argv[3]));
 			} else {
-				std::cerr << "vcf file" << std::endl;
-				std::cerr << "Tab file with names" << std::endl;
+				std::cerr << "*.smap file" << std::endl;
+				std::cerr << "output file" << std::endl;
 			}
 			break;
 		default:
