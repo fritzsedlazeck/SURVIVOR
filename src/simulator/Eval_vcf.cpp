@@ -24,6 +24,9 @@ std::string trans_type(short type) {
 	case 4:
 		return "INS";
 		break;
+	case 5:
+		return "BND";
+		break;
 	default:
 		return "NA";
 		break;

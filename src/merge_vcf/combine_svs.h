@@ -28,7 +28,11 @@ class Support_Node{
 public:
 	Support_Node(){
 		len=0;
-		num_support=0;
+		num_support.first=0;
+		num_support.second=0;
+		strand.first=false;
+		strand.second=false;
+		genotype="./.";
 	}
 	~Support_Node(){
 
@@ -37,7 +41,9 @@ public:
 	std::vector<short> types;
 	std::vector<breakpoint_str> starts;
 	std::vector<breakpoint_str> stops;
-	int num_support;
+	std::pair<int,int> num_support;
+	std::pair<bool,bool> strand;
+	std::string genotype;
 };
 
 class SVS_Node {
@@ -46,8 +52,12 @@ public:
 
 	SVS_Node() {
 		type=-1;
-		num_support=-1;
+		num_support.first=-1;
+		num_support.second=-1;
+		strand.first=false;
+		strand.second=false;
 		caller_info.clear();
+		genotype="./.";
 	}
 	~SVS_Node() {
 		caller_info.clear();
@@ -58,7 +68,9 @@ public:
 	breakpoint_str second;
 	std::vector<Support_Node *> caller_info;
 	std::string entry;
-	int num_support;
+	std::pair<int,int> num_support;
+	std::pair<bool,bool> strand;
+	std::string genotype;
 
 };
 
@@ -66,5 +78,5 @@ public:
 #include "IntervallTree.h"
 #include "../vcfs/Merge_VCF.h"
 
-void combine_calls_svs(std::string file, int max_dist, int min_support, int type_save, std::string output);
+void combine_calls_svs(std::string file, int max_dist, int min_support, int type_save, int strand_save, std::string output);
 #endif /* MERGE_VCF_COMBINE_SVS_H_ */

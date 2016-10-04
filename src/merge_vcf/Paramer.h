@@ -29,6 +29,7 @@ public:
 	int max_dist;
 	int max_caller;
 	bool use_type;
+	bool use_strand;
 
 	static Parameter* Instance() {
 		if (!m_pInstance) {

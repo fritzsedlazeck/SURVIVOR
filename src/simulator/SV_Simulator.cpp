@@ -609,11 +609,13 @@ void apply_mutations_ref(std::map<std::string, std::string> &genome, std::vector
 		store_sorted(tmp_svs, svs[i]);
 	}
 	svs = tmp_svs;
-	for (std::vector<struct_var>::iterator i = svs.begin(); i != svs.end(); i++) {
+
+	//iterator
+	for (std::vector<struct_var>::reverse_iterator i = svs.rbegin(); i != svs.rend(); i++) {
 		if ((*i).type == 4) {
-			//insertions: (simulated deletions)
+			//insertions: (simulated deletions) move always further away..???
 			(*i).type = 1;
-			genome[(*i).pos.chr].erase((*i).pos.start, (*i).pos.stop - (*i).pos.start);
+
 		} else if ((*i).type == 1) {
 			(*i).type = 4;
 		}
@@ -622,6 +624,9 @@ void apply_mutations_ref(std::map<std::string, std::string> &genome, std::vector
 		std::cout << (*i).pos.start << " " << (*i).type << std::endl;
 		std::string tmp;
 		switch ((*i).type) {
+		case 1:
+			genome[(*i).pos.chr].erase((*i).pos.start, (*i).pos.stop - (*i).pos.start);
+			break;
 		case 2:
 			//inversion
 			tmp = genome[(*i).pos.chr].substr((*i).pos.start, ((*i).pos.stop - (*i).pos.start));

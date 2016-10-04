@@ -56,7 +56,7 @@ std::string print_entry_bio(strvcfentry & region) {
 	return convert.str();
 }
 
-void parse_Bionano(std::string bionano,std::vector<strvcfentry>& entries) {
+void parse_Bionano(std::string bionano, std::vector<strvcfentry>& entries) {
 	size_t buffer_size = 2000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
@@ -75,12 +75,20 @@ void parse_Bionano(std::string bionano,std::vector<strvcfentry>& entries) {
 		int count = 0;
 		strvcfentry tmp;
 		std::string type;
+		int query_start = 0;
+		int query_stop = 0;
 		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 			if (count == 2 && buffer[i] != '\t') {
 				tmp.start.chr += buffer[i];
 			}
 			if (count == 3 && buffer[i] != '\t') {
 				tmp.stop.chr += buffer[i];
+			}
+			if (count == 4 && buffer[i - 1] == '\t') {
+				query_start = atoi(&buffer[i]);
+			}
+			if (count == 5 && buffer[i - 1] == '\t') {
+				query_stop = atoi(&buffer[i]);
 			}
 			if (count == 6 && buffer[i - 1] == '\t') {
 				tmp.start.pos = atoi(&buffer[i]);
@@ -98,6 +106,11 @@ void parse_Bionano(std::string bionano,std::vector<strvcfentry>& entries) {
 			if (buffer[i] == '\t') {
 				count++;
 			}
+		}
+		double factor = (query_stop - query_start) / 2;
+		if (tmp.type == 0) {
+			tmp.start.pos = tmp.start.pos + factor;
+			tmp.stop.pos = tmp.stop.pos - factor;
 		}
 		entries.push_back(tmp);
 		myfile.getline(buffer, buffer_size);

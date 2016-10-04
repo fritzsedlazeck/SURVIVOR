@@ -54,7 +54,8 @@ void print_header(FILE *& file, std::vector<std::string> names) {
 	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Type of approach used to detect SV\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=LN,Number=1,Type=Integer,Description=\"predicted length\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=DV,Number=1,Type=Integer,Description=\"# supporting variant reads\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=DR,Number=1,Type=Integer,Description=\"# supporting reference,variant reads in that order\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=ST,Number=1,Type=String,Description=\"Strand of SVs\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=TY,Number=1,Type=String,Description=\"Types\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=CO,Number=1,Type=String,Description=\"Coordinates\">\n");
 
@@ -65,16 +66,30 @@ void print_header(FILE *& file, std::vector<std::string> names) {
 	}
 	fprintf(file, "%c", '\n');
 }
-double get_avglen(std::vector<Support_Node *>caller_info){
-	double size=0;
-	double num=0;
-	for(size_t i=0;i<caller_info.size();i++){
-		size+=caller_info[i]->len;
-		if(caller_info[i]->len!=0){
+double get_avglen(std::vector<Support_Node *> caller_info) {
+	double size = 0;
+	double num = 0;
+	for (size_t i = 0; i < caller_info.size(); i++) {
+		size += caller_info[i]->len;
+		if (caller_info[i]->len != 0) {
 			num++;
 		}
 	}
-	return size/num;
+	return size / num;
+}
+std::string print_strands(std::pair<bool, bool> strands) {
+	std::string strand="";
+	if (strands.first) {
+		strand+="+";
+	} else {
+		strand+="-";
+	}
+	if (strands.second) {
+		strand+="+";
+	} else {
+		strand+="-";
+	}
+	return strand;
 }
 void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	std::ostringstream convert;   // stream used for the conversion
@@ -99,13 +114,22 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << entry->second.chr;
 	convert << ";END=";
 	convert << entry->second.position;
-	convert << "\tGT:LN:DV:TY:CO\t";
+	if (Parameter::Instance()->use_strand) {
+		convert << ";STRANDS=";
+		convert << print_strands(entry->strand);
+	}
+	convert << "\tGT:LN:DR:ST:TY:CO\t";
 
 	for (size_t i = 0; i < entry->caller_info.size(); i++) {
-		convert << "./.:";
+		convert << entry->caller_info[i]->genotype;
+		convert << ":";
 		convert << entry->caller_info[i]->len;
 		convert << ":";
-		convert << entry->caller_info[i]->num_support;
+		convert << entry->caller_info[i]->num_support.first;//ref
+		convert << ",";
+		convert << entry->caller_info[i]->num_support.second;//alt
+		convert << ":";
+		convert <<print_strands(entry->caller_info[i]->strand);
 		convert << ":";
 		if (entry->caller_info[i]->types.empty()) {
 			convert << "NaN";
@@ -138,12 +162,13 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	fprintf(file, "%c", '\n');
 }
 
-void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, std::string output) {
+void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, int strand_save, std::string output) {
 	std::vector<std::string> names = parse_filename(files);
 
 	Parameter::Instance()->max_caller = names.size();
 	Parameter::Instance()->max_dist = max_dist;
 	Parameter::Instance()->use_type = (type_save == 1);
+	Parameter::Instance()->use_strand = (strand_save == 1);
 	IntervallTree bst;
 	TNode *root = NULL;
 
@@ -151,7 +176,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 		std::vector<strvcfentry> entries = parse_vcf(names[id]);
 		std::cout << "merging entries: " << entries.size() << std::endl;
 		for (size_t j = 0; j < entries.size(); j++) {
-			bst.insert(convert_position(entries[j].start), convert_position(entries[j].stop), entries[j].type,entries[j].num_reads, (int) id, root);
+			bst.insert(convert_position(entries[j].start), convert_position(entries[j].stop), entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, root);
 		}
 		entries.clear();
 	}
@@ -166,40 +191,39 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	std::vector<int> hist;
 
 	for (size_t i = 0; i < points.size(); i++) {
-		int support=get_support(points[i]->caller_info);
+		int support = get_support(points[i]->caller_info);
 		if (support >= min_support) {
 			print_entry_overlap(file, points[i], i);
 		}
-		while(support>=hist.size()){
+		while (support >= hist.size()) {
 			hist.push_back(0);
 		}
 		hist[support]++;
 	}
-	std::cout<<"Histogram over the # of callers overlapping per SVs: "<<std::endl;
-	for(size_t i=1;i<hist.size();i++){
-		std::cout<<i<<" "<<hist[i]<<std::endl;
+	std::cout << "Histogram over the # of callers overlapping per SVs: " << std::endl;
+	for (size_t i = 1; i < hist.size(); i++) {
+		std::cout << i << " " << hist[i] << std::endl;
 	}
 	fclose(file);
-	std::string out=output;
-	out+="_venn";
+	std::string out = output;
+	out += "_venn";
 	file = fopen(out.c_str(), "w");
 
-
-	for(size_t i=0;i<names.size();i++){
-		fprintf(file,"%s",names[i].c_str());
-		fprintf(file,"%s","\t");
+	for (size_t i = 0; i < names.size(); i++) {
+		fprintf(file, "%s", names[i].c_str());
+		fprintf(file, "%s", "\t");
 	}
-	fprintf(file,"%s","\n");
+	fprintf(file, "%s", "\n");
 	for (size_t i = 0; i < points.size(); i++) {
 		for (size_t j = 0; j < points[i]->caller_info.size(); j++) {
-			if(!points[i]->caller_info[j]->starts.empty()){
-				fprintf(file,"%i",1);
-			}else{
-				fprintf(file,"%i",0);
+			if (!points[i]->caller_info[j]->starts.empty()) {
+				fprintf(file, "%i", 1);
+			} else {
+				fprintf(file, "%i", 0);
 			}
-			fprintf(file,"%s","\t");
+			fprintf(file, "%s", "\t");
 		}
-		fprintf(file,"%s","\n");
+		fprintf(file, "%s", "\n");
 	}
 	fclose(file);
 }

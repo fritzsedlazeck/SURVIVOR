@@ -29,7 +29,9 @@ struct strvcfentry{
 	int caller_id;
 	std::vector<int> caller_supports;
 	std::pair<bool,bool> strands;
-	int num_reads;
+	std::pair<int,int> num_reads; //ref alt
+	std::string genotype;
+	//int num_reads;
 };
 
 

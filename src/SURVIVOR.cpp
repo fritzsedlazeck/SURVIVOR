@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 				std::cerr << "Output vcf file" << std::endl;
 			}
 			break;
-		case 5:
+		/*case 5:
 			if (argc == 7) {
 				//merge 3 SV calls from the same strain
 				combine_calls(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]), atoi(argv[5]), std::string(argv[6]));
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 				std::cerr << "max dist" << std::endl;
 				std::cerr << "Output prefix" << std::endl;
 			}
-			break;
+			break;*/
 		case 6:
 			if (argc == 6) {
 				generate_gene_list(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), std::string(argv[5]));
@@ -180,20 +180,21 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 
-		case 14:
-			if (argc == 7) {
+		case 5: //prev 14!
+			if (argc == 8) {
 				//merge 3 SV calls from the same strain
 			//	combine_calls_new(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
-				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
+				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), std::string(argv[7]));
 			} else {
 				std::cerr << "Tab file with names" << std::endl;
 				std::cerr << "max distance between breakpoints" << std::endl;
 				std::cerr << "Minimum number of supporting caller" << std::endl;
 				std::cerr << "Take the type into account (1==yes, else no)"<<std::endl;
+				std::cerr << "Take the strands of SVs into account (1==yes, else no)"<<std::endl;
 				std::cerr << "Output prefix" << std::endl;
 			}
 			break;
-		case 15:
+		/*case 15:
 			if (argc == 5) {
 				//eval calls paper
 				eval_paper(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]));
@@ -211,7 +212,7 @@ int main(int argc, char *argv[]) {
 				std::cerr << "*.smap file" << std::endl;
 				std::cerr << "output file" << std::endl;
 			}
-			break;
+			break;*/
 		default:
 			break;
 		}
@@ -230,7 +231,7 @@ int main(int argc, char *argv[]) {
 		std::cerr << "11: Convert SV calls from Assemblytics" << std::endl;
 		std::cerr << "12: Summarize MQ 0 coverage to bed file" << std::endl;
 		std::cerr << "13: Summarize SVs events in VCF file" << std::endl;
-		std::cerr << "14: Combine calls from different vcf files" << std::endl;
+	//	std::cerr << "14: Combine calls from different vcf files" << std::endl;
 	}
 	return 0;
 }
