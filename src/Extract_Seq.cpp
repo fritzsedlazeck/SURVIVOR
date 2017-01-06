@@ -240,7 +240,7 @@ void extract_DUP(strvcfentry entry, std::map<std::string, std::string> &ref,
 void extract_breakpoint_seq(std::string vcf_file, std::string reference_file,
 		int len, std::string outputfile) {
 
-	std::vector<strvcfentry> svs = parse_vcf(vcf_file);
+	std::vector<strvcfentry> svs = parse_vcf(vcf_file,0);
 	std::map<std::string, std::string> ref = parse_ref(reference_file);
 	std::cout<<"REF "<<ref.size()<<std::endl;
 	FILE *file;

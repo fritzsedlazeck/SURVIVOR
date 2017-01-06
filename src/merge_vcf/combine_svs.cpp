@@ -162,7 +162,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	fprintf(file, "%c", '\n');
 }
 
-void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, int strand_save, std::string output) {
+void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, int strand_save,int min_svs, std::string output) {
 	std::vector<std::string> names = parse_filename(files);
 
 	Parameter::Instance()->max_caller = names.size();
@@ -173,7 +173,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	TNode *root = NULL;
 
 	for (size_t id = 0; id < names.size(); id++) {
-		std::vector<strvcfentry> entries = parse_vcf(names[id]);
+		std::vector<strvcfentry> entries = parse_vcf(names[id],min_svs);
 		std::cout << "merging entries: " << entries.size() << std::endl;
 		for (size_t j = 0; j < entries.size(); j++) {
 			bst.insert(convert_position(entries[j].start), convert_position(entries[j].stop), entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, root);

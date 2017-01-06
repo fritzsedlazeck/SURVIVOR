@@ -92,7 +92,7 @@ void combine_calls_new(std::string files, int max_dist, int min_caller, std::str
 	std::vector<std::string> names = parse_filename(files);
 	std::vector<strvcfentry> merged;
 	for (size_t i = 0; i < names.size(); i++) {
-		std::vector<strvcfentry> tmp = parse_vcf(names[i]);
+		std::vector<strvcfentry> tmp = parse_vcf(names[i],0);
 		std::cout << "Parsed: " << names[i].c_str() << " #Events: " << tmp.size() << std::endl;
 		process_SV(tmp, merged, max_dist, (int) i, (int) names.size());
 	}
@@ -120,9 +120,9 @@ void combine_calls_new(std::string files, int max_dist, int min_caller, std::str
 
 void combine_calls(std::string vcf_delly, std::string vcf_lumpy, std::string vcf_pindel, int max_dist, std::string output) {
 
-	std::vector<strvcfentry> delly = parse_vcf(vcf_delly);
-	std::vector<strvcfentry> lumpy = parse_vcf(vcf_lumpy);
-	std::vector<strvcfentry> pindel = parse_vcf(vcf_pindel);
+	std::vector<strvcfentry> delly = parse_vcf(vcf_delly,0);
+	std::vector<strvcfentry> lumpy = parse_vcf(vcf_lumpy,0);
+	std::vector<strvcfentry> pindel = parse_vcf(vcf_pindel,0);
 
 	std::vector<strvcfentry> merged;
 	process_SV(pindel, merged, max_dist, 1, 3);

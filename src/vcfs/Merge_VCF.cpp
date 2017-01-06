@@ -115,20 +115,63 @@ short get_type(std::string type) {
 	} else if (strncmp(type.c_str(), "BND", 3) == 0) { //can be inv/inter/tra
 		return 5;
 	} else {
-		std::cerr << "Unknown type!" << type << std::endl;
-
+		//std::cerr << "Unknown type!" << type << std::endl;
 	}
 	return -1;
 }
 
+std::string trans_type23(short type) {
+	switch (type) {
+	case 0:
+		return "DEL";
+		break;
+	case 1:
+		return "DUP";
+		break;
+	case 2:
+		return "INV";
+		break;
+	case 3:
+		return "TRA";
+		break;
+	case 4:
+		return "INS";
+		break;
+	case 5:
+		return "BND";
+		break;
+	}
+	return "NA";
+}
+
 strcoordinate parse_pos(char * buffer) {
-	std::string tmp = std::string(buffer);
-	size_t found = tmp.find(':');
 	strcoordinate pos;
-	pos.chr = tmp.substr(0, found);
-	found++;
-	pos.pos = atoi(&tmp[found]);
-	//std::cout << pos.chr << "| " << pos.pos << "|" << std::endl;
+	pos.chr = "";
+	pos.pos = -1;
+//	T]chr2:243185994]
+//  A[chr1:231019[
+	size_t i = 0;
+	int count = 0;
+	while (buffer[i] != '\t') {
+		if (count == 1 && ((buffer[i] != '[' || buffer[i] != ']') && buffer[i] != ':')) {
+			pos.chr += buffer[i];
+		}
+		if (count == 2 && buffer[i - 1] == ':') {
+			pos.pos = atoi(&buffer[i]);
+		}
+		if ((buffer[i] == ']' || buffer[i] == '[') || buffer[i] == ':') {
+			count++;
+		}
+		i++;
+	}
+
+	/*	std::string tmp = std::string(buffer);
+	 size_t found = tmp.find(':');
+	 strcoordinate pos;
+	 pos.chr = tmp.substr(0, found);
+	 found++;
+	 pos.pos = atoi(&tmp[found]);*/
+//	std::cout << pos.chr << " | " << pos.pos << "|" << std::endl;
 	return pos;
 }
 
@@ -254,8 +297,8 @@ std::string get_most_effect(std::string alt, int ref) {
 }
 
 //for each file parse the entries
-std::vector<strvcfentry> parse_vcf(std::string filename) {
-	size_t buffer_size = 2000000;
+std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
+	size_t buffer_size = 200000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
 
@@ -268,8 +311,11 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 	std::vector<strvcfentry> calls;
 	myfile.getline(buffer, buffer_size);
 
+	int num = 0;
 	while (!myfile.eof()) {
 		if (buffer[0] != '#') {
+			//	std::cout<<num<<"\t"<<buffer<<std::endl;
+			num++;
 			int count = 0;
 			strvcfentry tmp;
 			tmp.sup_lumpy = 0;
@@ -328,7 +374,9 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 					size_t j = i;
 					tmp.genotype = "";
 					while (buffer[j] != '\0' && buffer[j] != ':') {
-						tmp.genotype += buffer[j];
+						if (buffer[j] != '\t') {
+							tmp.genotype += buffer[j];
+						}
 						j++;
 					}
 					//	std::cout<<"GO: "<<tmp.genotype<<std::endl;
@@ -347,7 +395,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 					tmp.type = get_type(std::string(&buffer[i]));
 				}
 				if (tmp.stop.pos == -1 && (count == 4 && (buffer[i - 1] == '[' || buffer[i - 1] == ']'))) {
-					tmp.stop = parse_pos(&buffer[i]);
+					tmp.stop = parse_pos(&buffer[i - 1]);
 				}
 
 				if (count == 9 && buffer[i - 1] == '\t') {
@@ -363,19 +411,18 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 				}
 			}
 			if (!set_strand) {
-				if (tmp.type == 0 || tmp.type==4) {
+				if (tmp.type == 0 || tmp.type == 4) {
 					tmp.strands.first = true;
 					tmp.strands.second = false;
 				} else if (tmp.type == 1) {
 					tmp.strands.first = false;
 					tmp.strands.second = true;
-				}else { //should not happen??
+				} else { //should not happen??
 					tmp.strands.first = true;
 					tmp.strands.second = true;
 				}
 			}
 			if (tmp.stop.pos == -1) {
-
 				std::size_t found = alt.find(",");
 				if (found != std::string::npos) {
 					alt = get_most_effect(alt, (int) ref.size());
@@ -392,7 +439,26 @@ std::vector<strvcfentry> parse_vcf(std::string filename) {
 			if (tmp.stop.chr.empty()) {
 				tmp.stop.chr = tmp.start.chr;
 			}
-			calls.push_back(tmp);
+			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || abs(tmp.start.pos - tmp.stop.pos) >= min_svs) && (tmp.num_reads.second == 0 || tmp.num_reads.second > 5)) {
+				std::size_t found = tmp.stop.chr.find("chr");
+				if (found != std::string::npos) {
+					tmp.stop.chr.erase(tmp.stop.chr.begin() + found, tmp.stop.chr.begin() + found + 3);
+				}
+				found = tmp.start.chr.find("chr");
+				if (found != std::string::npos) {
+					tmp.start.chr.erase(tmp.start.chr.begin() + found, tmp.start.chr.begin() + found + 3);
+				}
+
+				if (tmp.type == 5) { //BND
+					if (strcmp(tmp.stop.chr.c_str(), tmp.start.chr.c_str()) == 0) {
+						tmp.type = 2;
+					} else {
+						tmp.type = 3;
+					}
+
+				}
+				calls.push_back(tmp);
+			}
 			tmp.calls.clear();
 		} else {
 
@@ -423,7 +489,7 @@ int overlap(strvcfentry tmp, std::vector<strvcfentry> & final_vcf, int max_dist)
 //detect overlap and merge:
 void merge_entries(std::string filename, int max_dist, std::vector<strvcfentry> & final_vcf) {
 //get new entries
-	std::vector<strvcfentry> new_entries = parse_vcf(filename);
+	std::vector<strvcfentry> new_entries = parse_vcf(filename, 0);
 //merge entires:
 	for (size_t i = 0; i < new_entries.size(); i++) {
 		int id = overlap(new_entries[i], final_vcf, max_dist);
@@ -459,11 +525,12 @@ std::string get_header(std::vector<std::string> names) {
 				if (count < 9) {
 					header += buffer[i];
 				}
-				if (count == 9) {
-					break;
-				}
+
 				if (buffer[i] == '\t') {
 					count++;
+				}
+				if (count == 9) {
+					break;
 				}
 			}
 			break;
@@ -472,7 +539,9 @@ std::string get_header(std::vector<std::string> names) {
 	}
 
 	for (size_t i = 0; i < names.size(); i++) {
-		header += '\t';
+		if (i != 0) {
+			header += '\t';
+		}
 		header += names[i];
 	}
 	header += '\n';
@@ -480,6 +549,67 @@ std::string get_header(std::vector<std::string> names) {
 	return header;
 }
 
+void print_entry(FILE *&file, SVS_Node * entry, int id) {
+	fprintf(file, "%s", entry->first.chr.c_str());
+	fprintf(file, "%c", '\t');
+	fprintf(file, "%i", entry->first.position);
+	fprintf(file, "%c", '\t');
+	fprintf(file, "%i", id);
+	fprintf(file, "%s", "\tN\t");
+	fprintf(file, "%c", '<');
+	fprintf(file, "%s", trans_type23(entry->type).c_str());
+	fprintf(file, "%c", '>');
+
+	fprintf(file, "%s", "\t.\tPASS\tIMPRECISE;SVMETHOD=SURVIVOR");
+	fprintf(file, "%s", ";CHR2=");
+	fprintf(file, "%s", entry->second.chr.c_str());
+	fprintf(file, "%s", ";END=");
+	fprintf(file, "%i", entry->second.position);
+
+	fprintf(file, "%s", ";SVTYPE=");
+	fprintf(file, "%s", trans_type23(entry->type).c_str());
+	fprintf(file, "%s", ";SVLEN=");
+	fprintf(file, "%i", entry->second.position - entry->first.position);
+
+	fprintf(file, "%s", ";STRANDS=");
+	if (entry->strand.first) {
+		fprintf(file, "%c", '+');
+	} else {
+		fprintf(file, "%c", '-');
+	}
+
+	if (entry->strand.second) {
+		fprintf(file, "%c", '+');
+	} else {
+		fprintf(file, "%c", '-');
+	}
+
+	fprintf(file, "%s", "\tGT:DR:DV");
+	for (size_t i = 0; i < entry->caller_info.size(); i++) {
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%s", entry->caller_info[i]->genotype.c_str());
+	}
+	fprintf(file, "%c", '\n');
+}
+void print_merged_vcf(std::string outputfile, std::string header, std::vector<SVS_Node *> points, std::vector<std::string> names, int min_observed) {
+	FILE *file;
+	file = fopen(outputfile.c_str(), "w");
+
+	fprintf(file, "%s", header.c_str());
+	header.clear();
+	for (size_t i = 0; i < points.size(); i++) {
+		int support = 0;
+		for (size_t j = 0; j < points[i]->caller_info.size(); j++) {
+			if (strncmp(points[i]->caller_info[j]->genotype.c_str(), "./.", 3) != 0 && strncmp(points[i]->caller_info[j]->genotype.c_str(), "0/0", 3) != 0) {
+				support++;
+			}
+		}
+		if (support > min_observed) {
+			print_entry(file, points[i], i);
+		}
+	}
+	fclose(file);
+}
 void print_merged_vcf(std::string outputfile, std::string header, std::vector<strvcfentry> &final_vcf, std::vector<std::string> names) {
 	FILE *file;
 	file = fopen(outputfile.c_str(), "w");
@@ -502,18 +632,42 @@ void print_merged_vcf(std::string outputfile, std::string header, std::vector<st
 }
 
 //main:
-void merge_vcf(std::string filenames, int max_dist, std::string outputfile) {
+void merge_vcf(std::string filenames, int max_dist, int min_observed, std::string outputfile) {
+
+	Parameter::Instance()->use_strand = true;
+
+	Parameter::Instance()->max_dist = max_dist;
+	Parameter::Instance()->use_type = true;
 
 	std::vector<std::string> names = parse_filename(filenames);
 	std::cout << "found in file: " << names.size() << std::endl;
 	std::vector<strvcfentry> final_vcf;
 
-	for (size_t i = 0; i < names.size(); i++) {
-		merge_entries(names[i], max_dist, final_vcf);
-		std::cout << "merged: " << final_vcf.size() << std::endl;
+	/*for (size_t i = 0; i < names.size(); i++) {
+	 merge_entries(names[i], max_dist, final_vcf);
+	 std::cout << "merged: " << final_vcf.size() << std::endl;
+	 }*/
+
+	IntervallTree bst;
+	TNode *root = NULL;
+	Parameter::Instance()->max_caller = names.size();
+	for (size_t id = 0; id < names.size(); id++) {
+		std::vector<strvcfentry> entries = parse_vcf(names[id], 0);
+		std::cout << id << ": merging entries: " << names[id] << " size: " << entries.size() << std::endl;
+		for (size_t j = 0; j < entries.size(); j++) {
+			bst.insert(convert_position(entries[j].start), convert_position(entries[j].stop), entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, root);
+		}
+		entries.clear();
 	}
+
+	std::vector<SVS_Node *> points;
+	bst.get_breakpoints(root, points);
+
+	std::cout << "Merged: " << points.size() << std::endl;
+
 	std::cout << "get header:" << std::endl;
 	std::string header = get_header(names);
 	std::cout << "print:" << std::endl;
-	print_merged_vcf(outputfile, header, final_vcf, names);
+	print_merged_vcf(outputfile, header, points, names, min_observed);
+	//print_merged_vcf(outputfile, header, final_vcf, names);
 }

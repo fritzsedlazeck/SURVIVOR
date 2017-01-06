@@ -18,6 +18,8 @@
 #include "../simulator/Eval_vcf.h"
 #include "Paramer.h"
 
+
+
 struct breakpoint_str {
 	std::string chr;
 	int position;
@@ -78,5 +80,7 @@ public:
 #include "IntervallTree.h"
 #include "../vcfs/Merge_VCF.h"
 
-void combine_calls_svs(std::string file, int max_dist, int min_support, int type_save, int strand_save, std::string output);
+void combine_calls_svs(std::string file, int max_dist, int min_support, int type_save, int strand_save,int min_svs, std::string output);
+breakpoint_str convert_position(strcoordinate pos);
+
 #endif /* MERGE_VCF_COMBINE_SVS_H_ */

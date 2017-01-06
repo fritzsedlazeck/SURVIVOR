@@ -89,7 +89,7 @@ void convert_vcf(std::string vcf_file, std::string output) {
 	FILE *file;
 	file = fopen(output.c_str(), "w");
 
-	std::vector<strvcfentry> entries = parse_vcf(vcf_file);
+	std::vector<strvcfentry> entries = parse_vcf(vcf_file, 0);
 	std::cout << "parse" << std::endl;
 	std::vector<std::string> names = parse_names(vcf_file);
 
@@ -270,8 +270,8 @@ void convert_vcf_bede(std::string vcffile, int min_length, std::string output) {
 	}
 }
 
-short get_type_bed(std::string type){
-	if (strncmp(type.c_str(), "DEL", 3) == 0 ) {
+short get_type_bed(std::string type) {
+	if (strncmp(type.c_str(), "DEL", 3) == 0) {
 		return 0;
 	} else if (strncmp(type.c_str(), "DUP", 3) == 0) {
 		return 1;
@@ -280,12 +280,11 @@ short get_type_bed(std::string type){
 	} else if (strncmp(type.c_str(), "INS", 3) == 0) {
 		return 4;
 	} else {
-		std::cerr << "Unknown type! "<<type << std::endl;
+		std::cerr << "Unknown type! " << type << std::endl;
 	}
 	return -1;
 
 }
-
 
 std::string print_entry_bed(strvcfentry & region) {
 
@@ -318,7 +317,6 @@ std::string print_entry_bed(strvcfentry & region) {
 	//std::cout<<convert.str()<<std::endl;
 	return convert.str();
 }
-
 
 void process_bed_file(std::string bedfile, std::string type, std::string output) {
 	size_t buffer_size = 2000000;
@@ -353,11 +351,34 @@ void process_bed_file(std::string bedfile, std::string type, std::string output)
 				count++;
 			}
 		}
-		region.type=get_type_bed(type);
-		fprintf(file, "%s",print_entry_bed(region).c_str());
-		fprintf(file, "%c",'\n');
+		region.type = get_type_bed(type);
+		fprintf(file, "%s", print_entry_bed(region).c_str());
+		fprintf(file, "%c", '\n');
 		myfile.getline(buffer, buffer_size);
 	}
 	myfile.close();
+	fclose(file);
+}
+
+void parse_VCF_to_bed(std::string vcffile, std::string output) {
+	std::vector<strvcfentry> entries = parse_vcf(vcffile, 0);
+	FILE *file;
+	file = fopen(output.c_str(), "w");
+
+	for (size_t i = 0; i < entries.size(); i++) {
+		fprintf(file, "%s", entries[i].start.chr.c_str());
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", entries[i].start.pos);
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", (int) i);
+		fprintf(file, "%c", '\n');
+		fprintf(file, "%s", entries[i].stop.chr.c_str());
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", entries[i].stop.pos);
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", (int) i);
+		fprintf(file, "%c", '\n');
+
+	}
 	fclose(file);
 }

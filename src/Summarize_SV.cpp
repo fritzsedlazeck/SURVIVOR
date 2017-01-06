@@ -58,7 +58,7 @@ void summary_SV(std::string vcf_file, std::string output) {
 	int step = 1000;
 	std::map<std::string, std::map<int, int> > SV_chrs;
 
-	std::vector<strvcfentry> entries = parse_vcf(vcf_file);
+	std::vector<strvcfentry> entries = parse_vcf(vcf_file,0);
 
 	for (size_t i = 0; i < entries.size(); i++) {
 		//summarize the support:

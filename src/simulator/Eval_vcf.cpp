@@ -242,7 +242,7 @@ void eval_calls(std::vector<strvcfentry> entries, std::vector<strsimul> simul, i
 	for (size_t j = 0; j < simul.size(); j++) {
 		if (!simul[j].identified) {
 			add_to_report(notfound, simul[j].type);
-			std::cout<<simul[j].type<<" "<<simul[j].start.chr<<" "<<simul[j].start.pos<<" END: "<<simul[j].stop.chr<<" "<<simul[j].stop.pos<<std::endl;
+			std::cout << simul[j].type << " " << simul[j].start.chr << " " << simul[j].start.pos << " END: " << simul[j].stop.chr << " " << simul[j].stop.pos << std::endl;
 		} else {
 			add_to_report(found, simul[j].type);
 		}
@@ -275,13 +275,32 @@ void summarize_simul(std::vector<strsimul> simul) {
 }
 
 void eval_vcf(std::string vcf_file, std::string bed_file, int max_allowed_dist, std::string output) {
-	std::vector<strvcfentry> entries = parse_vcf(vcf_file);
+	std::vector<strvcfentry> entries = parse_vcf(vcf_file, 0);
 	//prase simulated
 	std::vector<strsimul> simul = parse_bed_simul(bed_file);
 	summarize_simul(simul);
 
 	//compare overlap
 	eval_calls(entries, simul, max_allowed_dist, output);
+}
+
+bool match_coords_paper(strsimul c1, strvcfentry c2, int max_allowed_dist) {
+
+	if ((strcmp(c1.start.chr.c_str(), c2.start.chr.c_str()) == 0 && abs(c1.start.pos - c2.start.pos) < max_allowed_dist)) {
+		if (c1.type == 4 || c1.type == 3) {
+			return true;
+		}
+		return (strcmp(c1.stop.chr.c_str(), c2.stop.chr.c_str()) == 0 && abs(c1.stop.pos - c2.stop.pos) < max_allowed_dist);
+
+	} else if ((strcmp(c1.stop.chr.c_str(), c2.start.chr.c_str()) == 0 && abs(c1.stop.pos - c2.start.pos) < max_allowed_dist)) {
+		if (c1.type == 4 || c1.type == 3) {
+			return true;
+		}
+		return (strcmp(c1.start.chr.c_str(), c2.stop.chr.c_str()) == 0 && abs(c1.start.pos - c2.stop.pos) < max_allowed_dist);
+
+	}
+	return false;
+
 }
 
 void eval_calls_paper(std::vector<strvcfentry> entries, std::vector<strsimul> simul, int max_allowed_dist) {
@@ -293,11 +312,18 @@ void eval_calls_paper(std::vector<strvcfentry> entries, std::vector<strsimul> si
 	for (size_t i = 0; i < entries.size(); i++) {
 		bool found = false;
 		for (size_t j = 0; j < simul.size(); j++) {
-			if(match_coords(simul[j], entries[i], max_allowed_dist) && simul[j].type == entries[i].type) { //check if order is perserved!
+			if (match_coords(simul[j], entries[i], max_allowed_dist) && simul[j].type == entries[i].type) { //check if order is perserved!
 				found = true;
 				simul[j].identified = true;
-			} else if (match_coords(simul[j], entries[i], max_allowed_dist*100) ){
-				//std::cout<<entries[i].start.pos<<std::endl;
+				/*std::cout << "found: " << std::endl;
+				std::cout << "\t" << entries[i].type << " start " << entries[i].start.chr << " " << entries[i].start.pos << " " << entries[i].stop.chr << " " << entries[i].stop.pos << std::endl;
+				std::cout << "\t" << simul[j].type << " start " << simul[j].start.chr << " " << simul[j].start.pos << " " << simul[j].stop.chr << " " << simul[j].stop.pos << std::endl;
+*/
+			} else if (match_coords_paper(simul[j], entries[i], max_allowed_dist * 100)) {
+		/*		std::cout << "incorrect: " << std::endl;
+				std::cout << "\t" << entries[i].type << " start " << entries[i].start.chr << " " << entries[i].start.pos << " " << entries[i].stop.chr << " " << entries[i].stop.pos << std::endl;
+				std::cout << "\t" << simul[j].type << " start " << simul[j].start.chr << " " << simul[j].start.pos << " " << simul[j].stop.chr << " " << simul[j].stop.pos << std::endl;
+*/
 				found = true;
 				simul[j].wrong = true;
 			}
@@ -318,13 +344,14 @@ void eval_calls_paper(std::vector<strvcfentry> entries, std::vector<strsimul> si
 			notfound++;
 		}
 	}
-	std::cout << "chr\tstart\tstop\tTYPE\tLEN\t" << simul.size() << "\t" << found << "\t" << incorrect << "\t" << notfound << "\t" << additional << "\t0\t0\t0" << std::endl;
+	std::cout << "chr\tstart\tstop\tTYPE\tLEN\t" << simul.size() << "\t" << found << "\t" << incorrect << "\t" << notfound << "\t" << additional << std::endl;
 }
 
 void eval_paper(std::string vcf_file, std::string bed_file, int max_allowed_dist) {
-	std::vector<strvcfentry> entries = parse_vcf(vcf_file);
+	std::vector<strvcfentry> entries = parse_vcf(vcf_file, 0);
 	//prase simulated
 	std::vector<strsimul> simul = parse_bed_simul(bed_file);
+
 	//summarize_simul(simul);
 
 	//compare overlap

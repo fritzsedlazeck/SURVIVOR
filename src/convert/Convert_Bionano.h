@@ -9,5 +9,5 @@
 #define CONVERT_CONVERT_BIONANO_H_
 #include "Process_Lumpy.h"
 void process_Bionano(std::string bionano, std::string output);
-
+void process_CG(std::string gc_file, std::string output) ;
 #endif /* CONVERT_CONVERT_BIONANO_H_ */

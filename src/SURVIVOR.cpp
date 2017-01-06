@@ -72,27 +72,28 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 4:
-			if (argc == 5) {
+			if (argc == 6) {
 				//merge VCF calls for SV
-				merge_vcf(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
+				merge_vcf(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]),  std::string(argv[5]));
 			} else {
 				std::cerr << "list of files to process" << std::endl;
 				std::cerr << "Max allowed distance to be counted the same" << std::endl;
+				std::cerr << "Min observed"<<std::endl;
 				std::cerr << "Output vcf file" << std::endl;
 			}
 			break;
-		/*case 5:
-			if (argc == 7) {
-				//merge 3 SV calls from the same strain
-				combine_calls(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]), atoi(argv[5]), std::string(argv[6]));
-			} else {
-				std::cerr << "VCF delly" << std::endl;
-				std::cerr << "VCF lumpy" << std::endl;
-				std::cerr << "VCF pindel" << std::endl;
-				std::cerr << "max dist" << std::endl;
-				std::cerr << "Output prefix" << std::endl;
-			}
-			break;*/
+			/*case 5:
+			 if (argc == 7) {
+			 //merge 3 SV calls from the same strain
+			 combine_calls(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]), atoi(argv[5]), std::string(argv[6]));
+			 } else {
+			 std::cerr << "VCF delly" << std::endl;
+			 std::cerr << "VCF lumpy" << std::endl;
+			 std::cerr << "VCF pindel" << std::endl;
+			 std::cerr << "max dist" << std::endl;
+			 std::cerr << "Output prefix" << std::endl;
+			 }
+			 break;*/
 		case 6:
 			if (argc == 6) {
 				generate_gene_list(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), std::string(argv[5]));
@@ -130,7 +131,7 @@ int main(int argc, char *argv[]) {
 		case 9:
 			if (argc == 5) {
 				//convert Pindel to VCF
-				process_bed_file(std::string(argv[2]),std::string(argv[3]),std::string(argv[4]));
+				process_bed_file(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
 				//process_Pindel(std::string(argv[2]), atoi(argv[3]), atof(argv[4]), std::string(argv[5]));
 			} else {
 				std::cerr << "Bed file" << std::endl;
@@ -181,20 +182,21 @@ int main(int argc, char *argv[]) {
 			break;
 
 		case 5: //prev 14!
-			if (argc == 8) {
+			if (argc == 9) {
 				//merge 3 SV calls from the same strain
-			//	combine_calls_new(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
-				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), std::string(argv[7]));
+				//	combine_calls_new(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
+				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), std::string(argv[8]));
 			} else {
 				std::cerr << "Tab file with names" << std::endl;
 				std::cerr << "max distance between breakpoints" << std::endl;
 				std::cerr << "Minimum number of supporting caller" << std::endl;
-				std::cerr << "Take the type into account (1==yes, else no)"<<std::endl;
-				std::cerr << "Take the strands of SVs into account (1==yes, else no)"<<std::endl;
+				std::cerr << "Take the type into account (1==yes, else no)" << std::endl;
+				std::cerr << "Take the strands of SVs into account (1==yes, else no)" << std::endl;
+				std::cerr << "Minimum size of SVs to be taken into account." << std::endl;
 				std::cerr << "Output prefix" << std::endl;
 			}
 			break;
-		/*case 15:
+		case 15:
 			if (argc == 5) {
 				//eval calls paper
 				eval_paper(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]));
@@ -212,7 +214,29 @@ int main(int argc, char *argv[]) {
 				std::cerr << "*.smap file" << std::endl;
 				std::cerr << "output file" << std::endl;
 			}
-			break;*/
+			break;
+		case 17:
+			if (argc == 4) {
+				//eval calls paper
+				process_CG(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "*.smap file" << std::endl;
+				std::cerr << "output file" << std::endl;
+			}
+			break;
+		case 18:
+			if (argc == 4) {
+				//eval calls paper
+				parse_VCF_to_bed(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "vcf file" << std::endl;
+				std::cerr << "output file" << std::endl;
+			}
+			break;
+
+		case 19:
+
+			break;
 		default:
 			break;
 		}
@@ -226,12 +250,12 @@ int main(int argc, char *argv[]) {
 		std::cerr << "6: Extract genes influenced by SVs" << std::endl;
 		std::cerr << "7: Filter and convert SV calls from Delly" << std::endl;
 		std::cerr << "8: Filter and convert SV calls from Lumpy" << std::endl;
-		std::cerr << "9: Filter and convert SV calls from Pindel" << std::endl;
+		std::cerr << "9: Filter and convert SV calls from BED files" << std::endl;
 		std::cerr << "10: Convert SV calls from PBHoney (tails)" << std::endl;
 		std::cerr << "11: Convert SV calls from Assemblytics" << std::endl;
 		std::cerr << "12: Summarize MQ 0 coverage to bed file" << std::endl;
 		std::cerr << "13: Summarize SVs events in VCF file" << std::endl;
-	//	std::cerr << "14: Combine calls from different vcf files" << std::endl;
+		//	std::cerr << "14: Combine calls from different vcf files" << std::endl;
 	}
 	return 0;
 }

@@ -10,6 +10,7 @@
 #include <sstream>
 
 #include "../vcfs/Merge_VCF.h"
+#include "../structs.h"
 struct strreport{
 	short del;
 	short dup;

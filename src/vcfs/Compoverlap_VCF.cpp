@@ -86,8 +86,8 @@ void print_entry(strvcfentry entry, FILE *& out) {
 }
 
 void comp_overlap_vcf(std::string vcf1_file, std::string vcf2_file, int max_dist, std::string output) {
-	std::vector<strvcfentry> vcf1 = parse_vcf(vcf1_file);
-	std::vector<strvcfentry> vcf2 = parse_vcf(vcf2_file);
+	std::vector<strvcfentry> vcf1 = parse_vcf(vcf1_file,0);
+	std::vector<strvcfentry> vcf2 = parse_vcf(vcf2_file,0);
 
 	std::cout << vcf1.size() << " " << vcf2.size() << std::endl;
 

@@ -31,7 +31,14 @@ long IntervallTree::overlap(breakpoint_str start, breakpoint_str stop,short type
 	if(((!Parameter::Instance()->use_strand || is_same_strand(strands,curr_svs->strand)) && (!Parameter::Instance()->use_type || same_type(type,curr_svs->type))) && (same_breakpoint(start,curr_svs->first) && same_breakpoint(stop, curr_svs->second))){
 		return 0; //to be merged
 	}
-	return (start.position - curr_svs->first.position);
+	if(abs(start.position - curr_svs->first.position)<Parameter::Instance()->max_dist){
+		return (stop.position - curr_svs->second.position);
+	}
+	int dist=(start.position - curr_svs->first.position);
+	if(dist==0){
+		return 1;
+	}
+	return (dist);
 }
 
 // Inserting a node

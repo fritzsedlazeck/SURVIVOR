@@ -31,6 +31,7 @@ struct strvcfentry{
 	std::pair<bool,bool> strands;
 	std::pair<int,int> num_reads; //ref alt
 	std::string genotype;
+	int sv_len;
 	//int num_reads;
 };
 

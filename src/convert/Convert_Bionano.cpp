@@ -39,7 +39,7 @@ std::string print_entry_bio(strvcfentry & region) {
 	convert << trans_type(region.type);
 	convert << ">\t.\tLowQual\tIMPRECISE;SVTYPE=";
 	convert << trans_type(region.type);
-	convert << ";SVMETHOD=PINDELv0.2.5a8;CHR2=";
+	convert << ";CHR2=";
 	convert << region.stop.chr;
 	convert << ";END=";
 	convert << region.stop.pos;
@@ -119,9 +119,87 @@ void parse_Bionano(std::string bionano, std::vector<strvcfentry>& entries) {
 
 }
 
+void parse_GC(std::string bionano, std::vector<strvcfentry>& entries) {
+	size_t buffer_size = 2000000;
+	char*buffer = new char[buffer_size];
+	std::ifstream myfile;
+	myfile.open(bionano.c_str(), std::ifstream::in);
+	if (!myfile.good()) {
+		std::cout << "Bionano Parser: could not open file: " << bionano.c_str() << std::endl;
+		exit(0);
+	}
+	myfile.getline(buffer, buffer_size); //avoid header
+	myfile.getline(buffer, buffer_size);
+	while (buffer[0] == '#' && !myfile.eof()) {
+		myfile.getline(buffer, buffer_size);
+	}
+
+	while (!myfile.eof()) {
+		if (buffer[0] != '#' && buffer[0] != '>') {
+			int count = 0;
+			strvcfentry tmp;
+			std::string type="";
+			tmp.type = -1;
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				if (count == 1 && buffer[i] != '\t') {
+					type += buffer[i];
+				}
+				if (count == 2 && buffer[i - 1] == '\t') {
+				//	std::cout<<type<<std::endl;
+					if (strcmp(type.c_str(), "inversion") == 0) {
+					//	std::cout<<"HIT"<<std::endl;
+						tmp.type = 2;
+					} else if (strcmp(type.c_str(), "deletion") == 0) {
+						std::cout<<"HIT"<<std::endl;
+						tmp.type = 0;
+					} else {
+						type.clear(); //flag for ignoring!
+						break;
+					}
+				}
+				if (count == 5 && buffer[i] != '\t') { //all events are on the same chrs!
+					tmp.start.chr += buffer[i];
+					tmp.stop.chr += buffer[i];
+				}
+				if (count == 6 && buffer[i - 1] == '\t') {
+					tmp.start.pos = atoi(&buffer[i]);
+				}
+				if (count == 7 && buffer[i - 1] == '\t') {
+					tmp.stop.pos = atoi(&buffer[i]);
+				}
+				if (count == 8 && buffer[i - 1] == '\t') {
+					tmp.sv_len = atoi(&buffer[i]);
+				}
+
+				if (buffer[i] == '\t') {
+					count++;
+				}
+			}
+			if (tmp.type != -1) {
+				entries.push_back(tmp);
+			}
+		}
+		myfile.getline(buffer, buffer_size);
+	}
+	myfile.close();
+
+}
+
 void process_Bionano(std::string bionano, std::string output) {
 	std::vector<strvcfentry> entries;
 	parse_Bionano(bionano, entries);
+	FILE *file;
+	file = fopen(output.c_str(), "w");
+	for (size_t i = 0; i < entries.size(); i++) {
+		fprintf(file, "%s", print_entry_bio(entries[i]).c_str());
+		fprintf(file, "%c", '\n');
+	}
+	fclose(file);
+}
+
+void process_CG(std::string gc_file, std::string output) {
+	std::vector<strvcfentry> entries;
+	parse_GC(gc_file, entries);
 	FILE *file;
 	file = fopen(output.c_str(), "w");
 	for (size_t i = 0; i < entries.size(); i++) {

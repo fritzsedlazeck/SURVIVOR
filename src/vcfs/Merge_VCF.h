@@ -15,11 +15,13 @@
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../merge_vcf/Paramer.h"
+#include "../merge_vcf/combine_svs.h"
 
 #include "../structs.h"
-std::vector<strvcfentry> parse_vcf(std::string filename);
+std::vector<strvcfentry> parse_vcf(std::string filename,int min_svs);
 strcoordinate parse_stop(const char * buffer);
-void merge_vcf(std::string filenames, int max_dist, std::string outputfile);
+void merge_vcf(std::string filenames, int max_dist, int min_observed, std::string outputfile);
 short get_type(std::string type) ;
 int overlap(strvcfentry tmp, std::vector<strvcfentry> & final_vcf,int max_dist);
 strcoordinate parse_stop(const char * buffer);

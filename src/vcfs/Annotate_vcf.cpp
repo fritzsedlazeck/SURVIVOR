@@ -203,7 +203,7 @@ void comp_overlap(std::vector<strvcfentry> entries, std::vector<strgene> genes, 
 }
 
 void overlap_gtf(std::string vcf_file, std::string gtf_file, int max_distance, int min_num_occurance, int max_num_occurance, int type, std::string output) {
-	std::vector<strvcfentry> entries = parse_vcf(vcf_file);
+	std::vector<strvcfentry> entries = parse_vcf(vcf_file,0);
 	std::vector<strgene> genes = parse_annotation_bed(gtf_file);
 	std::cout << "parsed genes: " << genes.size() << std::endl;
 	//std::cout<<"gene[0] "<< genes[0].region.start<<std::endl;
