@@ -655,7 +655,9 @@ void merge_vcf(std::string filenames, int max_dist, int min_observed, std::strin
 		std::vector<strvcfentry> entries = parse_vcf(names[id], 0);
 		std::cout << id << ": merging entries: " << names[id] << " size: " << entries.size() << std::endl;
 		for (size_t j = 0; j < entries.size(); j++) {
-			bst.insert(convert_position(entries[j].start), convert_position(entries[j].stop), entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, root);
+			breakpoint_str start= convert_position(entries[j].start);
+			breakpoint_str stop= convert_position(entries[j].stop);
+			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, root);
 		}
 		entries.clear();
 	}

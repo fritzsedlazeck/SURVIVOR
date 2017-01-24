@@ -58,7 +58,7 @@ void summary_SV(std::string vcf_file, std::string output) {
 	int step = 1000;
 	std::map<std::string, std::map<int, int> > SV_chrs;
 
-	std::vector<strvcfentry> entries = parse_vcf(vcf_file,0);
+	std::vector<strvcfentry> entries = parse_vcf(vcf_file, 0);
 
 	for (size_t i = 0; i < entries.size(); i++) {
 		//summarize the support:
@@ -67,8 +67,8 @@ void summary_SV(std::string vcf_file, std::string output) {
 			while (id >= support.size()) {
 				support.push_back(0);
 			}
-			if(id==1){
-				std::cout<<entries[i].start.pos<<std::endl;
+			if (id == 1) {
+				std::cout << entries[i].start.pos << std::endl;
 			}
 			support[id]++;
 		}
@@ -189,6 +189,90 @@ void summary_SV(std::string vcf_file, std::string output) {
 			fprintf(file, "%i", (*i).second[3]);
 		} else {
 			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\n');
+	}
+	fclose(file);
+}
+
+void summary_venn(std::string filename, std::string output) {
+	std::vector<std::vector<int> > mat;
+	std::vector<std::string> names;
+
+	size_t buffer_size = 200000000;
+	char*buffer = new char[buffer_size];
+	std::ifstream myfile;
+
+	myfile.open(filename.c_str(), std::ifstream::in);
+	if (!myfile.good()) {
+		std::cout << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
+		exit(0);
+	}
+
+	myfile.getline(buffer, buffer_size);
+
+	int num = 0;
+	while (!myfile.eof()) {
+		if (num == 0) {
+			std::string name;
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				if (buffer[i] == '\t') {
+					names.push_back(name);
+					name.clear();
+				} else {
+					name += buffer[i];
+				}
+			}
+			if(!name.empty()){
+				names.push_back(name);
+			}
+			std::vector<int> tmp;
+			tmp.assign(names.size(), 0);
+			mat.assign(names.size(), tmp);
+			num++;
+		} else {
+			int count = 0;
+			std::vector<int> ids;
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				if (buffer[i - 1] == '\t' && buffer[i] == '1') {
+					ids.push_back(count - 1); //-1 since we have the ID in the first column.
+				//	std::cout<<count<<std::endl;
+				}
+				if (buffer[i] == '\t') {
+					count++;
+				}
+			}
+
+			for (size_t i = 0; i < ids.size(); i++) {
+				for (size_t j = 0; j < ids.size(); j++) {
+					mat[ids[i]][ids[j]]++;
+				}
+			}
+			num++;
+		}
+		myfile.getline(buffer, buffer_size);
+	}
+	myfile.close();
+	FILE * file = fopen(output.c_str(), "w");
+	for (size_t i = 0; i < names.size(); i++) {
+		fprintf(file, "%i", (int)i);
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%s", names[i].c_str());
+		fprintf(file, "%c", '\n');
+	}
+	fprintf(file, "%c", '\t');
+	for (size_t j = 0; j < names.size(); j++) {
+		fprintf(file, "%i",(int) j);
+		fprintf(file, "%c", '\t');
+	}
+	fprintf(file, "%c", '\n');
+
+	for (size_t i = 0; i < mat.size(); i++) {
+		fprintf(file, "%i",(int)i);
+				fprintf(file, "%c", '\t');
+		for (size_t j = 0; j < mat.size(); j++) {
+			fprintf(file, "%i", mat[i][j]);
+			fprintf(file, "%c", '\t');
 		}
 		fprintf(file, "%c", '\n');
 	}

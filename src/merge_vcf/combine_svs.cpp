@@ -78,16 +78,16 @@ double get_avglen(std::vector<Support_Node *> caller_info) {
 	return size / num;
 }
 std::string print_strands(std::pair<bool, bool> strands) {
-	std::string strand="";
+	std::string strand = "";
 	if (strands.first) {
-		strand+="+";
+		strand += "+";
 	} else {
-		strand+="-";
+		strand += "-";
 	}
 	if (strands.second) {
-		strand+="+";
+		strand += "+";
 	} else {
-		strand+="-";
+		strand += "-";
 	}
 	return strand;
 }
@@ -125,11 +125,11 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 		convert << ":";
 		convert << entry->caller_info[i]->len;
 		convert << ":";
-		convert << entry->caller_info[i]->num_support.first;//ref
+		convert << entry->caller_info[i]->num_support.first;   //ref
 		convert << ",";
-		convert << entry->caller_info[i]->num_support.second;//alt
+		convert << entry->caller_info[i]->num_support.second;   //alt
 		convert << ":";
-		convert <<print_strands(entry->caller_info[i]->strand);
+		convert << print_strands(entry->caller_info[i]->strand);
 		convert << ":";
 		if (entry->caller_info[i]->types.empty()) {
 			convert << "NaN";
@@ -162,7 +162,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	fprintf(file, "%c", '\n');
 }
 
-void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, int strand_save,int min_svs, std::string output) {
+void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, int strand_save, int min_svs, std::string output) {
 	std::vector<std::string> names = parse_filename(files);
 
 	Parameter::Instance()->max_caller = names.size();
@@ -173,10 +173,13 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	TNode *root = NULL;
 
 	for (size_t id = 0; id < names.size(); id++) {
-		std::vector<strvcfentry> entries = parse_vcf(names[id],min_svs);
+		std::vector<strvcfentry> entries = parse_vcf(names[id], min_svs);
 		std::cout << "merging entries: " << entries.size() << std::endl;
 		for (size_t j = 0; j < entries.size(); j++) {
-			bst.insert(convert_position(entries[j].start), convert_position(entries[j].stop), entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, root);
+			breakpoint_str start = convert_position(entries[j].start);
+			breakpoint_str stop = convert_position(entries[j].stop);
+			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, root);
+
 		}
 		entries.clear();
 	}
@@ -215,6 +218,13 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	}
 	fprintf(file, "%s", "\n");
 	for (size_t i = 0; i < points.size(); i++) {
+		std::ostringstream convert;
+		convert << trans_type(points[i]->type);
+		convert << "00";
+		convert << i;
+		convert << "SUR";
+		fprintf(file, "%s", convert.str().c_str());
+		fprintf(file, "%s", "\t");
 		for (size_t j = 0; j < points[i]->caller_info.size(); j++) {
 			if (!points[i]->caller_info[j]->starts.empty()) {
 				fprintf(file, "%i", 1);

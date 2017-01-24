@@ -22,8 +22,9 @@ private:
 	TNode * drr(TNode *&);
 	long overlap(breakpoint_str start, breakpoint_str stop,short type, std::pair<bool,bool> strands,SVS_Node * curr_svs);
 	bool same_breakpoint(breakpoint_str first, breakpoint_str second);
+	void careful_screening(breakpoint_str &start, breakpoint_str& stop ,short type,std::pair<int,int> num_reads, int caller_id, std::string genotype, std::pair<bool,bool> strands, TNode *p);
 public:
-	void insert(breakpoint_str start, breakpoint_str stop ,short type,std::pair<int,int> num_reads,int caller_id, std::string genotype, std::pair<bool,bool> strands, TNode *&p);
+	void insert(breakpoint_str &start, breakpoint_str &stop ,short type,std::pair<int,int> num_reads,int caller_id, std::string genotype, std::pair<bool,bool> strands, TNode *&p);
 	void del(SVS_Node * point, TNode *&);
 	int deletemin(TNode *&);
 	void find(SVS_Node * point, TNode *&);

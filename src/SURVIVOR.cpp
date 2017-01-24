@@ -74,11 +74,11 @@ int main(int argc, char *argv[]) {
 		case 4:
 			if (argc == 6) {
 				//merge VCF calls for SV
-				merge_vcf(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]),  std::string(argv[5]));
+				merge_vcf(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
 			} else {
 				std::cerr << "list of files to process" << std::endl;
 				std::cerr << "Max allowed distance to be counted the same" << std::endl;
-				std::cerr << "Min observed"<<std::endl;
+				std::cerr << "Min observed" << std::endl;
 				std::cerr << "Output vcf file" << std::endl;
 			}
 			break;
@@ -169,7 +169,6 @@ int main(int argc, char *argv[]) {
 				std::cerr << "min coverage to be considerd " << std::endl;
 			}
 			break;
-
 		case 13:
 			if (argc == 4) {
 				//Convert a MQ0 coverage file to bed file for filtering SV
@@ -235,7 +234,13 @@ int main(int argc, char *argv[]) {
 			break;
 
 		case 19:
-
+			if (argc == 4) {
+				//summarize venn
+				summary_venn(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "vcf venn file" << std::endl;
+				std::cerr << "output file" << std::endl;
+			}
 			break;
 		default:
 			break;
