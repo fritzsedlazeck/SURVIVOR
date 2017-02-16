@@ -223,7 +223,7 @@ void summary_venn(std::string filename, std::string output) {
 					name += buffer[i];
 				}
 			}
-			if(!name.empty()){
+			if (!name.empty()) {
 				names.push_back(name);
 			}
 			std::vector<int> tmp;
@@ -236,7 +236,7 @@ void summary_venn(std::string filename, std::string output) {
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 				if (buffer[i - 1] == '\t' && buffer[i] == '1') {
 					ids.push_back(count - 1); //-1 since we have the ID in the first column.
-				//	std::cout<<count<<std::endl;
+					//	std::cout<<count<<std::endl;
 				}
 				if (buffer[i] == '\t') {
 					count++;
@@ -245,7 +245,11 @@ void summary_venn(std::string filename, std::string output) {
 
 			for (size_t i = 0; i < ids.size(); i++) {
 				for (size_t j = 0; j < ids.size(); j++) {
-					mat[ids[i]][ids[j]]++;
+					if (ids[i] <= ids[j]) {
+						//if (i != j || ids.size() == 1) {
+							mat[ids[i]][ids[j]]++;
+						//}
+					}
 				}
 			}
 			num++;
@@ -254,22 +258,23 @@ void summary_venn(std::string filename, std::string output) {
 	}
 	myfile.close();
 	FILE * file = fopen(output.c_str(), "w");
+	//fprintf(file, "%c", '\t');
 	for (size_t i = 0; i < names.size(); i++) {
-		fprintf(file, "%i", (int)i);
+		//fprintf(file, "%i", (int) i);
 		fprintf(file, "%c", '\t');
 		fprintf(file, "%s", names[i].c_str());
-		fprintf(file, "%c", '\n');
+		//fprintf(file, "%c", '\n');
 	}
 	fprintf(file, "%c", '\t');
-	for (size_t j = 0; j < names.size(); j++) {
-		fprintf(file, "%i",(int) j);
+	/*for (size_t j = 0; j < names.size(); j++) {
+		fprintf(file, "%i", (int) j);
 		fprintf(file, "%c", '\t');
 	}
 	fprintf(file, "%c", '\n');
-
+*/
 	for (size_t i = 0; i < mat.size(); i++) {
-		fprintf(file, "%i",(int)i);
-				fprintf(file, "%c", '\t');
+		fprintf(file, "%i", (int) i);
+		fprintf(file, "%c", '\t');
 		for (size_t j = 0; j < mat.size(); j++) {
 			fprintf(file, "%i", mat[i][j]);
 			fprintf(file, "%c", '\t');

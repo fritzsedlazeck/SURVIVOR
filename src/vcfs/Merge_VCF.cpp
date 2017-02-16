@@ -329,6 +329,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 			tmp.strands.second = true;
 			tmp.num_reads.first = 0;
 			tmp.num_reads.second = 0;
+			int len = -1;
 			//std::cout<<buffer<<std::endl;
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 
@@ -363,6 +364,10 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 					set_strand = true;
 					tmp.strands.first = (bool) (buffer[i + 4] != '5');
 					tmp.strands.second = (bool) (buffer[i + 7] != '5');
+				}
+				if (count == 7 && strncmp(&buffer[i], "SVLEN=", 6) == 0) {
+					len = atoi(&buffer[i + 6]);
+
 				}
 				if (count == 7 && strncmp(&buffer[i], ";STRANDS=", 9) == 0) {
 					set_strand = true;
@@ -422,6 +427,10 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 					tmp.strands.second = true;
 				}
 			}
+
+			if (tmp.stop.pos == -1 && len!=-1) {
+				tmp.stop.pos = tmp.start.pos + len;
+			}
 			if (tmp.stop.pos == -1) {
 				std::size_t found = alt.find(",");
 				if (found != std::string::npos) {
@@ -439,7 +448,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 			if (tmp.stop.chr.empty()) {
 				tmp.stop.chr = tmp.start.chr;
 			}
-			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || abs(tmp.start.pos - tmp.stop.pos) >= min_svs) && (tmp.num_reads.second == 0 || tmp.num_reads.second > 5)) {
+			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (abs(tmp.start.pos - tmp.stop.pos) >= min_svs || tmp.type == 4)) && (tmp.num_reads.second == 0 || tmp.num_reads.second > 5)) {
 				std::size_t found = tmp.stop.chr.find("chr");
 				if (found != std::string::npos) {
 					tmp.stop.chr.erase(tmp.stop.chr.begin() + found, tmp.stop.chr.begin() + found + 3);
@@ -655,8 +664,8 @@ void merge_vcf(std::string filenames, int max_dist, int min_observed, std::strin
 		std::vector<strvcfentry> entries = parse_vcf(names[id], 0);
 		std::cout << id << ": merging entries: " << names[id] << " size: " << entries.size() << std::endl;
 		for (size_t j = 0; j < entries.size(); j++) {
-			breakpoint_str start= convert_position(entries[j].start);
-			breakpoint_str stop= convert_position(entries[j].stop);
+			breakpoint_str start = convert_position(entries[j].start);
+			breakpoint_str stop = convert_position(entries[j].stop);
 			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, root);
 		}
 		entries.clear();

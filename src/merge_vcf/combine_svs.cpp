@@ -114,10 +114,10 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << entry->second.chr;
 	convert << ";END=";
 	convert << entry->second.position;
-	if (Parameter::Instance()->use_strand) {
+	//if (Parameter::Instance()->use_strand) {
 		convert << ";STRANDS=";
 		convert << print_strands(entry->strand);
-	}
+	//}
 	convert << "\tGT:LN:DR:ST:TY:CO\t";
 
 	for (size_t i = 0; i < entry->caller_info.size(); i++) {
@@ -169,6 +169,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	Parameter::Instance()->max_dist = max_dist;
 	Parameter::Instance()->use_type = (type_save == 1);
 	Parameter::Instance()->use_strand = (strand_save == 1);
+
 	IntervallTree bst;
 	TNode *root = NULL;
 

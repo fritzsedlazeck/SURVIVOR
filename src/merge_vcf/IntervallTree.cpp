@@ -72,7 +72,7 @@ void IntervallTree::insert(breakpoint_str &start, breakpoint_str& stop, short ty
 			start.position = -1;
 			stop.position = -1;
 			return;
-		} else if (abs((int)score) < (long)Parameter::Instance()->max_dist) { // if two or more events are too close:
+		} else if (abs(score) < (long)Parameter::Instance()->max_dist) { // if two or more events are too close:
 			//std::cout<<"Screen"<<std::endl;
 			careful_screening(start,stop,type,num_reads, caller_id,genotype,  strands, p);
 			if (start.position == -1 && stop.position == -1) {

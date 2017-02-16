@@ -80,13 +80,14 @@ std::vector<strsimul> parse_bed_simul(std::string filename) {
 bool match_coords(strsimul c1, strvcfentry c2, int max_allowed_dist) {
 
 	if ((strcmp(c1.start.chr.c_str(), c2.start.chr.c_str()) == 0 && abs(c1.start.pos - c2.start.pos) < max_allowed_dist)) {
-		if (c1.type == 4) {
+		if (c2.type == 4 || c2.type == 3) {
+			std::cout<<"HIT"<<std::endl;
 			return true;
 		}
 		return (strcmp(c1.stop.chr.c_str(), c2.stop.chr.c_str()) == 0 && abs(c1.stop.pos - c2.stop.pos) < max_allowed_dist);
 
 	} else if ((strcmp(c1.stop.chr.c_str(), c2.start.chr.c_str()) == 0 && abs(c1.stop.pos - c2.start.pos) < max_allowed_dist)) {
-		if (c1.type == 4) {
+		if (c2.type == 4 || c2.type == 3) {
 			return true;
 		}
 		return (strcmp(c1.start.chr.c_str(), c2.stop.chr.c_str()) == 0 && abs(c1.start.pos - c2.stop.pos) < max_allowed_dist);
@@ -285,7 +286,7 @@ void eval_vcf(std::string vcf_file, std::string bed_file, int max_allowed_dist, 
 }
 
 bool match_coords_paper(strsimul c1, strvcfentry c2, int max_allowed_dist) {
-
+	//std::cout<<c1.type<<" "<<c2.type<<std::endl;
 	if ((strcmp(c1.start.chr.c_str(), c2.start.chr.c_str()) == 0 && abs(c1.start.pos - c2.start.pos) < max_allowed_dist)) {
 		if (c1.type == 4 || c1.type == 3) {
 			return true;
@@ -312,7 +313,7 @@ void eval_calls_paper(std::vector<strvcfentry> entries, std::vector<strsimul> si
 	for (size_t i = 0; i < entries.size(); i++) {
 		bool found = false;
 		for (size_t j = 0; j < simul.size(); j++) {
-			if (match_coords(simul[j], entries[i], max_allowed_dist) && simul[j].type == entries[i].type) { //check if order is perserved!
+			if (match_coords_paper(simul[j], entries[i], max_allowed_dist) && simul[j].type == entries[i].type) { //check if order is perserved!
 				found = true;
 				simul[j].identified = true;
 				/*std::cout << "found: " << std::endl;
@@ -340,7 +341,7 @@ void eval_calls_paper(std::vector<strvcfentry> entries, std::vector<strsimul> si
 		} else if (simul[j].wrong) {
 			incorrect++;
 		} else {
-			//std::cout<<"Not: "<<simul[j].start.pos<<std::endl;
+			//std::cout<<"Not: "<<simul[j].start.pos<<" "<<simul[j].type<<std::endl;
 			notfound++;
 		}
 	}
@@ -349,8 +350,15 @@ void eval_calls_paper(std::vector<strvcfentry> entries, std::vector<strsimul> si
 
 void eval_paper(std::string vcf_file, std::string bed_file, int max_allowed_dist) {
 	std::vector<strvcfentry> entries = parse_vcf(vcf_file, 0);
+	//for (size_t i = 0; i < entries.size(); i++) {
+	//std::cout << "\t" << entries[i].type << " start " << entries[i].start.chr << " " << entries[i].start.pos << " " << entries[i].stop.chr << " " << entries[i].stop.pos << std::endl;
+	//}
 	//prase simulated
 	std::vector<strsimul> simul = parse_bed_simul(bed_file);
+
+//	for(size_t j=0;j<simul.size();j++){
+//		std::cout << "\t" << simul[j].type << " start " << simul[j].start.chr << " " << simul[j].start.pos << " " << simul[j].stop.chr << " " << simul[j].stop.pos << std::endl;
+//	}
 
 	//summarize_simul(simul);
 

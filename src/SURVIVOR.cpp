@@ -242,6 +242,22 @@ int main(int argc, char *argv[]) {
 				std::cerr << "output file" << std::endl;
 			}
 			break;
+		case 20:
+			if (argc == 5) {
+				filter_vcf_sniffles(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
+			} else {
+				std::cerr << "vcf input file" << std::endl;
+				std::cerr << "min length" << std::endl;
+				std::cerr << "output file" << std::endl;
+			}
+			break;
+		case 21:
+			if (argc == 3) {
+				summarize_paper_gaib(std::string(argv[2]));
+			} else {
+				std::cerr << "vcf input file" << std::endl;
+			}
+			break;
 		default:
 			break;
 		}

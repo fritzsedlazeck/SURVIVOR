@@ -18,4 +18,6 @@
 
 void filter_vcf(std::string vcf_file,std::string genomic_regions,int min_alternative_pairs, float min_alt_ref_ratio, int max_genotype,std::string outputvcf);
 
+void filter_vcf_sniffles(std::string vcf_file,int min_lenght, std::string outputvcf);
+void summarize_paper_gaib(std::string venn_file);
 #endif /* FILTER_VCF_H_ */
