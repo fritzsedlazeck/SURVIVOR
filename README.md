@@ -3,17 +3,17 @@ SURVIVOR is a tool set for simulating/evaluating SVs, merging and comparing SVs 
 
 Please see our github wiki for more information (https://github.com/fritzsedlazeck/SURVIVOR/wiki ) 
 **************************************
-Cite:
+## Cite:
 
 If you use it in your study please cite:
 
-Transient structural variations have strong effects on quantitative traits and reproductive isolation in fission yeast. 
+**Transient structural variations have strong effects on quantitative traits and reproductive isolation in fission yeast.** 
 Jeffares, Daniel C; Jolly, Clemency; Hoti, Mimoza; Speed, Doug; Shaw, Liam; Rallis, Charalampos; Balloux, Francois; Dessimoz, Christophe; Bähler, Jürg; Sedlazeck, Fritz J. Sedlazeck 
 Nature communications, Vol. 8, 14061, 24.01.2017, p. 1-11. DOI:10.1038/NCOMMS14061
 
 **************************************
 
-INSTALL:
+## INSTALL:
 
 Download SURVIVOR:
 ```
@@ -26,7 +26,7 @@ git clone https://github.com/fritzsedlazeck/SURVIVOR.git
 
 **************************************
 
-USAGE:
+## USAGE:
 ```
 ./SURVIVOR ID
 ```
@@ -51,7 +51,7 @@ Possible options
 ```
 
 **************************************
-CONTACT:
+## CONTACT:
 
 If you have questions or encounter a problem please contact:
 fritz.sedlazeck@gmail.com
