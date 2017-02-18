@@ -16,13 +16,11 @@ Nature communications, Vol. 8, 14061, 24.01.2017, p. 1-11. DOI:10.1038/NCOMMS140
 ## INSTALL:
 
 Download SURVIVOR:
-```
+<pre>
 git clone https://github.com/fritzsedlazeck/SURVIVOR.git
-```
-
-  cd SURVIVOR/Debug
-  
-  make
+cd SURVIVOR/Debug
+make
+</pre>
 
 **************************************
 
