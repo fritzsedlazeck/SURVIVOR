@@ -102,14 +102,14 @@ parameter parse_param(std::string filename) {
 		myfile.getline(buffer, buffer_size);
 	}
 	tmp.intrachr_num = 0;
-	if (!myfile.eof()) {
+	/*if (!myfile.eof()) {
 		tmp.intrachr_min = parse_value(buffer, buffer_size);
 		myfile.getline(buffer, buffer_size);
 		tmp.intrachr_max = parse_value(buffer, buffer_size);
 		myfile.getline(buffer, buffer_size);
 		tmp.intrachr_num = parse_value(buffer, buffer_size);
 		//std::cout<<"NUM: "<<tmp.intrachr_num<<std::endl;
-	}
+	}*/
 	myfile.close();
 	return tmp;
 }
@@ -852,8 +852,8 @@ void generate_parameter_file(std::string parameter_file) {
 	fprintf(file2, "%s", "INV_dup_maximum_length: 800\n");
 	fprintf(file2, "%s", "INV_dup_number: 2\n");
 
-	fprintf(file2, "%s", "INTRA_TRANS_minimum_length: 600\n");
+	/*fprintf(file2, "%s", "INTRA_TRANS_minimum_length: 600\n");
 	fprintf(file2, "%s", "INTRA_TRANS_maximum_length: 800\n");
-	fprintf(file2, "%s", "INTRA_TRANS_number: 2\n");
+	fprintf(file2, "%s", "INTRA_TRANS_number: 2\n");*/
 	fclose(file2);
 }

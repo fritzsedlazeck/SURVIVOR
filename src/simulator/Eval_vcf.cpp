@@ -240,6 +240,7 @@ void eval_calls(std::vector<strvcfentry> entries, std::vector<strsimul> simul, i
 		}
 	}
 
+	std::cout<<"Missing SVs: "<<std::endl;
 	for (size_t j = 0; j < simul.size(); j++) {
 		if (!simul[j].identified) {
 			add_to_report(notfound, simul[j].type);
@@ -248,6 +249,7 @@ void eval_calls(std::vector<strvcfentry> entries, std::vector<strsimul> simul, i
 			add_to_report(found, simul[j].type);
 		}
 	}
+	std::cout << std::endl;
 	std::cout << " Overall: " << simul.size() << " " << print_report(found) << " " << print_report(notfound) << " " << print_report(additional) << " " << get_TP(simul.size(), found) << " " << get_FP(found, additional) << std::endl;
 }
 void summarize_simul(std::vector<strsimul> simul) {
