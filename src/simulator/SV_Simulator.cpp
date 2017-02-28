@@ -430,7 +430,7 @@ std::vector<struct_var> generate_mutations_ref(std::string parameter_file, std::
 
 void store_sorted(std::vector<struct_var> &svs, struct_var tmp) {
 	std::vector<struct_var>::iterator i = svs.begin();
-	while (i != svs.end() && strcmp(tmp.target.chr.c_str(), (*i).target.chr.c_str()) >= 0 && tmp.target.start > (*i).target.start) {
+	while (i != svs.end() &&(  tmp.target.start > (*i).target.start)) {
 		i++;
 	}
 	svs.insert(i, tmp);
@@ -611,17 +611,16 @@ void apply_mutations_ref(std::map<std::string, std::string> &genome, std::vector
 	svs = tmp_svs;
 
 	//iterator
-	for (std::vector<struct_var>::reverse_iterator i = svs.rbegin(); i != svs.rend(); i++) {
-		if ((*i).type == 4) {
-			//insertions: (simulated deletions) move always further away..???
-			(*i).type = 1;
-
-		} else if ((*i).type == 1) {
-			(*i).type = 4;
+	for(size_t i=0;i<svs.size();i++){
+		if(svs[i].type==4){
+			svs[i].type=1;
+		}else if(svs[i].type==1){
+			svs[i].type=4;
 		}
 	}
+
 	for (std::vector<struct_var>::iterator i = svs.begin(); i != svs.end(); i++) {
-		std::cout << (*i).pos.start << " " << (*i).type << std::endl;
+		std::cout << (*i).pos.chr<<" "<<(*i).pos.start << " " << (*i).type << std::endl;
 		std::string tmp;
 		switch ((*i).type) {
 		case 1:
@@ -808,7 +807,7 @@ void simulate_SV(std::string ref_file, std::string parameter_file, bool coordina
 		svs = generate_mutations(parameter_file, genome);
 		check_genome(genome, "Sec:");
 		apply_mutations(genome, svs);	//problem: We need two different coordinates. Simulate once for one and then for the other???
-	} else {
+	} else { //real read fake ref!
 		svs = generate_mutations_ref(parameter_file, genome);
 		check_genome(genome, "Sec:");
 		apply_mutations_ref(genome, svs);	//problem: We need two different coordinates. Simulate once for one and then for the other???
