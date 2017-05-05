@@ -30,6 +30,8 @@ public:
 	int max_caller;
 	bool use_type;
 	bool use_strand;
+	bool dynamic_size;
+	int min_length;
 
 	static Parameter* Instance() {
 		if (!m_pInstance) {

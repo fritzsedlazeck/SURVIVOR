@@ -74,9 +74,9 @@ void rev_comp(std::string & read) {
 }
 void simulate_reads(std::string name, std::string seq, FILE*& file, FILE*& sam, FILE*& file2) {
 	size_t i = 0;
-	int len = 20000 + rand() % 1000;
+	int len = std::min(20000 + rand() % 1000,(int)seq.size());
 	while (i < seq.size()) {
-		if (i + len < seq.size()) {
+		if (i + len <= seq.size()) {
 			fprintf(file, "%c", '@');
 			fprintf(file, "%s", name.c_str());
 			fprintf(file, "%c", '_');
@@ -168,7 +168,7 @@ void simulate_pac(std::string genome, std::string output) {
 
 	myfile.open(genome.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "SAM Parser: could not open file: " << genome.c_str() << std::endl;
+		std::cout << "Fasta Parser: could not open file: " << genome.c_str() << std::endl;
 		exit(0);
 	}
 

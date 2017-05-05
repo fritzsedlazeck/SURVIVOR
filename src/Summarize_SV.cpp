@@ -48,11 +48,26 @@ int get_support(vector<int> support) {
 	}
 	return count;
 }
+int bin_size(int dist) {
+	//20-50, 50-100, 100-1000, 1000/
+	if (dist < 50) {
+		return 0;
+	} else if (dist < 100) {
+		return 1;
+	} else if (dist < 1000) {
+		return 2;
+	} else if (dist < 10000) {
+		return 3;
+	}
+	return 4;
+}
 void summary_SV(std::string vcf_file, std::string output) {
+
 	std::vector<int> len_Del;
 	std::vector<int> len_Dup;
 	std::vector<int> len_Inv;
 	std::vector<int> len_Ins;
+	std::vector<int> len_unk;
 	std::vector<int> support;
 	int TRA = 0;
 	int step = 1000;
@@ -72,7 +87,7 @@ void summary_SV(std::string vcf_file, std::string output) {
 			}
 			support[id]++;
 		}
-		int dist = abs(entries[i].stop.pos - entries[i].start.pos) / step;
+		int dist = bin_size(entries[i].sv_len); // /step; //abs(entries[i].stop.pos - entries[i].start.pos) / step;
 		if (entries[i].type == 0) {
 			adjust(len_Del, dist);
 			len_Del[dist]++;
@@ -87,6 +102,9 @@ void summary_SV(std::string vcf_file, std::string output) {
 			len_Ins[dist]++;
 		} else if (entries[i].type == 3) {
 			TRA++;
+		} else if (entries[i].type == -1) {
+			adjust(len_unk, dist);
+			len_unk[dist]++;
 		}
 		std::string chr = entries[i].start.chr;
 		if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(entries[i].type) != SV_chrs[chr].end()) {
@@ -107,11 +125,30 @@ void summary_SV(std::string vcf_file, std::string output) {
 		fprintf(file, "%c", '\n');
 	}
 	fclose(file);
-	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()), (int) len_Inv.size());
+	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()),std::max( (int) len_Inv.size(),(int)len_unk.size()));
 	file = fopen(output.c_str(), "w");
-	fprintf(file, "%s", "Len(max)\tDel(1kb)\tDup(1kb)\tInv(1kb)\tINS(1kb)\tTRA(1kb)\n");
+	fprintf(file, "%s", "Len\tDel\tDup\tInv\tINS\tTRA\tUNK\n");
 	for (size_t i = 0; i < maxim + 1; i++) {
-		fprintf(file, "%i", (int) (i + 1) * step);
+		switch (i) {
+		case 0:
+			fprintf(file, "%s", "0-50bp");
+			break;
+		case 1:
+			fprintf(file, "%s", "50-100bp");
+			break;
+		case 2:
+			fprintf(file, "%s", "100-1000bp");
+			break;
+		case 3:
+			fprintf(file, "%s", "1000-10000bp");
+			break;
+		case 4:
+			fprintf(file, "%s", "10000+bp");
+			break;
+		default:
+			break;
+		}
+
 		fprintf(file, "%c", '\t');
 		if (i < len_Del.size()) {
 			fprintf(file, "%i", len_Del[i]);
@@ -142,7 +179,12 @@ void summary_SV(std::string vcf_file, std::string output) {
 		} else {
 			fprintf(file, "%i", 0);
 		}
-
+		fprintf(file, "%c", '\t');
+		if (i < len_unk.size()) {
+			fprintf(file, "%i", len_unk[i]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
 		fprintf(file, "%c", '\n');
 	}
 	fclose(file);
@@ -224,16 +266,17 @@ void summary_venn(std::string filename, std::string output) {
 				}
 			}
 			if (!name.empty()) {
-				names.push_back(name);
+				//names.push_back(name); // last column is length
 			}
+
 			std::vector<int> tmp;
-			tmp.assign(names.size(), 0);
+			tmp.assign(names.size(), 0); //last column is the length!
 			mat.assign(names.size(), tmp);
 			num++;
 		} else {
 			int count = 0;
 			std::vector<int> ids;
-			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+			for (size_t i = 0; i < buffer_size && count <= names.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 				if (buffer[i - 1] == '\t' && buffer[i] == '1') {
 					ids.push_back(count - 1); //-1 since we have the ID in the first column.
 					//	std::cout<<count<<std::endl;
@@ -247,7 +290,7 @@ void summary_venn(std::string filename, std::string output) {
 				for (size_t j = 0; j < ids.size(); j++) {
 					if (ids[i] <= ids[j]) {
 						//if (i != j || ids.size() == 1) {
-							mat[ids[i]][ids[j]]++;
+						mat[ids[i]][ids[j]]++;
 						//}
 					}
 				}
@@ -258,23 +301,16 @@ void summary_venn(std::string filename, std::string output) {
 	}
 	myfile.close();
 	FILE * file = fopen(output.c_str(), "w");
-	//fprintf(file, "%c", '\t');
+	//fprintf(file, "%s", "Caller");
 	for (size_t i = 0; i < names.size(); i++) {
-		//fprintf(file, "%i", (int) i);
 		fprintf(file, "%c", '\t');
 		fprintf(file, "%s", names[i].c_str());
-		//fprintf(file, "%c", '\n');
-	}
-	fprintf(file, "%c", '\t');
-	/*for (size_t j = 0; j < names.size(); j++) {
-		fprintf(file, "%i", (int) j);
-		fprintf(file, "%c", '\t');
 	}
 	fprintf(file, "%c", '\n');
-*/
+
 	for (size_t i = 0; i < mat.size(); i++) {
-		fprintf(file, "%i", (int) i);
-		fprintf(file, "%c", '\t');
+	//	fprintf(file, "%i", (int) i);
+	//	fprintf(file, "%c", '\t');
 		for (size_t j = 0; j < mat.size(); j++) {
 			fprintf(file, "%i", mat[i][j]);
 			fprintf(file, "%c", '\t');

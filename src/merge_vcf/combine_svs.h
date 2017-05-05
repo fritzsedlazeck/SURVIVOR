@@ -41,6 +41,7 @@ public:
 	}
 	int len;
 	std::vector<short> types;
+	std::vector<short> sv_lengths;
 	std::vector<breakpoint_str> starts;
 	std::vector<breakpoint_str> stops;
 	std::pair<int,int> num_support;
@@ -80,7 +81,7 @@ public:
 #include "IntervallTree.h"
 #include "../vcfs/Merge_VCF.h"
 
-void combine_calls_svs(std::string file, int max_dist, int min_support, int type_save, int strand_save,int min_svs, std::string output);
+void combine_calls_svs(std::string file, int max_dist, int min_support, int type_save, int strand_save,int dynamic_size,int min_svs, std::string output);
 breakpoint_str convert_position(strcoordinate pos);
-
+void summarize_VCF_files(std::string filename, int min_size, std::string output);
 #endif /* MERGE_VCF_COMBINE_SVS_H_ */

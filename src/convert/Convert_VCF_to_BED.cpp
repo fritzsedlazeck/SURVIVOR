@@ -90,12 +90,31 @@ void convert_vcf(std::string vcf_file, std::string output) {
 	file = fopen(output.c_str(), "w");
 
 	std::vector<strvcfentry> entries = parse_vcf(vcf_file, 0);
-	std::cout << "parse" << std::endl;
-	std::vector<std::string> names = parse_names(vcf_file);
 
-	std::cout << "parse end " << names.size() << std::endl;
 	int id = 0;
-	fprintf(file, "%s", "chr\tPos\tStop\tType\tID\tnames\n");
+	for (size_t i = 0; i < entries.size(); i++) {
+		if (strcmp(entries[i].start.chr.c_str(), entries[i].stop.chr.c_str()) == 0) {
+			fprintf(file, "%s", entries[i].start.chr.c_str());
+			fprintf(file, "%c", '\t');
+			if (entries[i].start.pos > entries[i].stop.pos) {
+				int start = entries[i].start.pos;
+				entries[i].start.pos = entries[i].stop.pos;
+				entries[i].stop.pos = start;
+			}
+			fprintf(file, "%i", entries[i].start.pos);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].stop.pos);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%s", trans_type(entries[i].type).c_str());
+			fprintf(file, "%c", '\n');
+		}
+
+	}
+
+	fclose(file);
+	exit(0);
+
+	//fprintf(file, "%s", "chr\tStart\tStop\tType\tID\tnames\n");
 	for (size_t i = 0; i < entries.size(); i++) {
 		bool flag = false;
 		fprintf(file, "%s", entries[i].start.chr.c_str());
@@ -115,12 +134,12 @@ void convert_vcf(std::string vcf_file, std::string output) {
 		fprintf(file, "%c", '\t');
 		std::vector<int> ids = get_strains(entries[i]);
 		fprintf(file, "%i", (int) ids.size());
-		fprintf(file, "%c", '\t');
-		for (size_t j = 0; j < ids.size(); j++) {
-			fprintf(file, "%s", names[ids[j]].c_str());
-			fprintf(file, "%c", '\t');
-		}
-
+		/*		fprintf(file, "%c", '\t');
+		 for (size_t j = 0; j < ids.size(); j++) {
+		 fprintf(file, "%s", names[ids[j]].c_str());
+		 fprintf(file, "%c", '\t');
+		 }
+		 */
 		fprintf(file, "%c", '\n');
 
 		if (flag) { //print the ending pos
@@ -137,7 +156,7 @@ void convert_vcf(std::string vcf_file, std::string output) {
 			fprintf(file, "%i", (int) ids.size());
 			fprintf(file, "%c", '\t');
 			for (size_t j = 0; j < ids.size(); j++) {
-				fprintf(file, "%s", names[ids[j]].c_str());
+				//	fprintf(file, "%s", names[ids[j]].c_str());
 				fprintf(file, "%c", '\t');
 			}
 			fprintf(file, "%c", '\n');
@@ -360,6 +379,13 @@ void process_bed_file(std::string bedfile, std::string type, std::string output)
 	fclose(file);
 }
 
+char trans_strands(bool strand) {
+	if (strand) {
+		return '+';
+	}
+	return '-';
+}
+
 void parse_VCF_to_bed(std::string vcffile, std::string output) {
 	std::vector<strvcfentry> entries = parse_vcf(vcffile, 0);
 	FILE *file;
@@ -370,15 +396,117 @@ void parse_VCF_to_bed(std::string vcffile, std::string output) {
 		fprintf(file, "%c", '\t');
 		fprintf(file, "%i", entries[i].start.pos);
 		fprintf(file, "%c", '\t');
-		fprintf(file, "%i", (int) i);
-		fprintf(file, "%c", '\n');
+		fprintf(file, "%i", entries[i].start.pos);
+		fprintf(file, "%c", '\t');
 		fprintf(file, "%s", entries[i].stop.chr.c_str());
 		fprintf(file, "%c", '\t');
 		fprintf(file, "%i", entries[i].stop.pos);
 		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", entries[i].stop.pos);
+		fprintf(file, "%c", '\t');
 		fprintf(file, "%i", (int) i);
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%c", ',');
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%c", trans_strands(entries[i].strands.first));
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%c", trans_strands(entries[i].strands.second));
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%s", trans_type(entries[i].type).c_str());
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%s", "PASS");
 		fprintf(file, "%c", '\n');
+		//	fprintf(file, "%s", entries[i].stop.chr.c_str());
+		//	fprintf(file, "%c", '\t');
+		//	fprintf(file, "%i", entries[i].stop.pos);
+		//	fprintf(file, "%c", '\t');
+		//	fprintf(file, "%i", (int) i);
+		//	fprintf(file, "%c", '\n');
 
+	}
+	fclose(file);
+}
+
+void change_insert_pos(std::string vcffile, std::string output) {
+	size_t buffer_size = 2000000;
+	char*buffer = new char[buffer_size];
+	std::ifstream myfile;
+
+	myfile.open(vcffile.c_str(), std::ifstream::in);
+	if (!myfile.good()) {
+		std::cout << "Bed Parser: could not open file: " << vcffile.c_str() << std::endl;
+		exit(0);
+	}
+	FILE *file;
+	file = fopen(output.c_str(), "w");
+
+	myfile.getline(buffer, buffer_size);
+	while (!myfile.eof()) {
+
+		if (buffer[0] == '#') {
+			fprintf(file, "%s", buffer);
+			fprintf(file, "%c", '\n');
+		} else {
+			int start = 0;
+			bool is_insert = false;
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				if (buffer[i] == '\t' && start == 0) {
+					start = atoi(&buffer[i + 1]);
+				}
+				if (strncmp("<INS>", &buffer[i], 5) == 0) {
+					is_insert = true;
+				}
+				if (is_insert && strncmp("END=", &buffer[i], 4) == 0) {
+					while (buffer[i] != ';') {
+						i++;
+					}
+					fprintf(file, "%s", "END=");
+					fprintf(file, "%i", start + 1);
+				}
+				fprintf(file, "%c", buffer[i]);
+			}
+			fprintf(file, "%c", '\n');
+
+		}
+		myfile.getline(buffer, buffer_size);
+	}
+	myfile.close();
+	fclose(file);
+}
+
+void prepare_svviz(std::string vcffile, std::string bam, std::string ref, std::string output) {
+
+	FILE *file;
+	file = fopen(output.c_str(), "w");
+
+	std::vector<strvcfentry> entries = parse_vcf(vcffile, 0);
+	for (size_t i = 0; i < entries.size(); i++) {
+		if (entries[i].type == 3) {
+			fprintf(file, "%s", "svviz -t bkend -b ");
+			fprintf(file, "%s", bam.c_str());
+			fprintf(file, "%c", ' ');
+			fprintf(file, "%s", ref.c_str());
+			fprintf(file, "%c", ' ');
+			fprintf(file, "%s", entries[i].start.chr.c_str());
+			fprintf(file, "%c", ' ');
+			fprintf(file, "%i", entries[i].start.pos);
+			fprintf(file, "%c", ' ');
+			if(entries[i].strands.first){
+				fprintf(file, "%c", '+');
+			}else{
+				fprintf(file, "%c", '-');
+			}
+			fprintf(file, "%c", ' ');
+			fprintf(file, "%s", entries[i].stop.chr.c_str());
+			fprintf(file, "%c", ' ');
+			fprintf(file, "%i", entries[i].stop.pos);
+
+			if (entries[i].strands.second) {
+				fprintf(file, "%s", " + >>res_svviz\n");
+			} else {
+				fprintf(file, "%s", " - >>res_svviz\n");
+			}
+		}
 	}
 	fclose(file);
 }

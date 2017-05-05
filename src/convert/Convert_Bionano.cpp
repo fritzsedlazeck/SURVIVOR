@@ -35,7 +35,7 @@ std::string print_entry_bio(strvcfentry & region) {
 	convert << "\t";
 	convert << trans_type(region.type);
 	convert << "00";
-	convert << "Assym\tN\t<";
+	convert << "Bionanom\tN\t<";
 	convert << trans_type(region.type);
 	convert << ">\t.\tLowQual\tIMPRECISE;SVTYPE=";
 	convert << trans_type(region.type);
@@ -44,7 +44,7 @@ std::string print_entry_bio(strvcfentry & region) {
 	convert << ";END=";
 	convert << region.stop.pos;
 	convert << ";SVLEN=";
-	convert << region.stop.pos - region.start.pos;
+	convert << region.sv_len;
 	convert << ";PE=";
 	convert << 1;
 	convert << "\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t";
@@ -111,6 +111,13 @@ void parse_Bionano(std::string bionano, std::vector<strvcfentry>& entries) {
 		if (tmp.type == 0) {
 			tmp.start.pos = tmp.start.pos + factor;
 			tmp.stop.pos = tmp.stop.pos - factor;
+			tmp.sv_len=tmp.stop.pos-tmp.start.pos;
+		} else if (tmp.type == 4) {
+			tmp.sv_len=query_start - query_stop + tmp.stop.pos - tmp.start.pos;
+
+			//tmp.sv_len=abs((query_start - query_stop) - (tmp.start.pos - tmp.stop.pos));
+			tmp.start.pos=(query_stop +  query_start)/2;
+			tmp.stop.pos = tmp.start.pos+1;
 		}
 		entries.push_back(tmp);
 		myfile.getline(buffer, buffer_size);
@@ -138,19 +145,19 @@ void parse_GC(std::string bionano, std::vector<strvcfentry>& entries) {
 		if (buffer[0] != '#' && buffer[0] != '>') {
 			int count = 0;
 			strvcfentry tmp;
-			std::string type="";
+			std::string type = "";
 			tmp.type = -1;
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 				if (count == 1 && buffer[i] != '\t') {
 					type += buffer[i];
 				}
 				if (count == 2 && buffer[i - 1] == '\t') {
-				//	std::cout<<type<<std::endl;
+					//	std::cout<<type<<std::endl;
 					if (strcmp(type.c_str(), "inversion") == 0) {
-					//	std::cout<<"HIT"<<std::endl;
+						//	std::cout<<"HIT"<<std::endl;
 						tmp.type = 2;
 					} else if (strcmp(type.c_str(), "deletion") == 0) {
-						std::cout<<"HIT"<<std::endl;
+						std::cout << "HIT" << std::endl;
 						tmp.type = 0;
 					} else {
 						type.clear(); //flag for ignoring!

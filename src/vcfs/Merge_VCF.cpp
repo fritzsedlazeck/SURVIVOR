@@ -41,6 +41,7 @@ strcoordinate parse_stop(const char * buffer) {
 		}
 		if ((strncmp(&buffer[i], "END=", 4) == 0 && i == 0)) {
 			pos.pos = atoi(&buffer[i + 4]);
+			//std::cout<<"pos"<<pos.pos<<std::endl;
 		}
 		if (strncmp(&buffer[i], "CHR2=", 5) == 0) {
 			i = i + 5;
@@ -114,8 +115,6 @@ short get_type(std::string type) {
 		return 4;
 	} else if (strncmp(type.c_str(), "BND", 3) == 0) { //can be inv/inter/tra
 		return 5;
-	} else {
-		//std::cerr << "Unknown type!" << type << std::endl;
 	}
 	return -1;
 }
@@ -329,7 +328,8 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 			tmp.strands.second = true;
 			tmp.num_reads.first = 0;
 			tmp.num_reads.second = 0;
-			int len = -1;
+			tmp.sv_len = -1;
+
 			//std::cout<<buffer<<std::endl;
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 
@@ -351,7 +351,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 				}
 				if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
 					tmp.stop = parse_stop(&buffer[i]);
-					//std::cout<<tmp.stop.chr<<std::endl;
+					//std::cout<<"Stop:"<<tmp.stop.pos<<std::endl;
 				}
 				if (count == 7 && strncmp(&buffer[i], "SVTYPE=", 7) == 0) {
 					tmp.type = get_type(std::string(&buffer[i + 7]));
@@ -365,9 +365,13 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 					tmp.strands.first = (bool) (buffer[i + 4] != '5');
 					tmp.strands.second = (bool) (buffer[i + 7] != '5');
 				}
-				if (count == 7 && strncmp(&buffer[i], "SVLEN=", 6) == 0) {
-					len = atoi(&buffer[i + 6]);
+				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i], "HOMLEN=", 7) == 0 ||strncmp(&buffer[i],  "AVGLEN", 7) == 0 )) {
+					tmp.sv_len = abs(atoi(&buffer[i + 7]));
+				}
 
+				if (count == 7 && (strncmp(&buffer[i], "SVLEN=", 6) == 0 )) {
+					tmp.sv_len = abs(atoi(&buffer[i + 6]));
+					//std::cout<<"LEN: "<<tmp.sv_len<<std::endl;
 				}
 				if (count == 7 && strncmp(&buffer[i], ";STRANDS=", 9) == 0) {
 					set_strand = true;
@@ -428,8 +432,8 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 				}
 			}
 
-			if (tmp.stop.pos == -1 && len!=-1) {
-				tmp.stop.pos = tmp.start.pos + len;
+			if (tmp.stop.pos == -1 && tmp.sv_len != -1) {
+				tmp.stop.pos = tmp.start.pos + tmp.sv_len;
 			}
 			if (tmp.stop.pos == -1) {
 				std::size_t found = alt.find(",");
@@ -437,18 +441,21 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 					alt = get_most_effect(alt, (int) ref.size());
 				}
 				tmp.stop.chr = tmp.start.chr;
-				int len = (int) ref.size() - (int) alt.size();
-				tmp.stop.pos = tmp.start.pos + abs(len);
-				if (len > 0) {
+				tmp.sv_len = (int) ref.size() - (int) alt.size();
+				tmp.stop.pos = tmp.start.pos + abs(tmp.sv_len);
+				if (tmp.sv_len > 0) {
 					tmp.type = 0;
-				} else if (len < 0) {
+				} else if (tmp.sv_len < 0) {
 					tmp.type = 1;
 				}
 			}
 			if (tmp.stop.chr.empty()) {
 				tmp.stop.chr = tmp.start.chr;
 			}
-			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (abs(tmp.start.pos - tmp.stop.pos) >= min_svs || tmp.type == 4)) && (tmp.num_reads.second == 0 || tmp.num_reads.second > 5)) {
+			if (tmp.sv_len == -1) {
+				tmp.sv_len = abs(tmp.start.pos - tmp.stop.pos);
+			}
+			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (tmp.sv_len >= min_svs))) { // || tmp.type==4
 				std::size_t found = tmp.stop.chr.find("chr");
 				if (found != std::string::npos) {
 					tmp.stop.chr.erase(tmp.stop.chr.begin() + found, tmp.stop.chr.begin() + found + 3);
@@ -666,7 +673,7 @@ void merge_vcf(std::string filenames, int max_dist, int min_observed, std::strin
 		for (size_t j = 0; j < entries.size(); j++) {
 			breakpoint_str start = convert_position(entries[j].start);
 			breakpoint_str stop = convert_position(entries[j].stop);
-			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, root);
+			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, root);
 		}
 		entries.clear();
 	}

@@ -160,9 +160,7 @@ void parse_lumpy(std::string lumpy_bede, std::vector<strvcfentry> & entries,
 
 		strregion region;
 		int support = 0;
-		for (size_t i = 0;
-				i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n';
-				i++) {
+		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 			if (count == 7 && buffer[i - 1] == '\t') {
 				eval = atof(&buffer[i]);
 			}

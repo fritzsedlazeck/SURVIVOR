@@ -70,12 +70,52 @@ double get_avglen(std::vector<Support_Node *> caller_info) {
 	double size = 0;
 	double num = 0;
 	for (size_t i = 0; i < caller_info.size(); i++) {
+
 		size += caller_info[i]->len;
 		if (caller_info[i]->len != 0) {
 			num++;
 		}
+
 	}
 	return size / num;
+}
+long get_start_medpos(std::vector<Support_Node *> caller_info) {
+	std::vector<int> positions;
+
+	for (size_t i = 0; i < caller_info.size(); i++) {
+		for (size_t j = 0; j < caller_info[i]->starts.size(); j++) {
+			size_t pos = 0;
+			while (pos < positions.size() && positions[pos] < caller_info[i]->starts[j].position) {
+				pos++;
+			}
+			if (pos == positions.size()) {
+				positions.push_back(caller_info[i]->starts[j].position);
+			} else {
+				positions.insert(positions.begin() + j, caller_info[i]->starts[j].position);
+			}
+		}
+
+	}
+	return positions[positions.size() / 2];
+}
+
+long get_stop_medpos(std::vector<Support_Node *> caller_info) {
+	std::vector<int> positions;
+	for (size_t i = 0; i < caller_info.size(); i++) {
+		for (size_t j = 0; j < caller_info[i]->starts.size(); j++) {
+			size_t pos = 0;
+			while (pos < positions.size() && positions[pos] < caller_info[i]->starts[j].position) {
+				pos++;
+			}
+			if (pos == positions.size()) {
+				positions.push_back(caller_info[i]->starts[j].position);
+			} else {
+				positions.insert(positions.begin() + j, caller_info[i]->starts[j].position);
+			}
+		}
+
+	}
+	return positions[positions.size() / 2];
 }
 std::string print_strands(std::pair<bool, bool> strands) {
 	std::string strand = "";
@@ -91,11 +131,12 @@ std::string print_strands(std::pair<bool, bool> strands) {
 	}
 	return strand;
 }
+
 void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	std::ostringstream convert;   // stream used for the conversion
 	convert << entry->first.chr;
 	convert << "\t";
-	convert << entry->first.position;
+	convert << get_start_medpos(entry->caller_info);//entry->first.position;
 	convert << "\t";
 	convert << trans_type(entry->type);
 	convert << "00";
@@ -107,16 +148,24 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << "SUPP=";
 	convert << get_support(entry->caller_info);
 	convert << ";AVGLEN=";
-	convert << get_avglen(entry->caller_info);
+	if (entry->type != 3) {
+		convert << get_avglen(entry->caller_info);
+	} else {
+		convert << "100000";   // TODO think about it.
+	}
+	/*convert << ";med_start=";
+	convert << get_start_medpos(entry->caller_info);
+	convert << ";med_stop=";
+	convert << get_stop_medpos(entry->caller_info);*/
 	convert << ";SVTYPE=";
 	convert << trans_type(entry->type);
 	convert << ";SVMETHOD=SURVIVORv2;CHR2=";
 	convert << entry->second.chr;
 	convert << ";END=";
-	convert << entry->second.position;
+	convert <<  get_stop_medpos(entry->caller_info);//entry->second.position;
 	//if (Parameter::Instance()->use_strand) {
-		convert << ";STRANDS=";
-		convert << print_strands(entry->strand);
+	convert << ";STRANDS=";
+	convert << print_strands(entry->strand);
 	//}
 	convert << "\tGT:LN:DR:ST:TY:CO\t";
 
@@ -162,13 +211,15 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	fprintf(file, "%c", '\n');
 }
 
-void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, int strand_save, int min_svs, std::string output) {
+void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, int strand_save, int dynamic_size, int min_svs, std::string output) {
 	std::vector<std::string> names = parse_filename(files);
 
 	Parameter::Instance()->max_caller = names.size();
 	Parameter::Instance()->max_dist = max_dist;
 	Parameter::Instance()->use_type = (type_save == 1);
 	Parameter::Instance()->use_strand = (strand_save == 1);
+	Parameter::Instance()->min_length = min_svs;
+	Parameter::Instance()->dynamic_size = false;   //(dynamic_size==1);
 
 	IntervallTree bst;
 	TNode *root = NULL;
@@ -179,7 +230,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 		for (size_t j = 0; j < entries.size(); j++) {
 			breakpoint_str start = convert_position(entries[j].start);
 			breakpoint_str stop = convert_position(entries[j].stop);
-			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, root);
+			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, root);
 
 		}
 		entries.clear();
@@ -193,9 +244,48 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	print_header(file, names);
 
 	std::vector<int> hist;
+	std::vector<std::vector<std::vector<int> > > svs_summary; //first: support, second: type, third: size
+	std::vector<std::vector<int> > support_vec;
+	std::vector<int> tmp;
+	tmp.assign(5, 0); //sizes
+	support_vec.assign(6, tmp);
+	svs_summary.assign(25, support_vec);
 
 	for (size_t i = 0; i < points.size(); i++) {
 		int support = get_support(points[i]->caller_info);
+		int len = 100000;
+		if (points[i]->type != 3) {
+			len = get_avglen(points[i]->caller_info);
+		}
+		short type = points[i]->type;
+		if (points[i]->type == -1) {
+			type = 5;
+		}
+		while(support>=svs_summary.size()){
+			svs_summary.push_back(support_vec);
+		}
+		if (len < 50) {
+			if (type >= 0 && type < 6) {
+				svs_summary[support][type][0]++;
+			}
+		} else if (len < 100) {
+			if (type >= 0 && type < 6) {
+				svs_summary[support][type][1]++;
+			}
+		} else if (len< 1000) {
+			if (type >= 0 && type < 6) {
+				svs_summary[support][type][2]++;
+			}
+		} else if (len < 10000) {
+			if (type >= 0 && type < 6) {
+				svs_summary[support][type][3]++;
+			}
+		} else {
+			if (type >= 0 && type < 6) {
+				svs_summary[support][type][4]++;
+			}
+		}
+
 		if (support >= min_support) {
 			print_entry_overlap(file, points[i], i);
 		}
@@ -213,13 +303,35 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	out += "_venn";
 	file = fopen(out.c_str(), "w");
 
+	fprintf(file, "%s", "Identifier");
 	for (size_t i = 0; i < names.size(); i++) {
 		fprintf(file, "%s", names[i].c_str());
 		fprintf(file, "%s", "\t");
 	}
+	fprintf(file, "%s", "Length");
 	fprintf(file, "%s", "\n");
 	for (size_t i = 0; i < points.size(); i++) {
 		std::ostringstream convert;
+		if (points[i]->type > 5) {
+			std::vector<int> determine_types;
+			determine_types.assign(5, 0);
+			for (size_t j = 0; j < points[i]->caller_info.size(); j++) {
+				for (size_t t = 0; t < points[i]->caller_info[j]->types.size(); t++) {
+					if (points[i]->caller_info[j]->types[t] < 5) {
+						determine_types[points[i]->caller_info[j]->types[t]]++;
+					}
+				}
+			}
+			short id = -1;
+			int max = -1;
+			for (size_t j = 0; j < determine_types.size(); j++) {
+				if (determine_types[j] > max) {
+					max = determine_types[j];
+					id = (short) j;
+				}
+			}
+			points[i]->type = id;
+		}
 		convert << trans_type(points[i]->type);
 		convert << "00";
 		convert << i;
@@ -233,6 +345,98 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 				fprintf(file, "%i", 0);
 			}
 			fprintf(file, "%s", "\t");
+		}
+		if (points[i]->type != 3) {
+			fprintf(file, "%f", get_avglen(points[i]->caller_info));
+		} else {
+			fprintf(file, "%i", 100000);
+		}
+		fprintf(file, "%s", "\n");
+	}
+	fclose(file);
+
+	out = output;
+	out += "_venn_summary";
+	file = fopen(out.c_str(), "w");
+	fprintf(file, "%s", "Support\tDEL20\tDEL50bp\tDEL100\tDEL1k\tDEL10k\tDUP20\tDUP50bp\tDUP100\tDUP1k\tDUP10k\t");
+	fprintf(file, "%s", "INV20\tINV50bp\tINV100\tINV1k\tINV10k\tTRA20\tTRA50bp\tTRA100\tTRA1k\tTRA10\t");
+	fprintf(file, "%s", "INS20\tINS50bp\tINS100\tINS1k\tINS10k\tUNK20\tUNK50bp\tUNK100\tUNK1k\tUNK10k\n");
+	for (size_t i = 1; i < svs_summary.size(); i++) {
+		fprintf(file, "%i", (int) i);
+		fprintf(file, "%s", "\t");
+		for (size_t types = 0; types < svs_summary[i].size(); types++) {
+			for (size_t len = 0; len < svs_summary[i][types].size(); len++) {
+				fprintf(file, "%i", svs_summary[i][types][len]);
+				fprintf(file, "%s", "\t");
+			}
+		}
+		fprintf(file, "%s", "\n");
+	}
+	fclose(file);
+
+}
+
+size_t get_len_id(int sv_len) {
+	if (sv_len < 50) {
+		return 0;
+	} else if (sv_len < 100) {
+		return 1;
+	} else if (sv_len < 1000) {
+		return 2;
+	} else if (sv_len < 10000) {
+		return 3;
+	}
+	return 4;
+}
+
+void summarize_VCF_files(std::string filename, int min_size, std::string output) {
+	std::vector<std::string> names = parse_filename(filename);
+
+	Parameter::Instance()->max_caller = names.size();
+	Parameter::Instance()->min_length = min_size;
+	Parameter::Instance()->dynamic_size = false;   //(dynamic_size==1);
+
+	IntervallTree bst;
+	TNode *root = NULL;
+
+	std::vector<std::vector<std::vector<int> > > svs;   //first: caller, second: type, third: size
+	std::vector<std::vector<int> > caller;
+	std::vector<int> tmp;
+	tmp.assign(5, 0);   //sizes
+	caller.assign(6, tmp);   //types
+	svs.assign(names.size(), caller);
+
+	for (size_t id = 0; id < names.size(); id++) {
+		std::vector<strvcfentry> entries = parse_vcf(names[id], min_size);
+		std::cout << "merging entries: " << entries.size() << std::endl;
+		for (size_t j = 0; j < entries.size(); j++) {
+			int len = get_len_id(entries[j].sv_len);
+			if (entries[j].type == -1) {
+				entries[j].type = 5;
+			}
+			if ((entries[j].type >= 0 && entries[j].type < 6) && (len >= 0 && len < 5)) {
+				if (entries[j].type == 3) { //TRA
+					len = 4;
+				}
+				svs[id][entries[j].type][len]++;
+			}
+		}
+		entries.clear();
+	}
+	FILE * file;
+	file = fopen(output.c_str(), "w");
+	fprintf(file, "%s", "Caller\tDEL20\tDEL50bp\tDEL100\tDEL1k\tDEL10k\tDUP20\tDUP50bp\tDUP100\tDUP1k\tDUP10k\t");
+	fprintf(file, "%s", "INV20\tINV50bp\tINV100\tINV1k\tINV10k\tTRA20\tTRA50bp\tTRA100\tTRA1k\tTRA10\t");
+	fprintf(file, "%s", "INS20\tINS50bp\tINS100\tINS1k\tINS10k\tUNK20\tUNK50bp\tUNK100\tUNK1k\tUNK10k\n");
+	for (size_t i = 0; i < svs.size(); i++) {
+
+		fprintf(file, "%i", (int) i);
+		fprintf(file, "%s", "\t");
+		for (size_t types = 0; types < svs[i].size(); types++) {
+			for (size_t len = 0; len < svs[i][types].size(); len++) {
+				fprintf(file, "%i", svs[i][types][len]);
+				fprintf(file, "%s", "\t");
+			}
 		}
 		fprintf(file, "%s", "\n");
 	}

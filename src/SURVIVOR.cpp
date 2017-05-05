@@ -28,6 +28,9 @@
 #include "convert/Convert_VCF_to_BED.h"
 #include "merge_vcf/Paramer.h"
 #include "merge_vcf/combine_svs.h"
+#include "convert/Process_Coverage.h"
+#include "analysis_sv/GIAB_summary.h"
+#include "vcfs/Detect_nested.h"
 Parameter* Parameter::m_pInstance = NULL;
 int main(int argc, char *argv[]) {
 	if (argc > 1) {
@@ -171,7 +174,6 @@ int main(int argc, char *argv[]) {
 			break;
 		case 13:
 			if (argc == 4) {
-				//Convert a MQ0 coverage file to bed file for filtering SV
 				summary_SV(std::string(argv[2]), std::string(argv[3]));
 				std::cout << "You can find an R script in the src/R-scripts/ to create plots given the summary output files." << std::endl;
 			} else {
@@ -181,16 +183,17 @@ int main(int argc, char *argv[]) {
 			break;
 
 		case 5: //prev 14!
-			if (argc == 9) {
+			if (argc == 10) {
 				//merge 3 SV calls from the same strain
 				//	combine_calls_new(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
-				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), std::string(argv[8]));
+				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), atoi(argv[8]), std::string(argv[9]));
 			} else {
 				std::cerr << "Tab file with names" << std::endl;
-				std::cerr << "max distance between breakpoints" << std::endl;
+				std::cerr << "max distance between breakpoints " << std::endl;
 				std::cerr << "Minimum number of supporting caller" << std::endl;
 				std::cerr << "Take the type into account (1==yes, else no)" << std::endl;
 				std::cerr << "Take the strands of SVs into account (1==yes, else no)" << std::endl;
+				std::cerr << "Estimate distance based on the size of SV (1==yes, else no)." << std::endl;
 				std::cerr << "Minimum size of SVs to be taken into account." << std::endl;
 				std::cerr << "Output prefix" << std::endl;
 			}
@@ -225,7 +228,6 @@ int main(int argc, char *argv[]) {
 			break;
 		case 18:
 			if (argc == 4) {
-				//eval calls paper
 				parse_VCF_to_bed(std::string(argv[2]), std::string(argv[3]));
 			} else {
 				std::cerr << "vcf file" << std::endl;
@@ -256,6 +258,68 @@ int main(int argc, char *argv[]) {
 				summarize_paper_gaib(std::string(argv[2]));
 			} else {
 				std::cerr << "vcf input file" << std::endl;
+			}
+			break;
+		case 22:
+			if (argc == 4) {
+				change_insert_pos(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "vcf input file" << std::endl;
+				std::cerr << "corrected vcf output file" << std::endl;
+			}
+			break;
+		case 23:
+			if (argc == 6) {
+				summarize_badcoverage(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
+			} else {
+				std::cerr << "sambada depth input file" << std::endl;
+				std::cerr << "window size" << std::endl;
+				std::cerr << "min coverage " << std::endl;
+				std::cerr << "corrected vcf output file" << std::endl;
+			}
+			break;
+		case 24:
+			if (argc == 5) {
+				summarize_VCF_files(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
+			} else {
+				std::cerr << "input file: list of vcf" << std::endl;
+				std::cerr << "min size " << std::endl;
+				std::cerr << "output file" << std::endl;
+			}
+			break;
+		case 25:
+			if (argc == 4) {
+				summary_giab(std::string(argv[2]), std::string(argv[3]));
+
+			} else {
+				std::cerr << "input file _venn" << std::endl;
+				std::cerr << "output file" << std::endl;
+			}
+			break;
+		case 26:
+			if (argc == 4) {
+				convert_vcf(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "input vcf file" << std::endl;
+				std::cerr << "output bed file" << std::endl;
+			}
+			break;
+		case 27:
+			if (argc == 4) {
+				detect_nested(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "input vcf file" << std::endl;
+				std::cerr << "output file" << std::endl;
+			}
+			break;
+		case 28:
+			if (argc == 6) {
+				prepare_svviz(std::string(argv[2]), std::string(argv[3]),std::string(argv[4]), std::string(argv[5]));
+			} else {
+				std::cerr << "input vcf file" << std::endl;
+				std::cerr << "input bam file" << std::endl;
+				std::cerr << "input ref file" << std::endl;
+				std::cerr << "output svviz file" << std::endl;
 			}
 			break;
 		default:
