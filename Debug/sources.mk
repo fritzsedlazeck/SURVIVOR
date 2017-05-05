@@ -27,5 +27,6 @@ src/vcfs \
 src/simulator \
 src/merge_vcf \
 src/convert \
+src/analysis_sv \
 src \
 

@@ -12,6 +12,7 @@ RM := rm -rf
 -include src/simulator/subdir.mk
 -include src/merge_vcf/subdir.mk
 -include src/convert/subdir.mk
+-include src/analysis_sv/subdir.mk
 -include src/subdir.mk
 -include subdir.mk
 -include objects.mk
