@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : Arnes_little_helper.cpp
+// Name        : SURVIVOR.cpp
 // Author      : Fritz Sedlazeck
 // Version     :
 // Copyright   : artistic license
