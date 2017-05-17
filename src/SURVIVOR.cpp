@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : SURVIVOR.cpp
+// Name        : Arnes_little_helper.cpp
 // Author      : Fritz Sedlazeck
 // Version     :
 // Copyright   : artistic license
@@ -227,10 +227,12 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 18:
-			if (argc == 4) {
-				parse_VCF_to_bed(std::string(argv[2]), std::string(argv[3]));
+			if (argc == 6) {
+				parse_VCF_to_bed(std::string(argv[2]),atoi(argv[3]),atoi(argv[4]), std::string(argv[5]));
 			} else {
 				std::cerr << "vcf file" << std::endl;
+				std::cerr << "min size" << std::endl;
+				std::cerr << "max size" << std::endl;
 				std::cerr << "output file" << std::endl;
 			}
 			break;

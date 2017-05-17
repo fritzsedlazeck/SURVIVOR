@@ -102,15 +102,15 @@ long get_start_medpos(std::vector<Support_Node *> caller_info) {
 long get_stop_medpos(std::vector<Support_Node *> caller_info) {
 	std::vector<int> positions;
 	for (size_t i = 0; i < caller_info.size(); i++) {
-		for (size_t j = 0; j < caller_info[i]->starts.size(); j++) {
+		for (size_t j = 0; j < caller_info[i]->stops.size(); j++) {
 			size_t pos = 0;
-			while (pos < positions.size() && positions[pos] < caller_info[i]->starts[j].position) {
+			while (pos < positions.size() && positions[pos] < caller_info[i]->stops[j].position) {
 				pos++;
 			}
 			if (pos == positions.size()) {
-				positions.push_back(caller_info[i]->starts[j].position);
+				positions.push_back(caller_info[i]->stops[j].position);
 			} else {
-				positions.insert(positions.begin() + j, caller_info[i]->starts[j].position);
+				positions.insert(positions.begin() + j, caller_info[i]->stops[j].position);
 			}
 		}
 

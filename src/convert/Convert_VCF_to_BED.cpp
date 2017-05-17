@@ -386,36 +386,38 @@ char trans_strands(bool strand) {
 	return '-';
 }
 
-void parse_VCF_to_bed(std::string vcffile, std::string output) {
-	std::vector<strvcfentry> entries = parse_vcf(vcffile, 0);
+void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::string output) {
+	std::vector<strvcfentry> entries = parse_vcf(vcffile, min_size);
 	FILE *file;
 	file = fopen(output.c_str(), "w");
 
 	for (size_t i = 0; i < entries.size(); i++) {
-		fprintf(file, "%s", entries[i].start.chr.c_str());
-		fprintf(file, "%c", '\t');
-		fprintf(file, "%i", entries[i].start.pos);
-		fprintf(file, "%c", '\t');
-		fprintf(file, "%i", entries[i].start.pos);
-		fprintf(file, "%c", '\n');
-		fprintf(file, "%s", entries[i].stop.chr.c_str());
-		fprintf(file, "%c", '\t');
-		fprintf(file, "%i", entries[i].stop.pos);
-		fprintf(file, "%c", '\t');
-		fprintf(file, "%i", entries[i].stop.pos);
-		//fprintf(file, "%c", '\t');
-		//fprintf(file, "%i", (int) i);
-		//fprintf(file, "%c", '\t');
-		//fprintf(file, "%c", ',');
-	//	fprintf(file, "%c", '\t');
-		//fprintf(file, "%c", trans_strands(entries[i].strands.first));
-		//fprintf(file, "%c", '\t');
-		//fprintf(file, "%c", trans_strands(entries[i].strands.second));
-		//fprintf(file, "%c", '\t');
-		//fprintf(file, "%s", trans_type(entries[i].type).c_str());
-		//fprintf(file, "%c", '\t');
-		//fprintf(file, "%s", "PASS");
-		fprintf(file, "%c", '\n');
+		if (entries[i].sv_len < max_size) {
+			fprintf(file, "%s", entries[i].start.chr.c_str());
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].start.pos);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].start.pos);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%s", entries[i].stop.chr.c_str());
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].stop.pos);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].stop.pos);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", (int) i);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%c", ',');
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%c", trans_strands(entries[i].strands.first));
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%c", trans_strands(entries[i].strands.second));
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%s", trans_type(entries[i].type).c_str());
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%s", "PASS");
+			fprintf(file, "%c", '\n');
+		}
 		//	fprintf(file, "%s", entries[i].stop.chr.c_str());
 		//	fprintf(file, "%c", '\t');
 		//	fprintf(file, "%i", entries[i].stop.pos);
@@ -491,9 +493,9 @@ void prepare_svviz(std::string vcffile, std::string bam, std::string ref, std::s
 			fprintf(file, "%c", ' ');
 			fprintf(file, "%i", entries[i].start.pos);
 			fprintf(file, "%c", ' ');
-			if(entries[i].strands.first){
+			if (entries[i].strands.first) {
 				fprintf(file, "%c", '+');
-			}else{
+			} else {
 				fprintf(file, "%c", '-');
 			}
 			fprintf(file, "%c", ' ');
