@@ -392,7 +392,7 @@ void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::stri
 	file = fopen(output.c_str(), "w");
 
 	for (size_t i = 0; i < entries.size(); i++) {
-		if (entries[i].sv_len < max_size) {
+		if ((entries[i].type == 0 && entries[i].sv_len < 3000) || (entries[i].type == 4 && entries[i].sv_len < 311)) {
 			fprintf(file, "%s", entries[i].start.chr.c_str());
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%i", entries[i].start.pos);
@@ -474,6 +474,25 @@ void change_insert_pos(std::string vcffile, std::string output) {
 	}
 	myfile.close();
 	fclose(file);
+}
+
+void prepare_positions(std::string vcffile, std::string output) {
+	FILE *file;
+	file = fopen(output.c_str(), "w");
+
+	std::vector<strvcfentry> entries = parse_vcf(vcffile, 0);
+	for (size_t i = 0; i < entries.size(); i++) {
+		fprintf(file, "%s", entries[i].start.chr.c_str());
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", entries[i].start.pos);
+		fprintf(file, "%c", '\t');
+
+		fprintf(file, "%c", ' ');
+		fprintf(file, "%s", entries[i].stop.chr.c_str());
+		fprintf(file, "%c", ' ');
+		fprintf(file, "%i", entries[i].stop.pos);
+
+	}
 }
 
 void prepare_svviz(std::string vcffile, std::string bam, std::string ref, std::string output) {

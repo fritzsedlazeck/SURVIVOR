@@ -253,7 +253,7 @@ double report_norm(double e1, double e2) {
 	if (e2 == 0) {
 		return 0;
 	}
-	return round((e1 / e2)* 10000)/100 ;
+	return e1;//round((e1 / e2)* 10000)/100 ;
 }
 void summarize_paper_gaib(std::string venn_file) {
 	size_t buffer_size = 2000000;

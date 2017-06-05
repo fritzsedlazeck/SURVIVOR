@@ -332,7 +332,6 @@ void eval_calls_paper(std::vector<strvcfentry> entries, std::vector<strsimul> si
 			}
 		}
 		if (!found) {
-			//std::cout<<"A: "<<entries[i].start.pos<<std::endl;
 			additional++;
 		}
 	}
@@ -343,7 +342,7 @@ void eval_calls_paper(std::vector<strvcfentry> entries, std::vector<strsimul> si
 		} else if (simul[j].wrong) {
 			incorrect++;
 		} else {
-			//std::cout<<"Not: "<<simul[j].start.pos<<" "<<simul[j].type<<std::endl;
+			std::cout<<"Not: "<<simul[j].start.chr <<" "<<simul[j].start.pos<<" "<<simul[j].stop.chr <<" "<<simul[j].stop.pos<<" "<<simul[j].type<<std::endl;
 			notfound++;
 		}
 	}

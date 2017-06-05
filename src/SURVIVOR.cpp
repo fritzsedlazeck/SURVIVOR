@@ -228,7 +228,7 @@ int main(int argc, char *argv[]) {
 			break;
 		case 18:
 			if (argc == 6) {
-				parse_VCF_to_bed(std::string(argv[2]),atoi(argv[3]),atoi(argv[4]), std::string(argv[5]));
+				parse_VCF_to_bed(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
 			} else {
 				std::cerr << "vcf file" << std::endl;
 				std::cerr << "min size" << std::endl;
@@ -316,7 +316,7 @@ int main(int argc, char *argv[]) {
 			break;
 		case 28:
 			if (argc == 6) {
-				prepare_svviz(std::string(argv[2]), std::string(argv[3]),std::string(argv[4]), std::string(argv[5]));
+				prepare_svviz(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]), std::string(argv[5]));
 			} else {
 				std::cerr << "input vcf file" << std::endl;
 				std::cerr << "input bam file" << std::endl;
@@ -324,6 +324,7 @@ int main(int argc, char *argv[]) {
 				std::cerr << "output svviz file" << std::endl;
 			}
 			break;
+
 		default:
 			break;
 		}

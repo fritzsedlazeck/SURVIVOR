@@ -103,13 +103,13 @@ parameter parse_param(std::string filename) {
 	}
 	tmp.intrachr_num = 0;
 	/*if (!myfile.eof()) {
-		tmp.intrachr_min = parse_value(buffer, buffer_size);
-		myfile.getline(buffer, buffer_size);
-		tmp.intrachr_max = parse_value(buffer, buffer_size);
-		myfile.getline(buffer, buffer_size);
-		tmp.intrachr_num = parse_value(buffer, buffer_size);
-		//std::cout<<"NUM: "<<tmp.intrachr_num<<std::endl;
-	}*/
+	 tmp.intrachr_min = parse_value(buffer, buffer_size);
+	 myfile.getline(buffer, buffer_size);
+	 tmp.intrachr_max = parse_value(buffer, buffer_size);
+	 myfile.getline(buffer, buffer_size);
+	 tmp.intrachr_num = parse_value(buffer, buffer_size);
+	 //std::cout<<"NUM: "<<tmp.intrachr_num<<std::endl;
+	 }*/
 	myfile.close();
 	return tmp;
 }
@@ -430,7 +430,7 @@ std::vector<struct_var> generate_mutations_ref(std::string parameter_file, std::
 
 void store_sorted(std::vector<struct_var> &svs, struct_var tmp) {
 	std::vector<struct_var>::iterator i = svs.begin();
-	while (i != svs.end() &&(  tmp.target.start > (*i).target.start)) {
+	while (i != svs.end() && (tmp.target.start > (*i).target.start)) {
 		i++;
 	}
 	svs.insert(i, tmp);
@@ -560,9 +560,9 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 			invert(in.seq);
 			in.target = svs[i].pos;	//check
 			store_ins(ins, in);
-			svs[i].type=0;//dup
+			svs[i].type = 0;	//dup
 			new_svs.push_back(svs[i]);
-			svs[i].type=2;//inv
+			svs[i].type = 2;	//inv
 			break;
 		case 6:
 			//inter tra:
@@ -587,7 +587,7 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 	for (std::vector<insertions>::reverse_iterator i = ins.rbegin(); i != ins.rend(); i++) {
 		genome[(*i).target.chr].insert((*i).target.start, (*i).seq);
 	}
-	for(size_t i =0;i<new_svs.size();i++){
+	for (size_t i = 0; i < new_svs.size(); i++) {
 		svs.push_back(new_svs[i]);
 	}
 
@@ -608,19 +608,19 @@ void apply_mutations_ref(std::map<std::string, std::string> &genome, std::vector
 	for (size_t i = 0; i < svs.size(); i++) {
 		store_sorted(tmp_svs, svs[i]);
 	}
-	svs = tmp_svs;
+	svs = tmp_svs;	//stored according to postions 0-> max
 
-	//iterator
-	for(size_t i=0;i<svs.size();i++){
-		if(svs[i].type==4){
-			svs[i].type=1;
-		}else if(svs[i].type==1){
-			svs[i].type=4;
+	//switch ins vs. del
+	for (size_t i = 0; i < svs.size(); i++) {
+		if (svs[i].type == 4) {
+			svs[i].type = 1;
+		} else if (svs[i].type == 1) {
+			svs[i].type = 4;
 		}
 	}
 
 	for (std::vector<struct_var>::iterator i = svs.begin(); i != svs.end(); i++) {
-		std::cout << (*i).pos.chr<<" "<<(*i).pos.start << " " << (*i).type << std::endl;
+		std::cout << "apply: " << (*i).pos.chr << " " << (*i).pos.start << " " << (*i).type << std::endl;
 		std::string tmp;
 		switch ((*i).type) {
 		case 1:
@@ -634,7 +634,21 @@ void apply_mutations_ref(std::map<std::string, std::string> &genome, std::vector
 			genome[(*i).pos.chr].erase((*i).pos.start, tmp.size());
 			genome[(*i).pos.chr].insert((*i).pos.start, tmp);
 			break;
-		case 3:
+
+		case 4:
+			//deletions: (simulated insertions)
+			(*i).seq = rand_seq((*i).target.stop - (*i).target.start);
+			in.seq = (*i).seq;
+			in.target = (*i).target;
+			genome[in.target.chr].insert(in.target.start, in.seq);
+			break;
+
+		default:
+			break;
+		}
+	}
+	for (std::vector<struct_var>::iterator i = svs.begin(); i != svs.end(); i++) {
+		if ((*i).type == 3) {
 			//translocations
 			seq1 = genome[(*i).pos.chr].substr((*i).pos.start, ((*i).pos.stop - (*i).pos.start));
 			seq2 = genome[(*i).target.chr].substr((*i).target.start, ((*i).target.stop - (*i).target.start));
@@ -649,19 +663,9 @@ void apply_mutations_ref(std::map<std::string, std::string> &genome, std::vector
 				genome[(*i).pos.chr][j] = seq2[pos];
 				pos++;
 			}
-			break;
-		case 4:
-			//deletions: (simulated insertions)
-			(*i).seq = rand_seq((*i).target.stop - (*i).target.start);
-			in.seq = (*i).seq;
-			in.target = (*i).target;
-			genome[in.target.chr].insert(in.target.start, in.seq);
-			break;
-
-		default:
-			break;
 		}
 	}
+
 }
 void write_fasta(std::string output_prefix, std::map<std::string, std::string> genome) {
 	std::string out = output_prefix;
@@ -852,7 +856,7 @@ void generate_parameter_file(std::string parameter_file) {
 	fprintf(file2, "%s", "INV_dup_number: 2\n");
 
 	/*fprintf(file2, "%s", "INTRA_TRANS_minimum_length: 600\n");
-	fprintf(file2, "%s", "INTRA_TRANS_maximum_length: 800\n");
-	fprintf(file2, "%s", "INTRA_TRANS_number: 2\n");*/
+	 fprintf(file2, "%s", "INTRA_TRANS_maximum_length: 800\n");
+	 fprintf(file2, "%s", "INTRA_TRANS_number: 2\n");*/
 	fclose(file2);
 }

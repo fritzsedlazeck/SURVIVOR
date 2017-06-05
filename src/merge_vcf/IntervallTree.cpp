@@ -255,6 +255,15 @@ void IntervallTree::get_breakpoints(TNode *p, std::vector<SVS_Node *> & points) 
 	}
 }
 
+void IntervallTree::get_breakpoints(TNode *p, std::map<std::string,std::vector<SVS_Node *> > & points) {
+	if (p != NULL) {
+		get_breakpoints(p->left, points);
+		points[p->get_data()->first.chr].push_back(p->get_data());
+		get_breakpoints(p->right, points);
+	}
+}
+
+
 // Inorder Printing
 void IntervallTree::inorder(TNode * p, TNode * root) {
 	if (p != NULL) {

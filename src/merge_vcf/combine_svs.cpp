@@ -14,6 +14,17 @@ breakpoint_str convert_position(strcoordinate pos) {
 	return tmp;
 }
 
+std::string get_support_vec(std::vector<Support_Node *> caller_info) {
+	std::stringstream ss;
+	for (size_t i = 0; i < caller_info.size(); i++) {
+		if (!caller_info[i]->starts.empty()) {
+			ss << "1";
+		} else {
+			ss << '0';
+		}
+	}
+	return ss.str();
+}
 int get_support(std::vector<Support_Node *> caller_info) {
 	int support = 0;
 	for (size_t i = 0; i < caller_info.size(); i++) {
@@ -79,7 +90,7 @@ double get_avglen(std::vector<Support_Node *> caller_info) {
 	}
 	return size / num;
 }
-long get_start_medpos(std::vector<Support_Node *> caller_info) {
+int get_index_medpos(std::vector<Support_Node *> caller_info) {
 	std::vector<int> positions;
 
 	for (size_t i = 0; i < caller_info.size(); i++) {
@@ -89,9 +100,9 @@ long get_start_medpos(std::vector<Support_Node *> caller_info) {
 				pos++;
 			}
 			if (pos == positions.size()) {
-				positions.push_back(caller_info[i]->starts[j].position);
+				positions.push_back(i);
 			} else {
-				positions.insert(positions.begin() + j, caller_info[i]->starts[j].position);
+				positions.insert(positions.begin() + j, i);
 			}
 		}
 
@@ -99,24 +110,6 @@ long get_start_medpos(std::vector<Support_Node *> caller_info) {
 	return positions[positions.size() / 2];
 }
 
-long get_stop_medpos(std::vector<Support_Node *> caller_info) {
-	std::vector<int> positions;
-	for (size_t i = 0; i < caller_info.size(); i++) {
-		for (size_t j = 0; j < caller_info[i]->stops.size(); j++) {
-			size_t pos = 0;
-			while (pos < positions.size() && positions[pos] < caller_info[i]->stops[j].position) {
-				pos++;
-			}
-			if (pos == positions.size()) {
-				positions.push_back(caller_info[i]->stops[j].position);
-			} else {
-				positions.insert(positions.begin() + j, caller_info[i]->stops[j].position);
-			}
-		}
-
-	}
-	return positions[positions.size() / 2];
-}
 std::string print_strands(std::pair<bool, bool> strands) {
 	std::string strand = "";
 	if (strands.first) {
@@ -134,19 +127,23 @@ std::string print_strands(std::pair<bool, bool> strands) {
 
 void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	std::ostringstream convert;   // stream used for the conversion
-	convert << entry->first.chr;
+	int index = get_index_medpos(entry->caller_info);
+
+	convert << entry->caller_info[index]->starts[0].chr;
 	convert << "\t";
-	convert << get_start_medpos(entry->caller_info);//entry->first.position;
+	convert << entry->caller_info[index]->starts[0].position;  //entry->first.position;
 	convert << "\t";
-	convert << trans_type(entry->type);
+	convert << trans_type(entry->caller_info[index]->types[0]);
 	convert << "00";
 	convert << id;
 	convert << "SUR\tN\t<";
-	convert << trans_type(entry->type);
+	convert << trans_type(entry->caller_info[index]->types[0]);
 	convert << ">\t.\t";
 	convert << "PASS\t";
 	convert << "SUPP=";
 	convert << get_support(entry->caller_info);
+	convert << ";SUPP_VEC=";
+	convert << get_support_vec(entry->caller_info);
 	convert << ";AVGLEN=";
 	if (entry->type != 3) {
 		convert << get_avglen(entry->caller_info);
@@ -154,18 +151,18 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 		convert << "100000";   // TODO think about it.
 	}
 	/*convert << ";med_start=";
-	convert << get_start_medpos(entry->caller_info);
-	convert << ";med_stop=";
-	convert << get_stop_medpos(entry->caller_info);*/
+	 convert << get_start_medpos(entry->caller_info);
+	 convert << ";med_stop=";
+	 convert << get_stop_medpos(entry->caller_info);*/
 	convert << ";SVTYPE=";
-	convert << trans_type(entry->type);
+	convert << trans_type(entry->caller_info[index]->types[0]);
 	convert << ";SVMETHOD=SURVIVORv2;CHR2=";
-	convert << entry->second.chr;
+	convert << entry->caller_info[index]->stops[0].chr;
 	convert << ";END=";
-	convert <<  get_stop_medpos(entry->caller_info);//entry->second.position;
+	convert << entry->caller_info[index]->stops[0].position;   //entry->second.position;
 	//if (Parameter::Instance()->use_strand) {
 	convert << ";STRANDS=";
-	convert << print_strands(entry->strand);
+	convert << print_strands(entry->caller_info[index]->strand);
 	//}
 	convert << "\tGT:LN:DR:ST:TY:CO\t";
 
@@ -210,6 +207,40 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	fprintf(file, "%s", convert.str().c_str());
 	fprintf(file, "%c", '\n');
 }
+bool mysort(SVS_Node* i, SVS_Node* j) {
+
+	return (i->first.position < j->first.position);
+
+}
+
+bool compareFunction (std::string a, std::string b) {return a<b;}
+bool is_not_digit(char c)
+{
+    return !std::isdigit(c);
+}
+
+bool numeric_string_compare(const std::string& s1, const std::string& s2)
+{
+    // handle empty strings...
+
+    std::string::const_iterator it1 = s1.begin(), it2 = s2.begin();
+
+    if (std::isdigit(s1[0]) && std::isdigit(s2[0])) {
+        int n1, n2;
+        std::stringstream ss(s1);
+        ss >> n1;
+        ss.clear();
+        ss.str(s2);
+        ss >> n2;
+
+        if (n1 != n2) return n1 < n2;
+
+        it1 = std::find_if(s1.begin(), s1.end(), is_not_digit);
+        it2 = std::find_if(s2.begin(), s2.end(), is_not_digit);
+    }
+
+    return std::lexicographical_compare(it1, s1.end(), it2, s2.end());
+}
 
 void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, int strand_save, int dynamic_size, int min_svs, std::string output) {
 	std::vector<std::string> names = parse_filename(files);
@@ -236,8 +267,8 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 		entries.clear();
 	}
 
-	std::vector<SVS_Node *> points;
-	bst.get_breakpoints(root, points);
+	std::map<std::string, std::vector<SVS_Node *> > union_set;
+	bst.get_breakpoints(root, union_set);
 
 	FILE * file;
 	file = fopen(output.c_str(), "w");
@@ -250,49 +281,65 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	tmp.assign(5, 0); //sizes
 	support_vec.assign(6, tmp);
 	svs_summary.assign(25, support_vec);
+	int id = 0;
 
-	for (size_t i = 0; i < points.size(); i++) {
-		int support = get_support(points[i]->caller_info);
-		int len = 100000;
-		if (points[i]->type != 3) {
-			len = get_avglen(points[i]->caller_info);
-		}
-		short type = points[i]->type;
-		if (points[i]->type == -1) {
-			type = 5;
-		}
-		while(support>=svs_summary.size()){
-			svs_summary.push_back(support_vec);
-		}
-		if (len < 50) {
-			if (type >= 0 && type < 6) {
-				svs_summary[support][type][0]++;
-			}
-		} else if (len < 100) {
-			if (type >= 0 && type < 6) {
-				svs_summary[support][type][1]++;
-			}
-		} else if (len< 1000) {
-			if (type >= 0 && type < 6) {
-				svs_summary[support][type][2]++;
-			}
-		} else if (len < 10000) {
-			if (type >= 0 && type < 6) {
-				svs_summary[support][type][3]++;
-			}
-		} else {
-			if (type >= 0 && type < 6) {
-				svs_summary[support][type][4]++;
-			}
-		}
 
-		if (support >= min_support) {
-			print_entry_overlap(file, points[i], i);
+
+
+	std::vector<std::string> keys;
+	for (std::map<std::string, std::vector<SVS_Node *> >::iterator i = union_set.begin(); i != union_set.end(); i++) {
+
+		keys.push_back((*i).first);
+	}
+
+	std::sort(keys.begin(),keys.end(),numeric_string_compare);
+	for(size_t i=0;i<keys.size();i++){
+		std::vector<SVS_Node *> points = union_set[keys[i]];
+		for (std::vector<SVS_Node *>::reverse_iterator i = points.rbegin(); i != points.rend(); i++) {
+			int support = get_support((*i)->caller_info);
+			int len = 100000;
+			if ((*i)->type != 3) {
+				len = get_avglen((*i)->caller_info);
+			}
+			short type = (*i)->type;
+			if ((*i)->type == -1) {
+				type = 5;
+			}
+			while (support >= svs_summary.size()) {
+				svs_summary.push_back(support_vec);
+			}
+			if (len < 50) {
+				if (type >= 0 && type < 6) {
+					svs_summary[support][type][0]++;
+				}
+			} else if (len < 100) {
+				if (type >= 0 && type < 6) {
+					svs_summary[support][type][1]++;
+				}
+			} else if (len < 1000) {
+				if (type >= 0 && type < 6) {
+					svs_summary[support][type][2]++;
+				}
+			} else if (len < 10000) {
+				if (type >= 0 && type < 6) {
+					svs_summary[support][type][3]++;
+				}
+			} else {
+				if (type >= 0 && type < 6) {
+					svs_summary[support][type][4]++;
+				}
+			}
+
+			if (support >= min_support) {
+				print_entry_overlap(file, (*i), id);
+
+			}
+			while (support >= hist.size()) {
+				hist.push_back(0);
+			}
+			hist[support]++;
+			id++;
 		}
-		while (support >= hist.size()) {
-			hist.push_back(0);
-		}
-		hist[support]++;
 	}
 	std::cout << "Histogram over the # of callers overlapping per SVs: " << std::endl;
 	for (size_t i = 1; i < hist.size(); i++) {
@@ -310,48 +357,54 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	}
 	fprintf(file, "%s", "Length");
 	fprintf(file, "%s", "\n");
-	for (size_t i = 0; i < points.size(); i++) {
-		std::ostringstream convert;
-		if (points[i]->type > 5) {
-			std::vector<int> determine_types;
-			determine_types.assign(5, 0);
-			for (size_t j = 0; j < points[i]->caller_info.size(); j++) {
-				for (size_t t = 0; t < points[i]->caller_info[j]->types.size(); t++) {
-					if (points[i]->caller_info[j]->types[t] < 5) {
-						determine_types[points[i]->caller_info[j]->types[t]]++;
+	id = 0;
+	for (std::map<std::string, std::vector<SVS_Node *> >::iterator pos = union_set.begin(); pos != union_set.end(); pos++) {
+		std::vector<SVS_Node *> points = (*pos).second;
+
+		for (std::vector<SVS_Node *>::iterator i = points.begin(); i != points.end(); i++) {
+			std::ostringstream convert;
+			if ((*i)->type > 5) {
+				std::vector<int> determine_types;
+				determine_types.assign(5, 0);
+				for (size_t j = 0; j < (*i)->caller_info.size(); j++) {
+					for (size_t t = 0; t < (*i)->caller_info[j]->types.size(); t++) {
+						if ((*i)->caller_info[j]->types[t] < 5) {
+							determine_types[(*i)->caller_info[j]->types[t]]++;
+						}
 					}
 				}
-			}
-			short id = -1;
-			int max = -1;
-			for (size_t j = 0; j < determine_types.size(); j++) {
-				if (determine_types[j] > max) {
-					max = determine_types[j];
-					id = (short) j;
+				short id = -1;
+				int max = -1;
+				for (size_t j = 0; j < determine_types.size(); j++) {
+					if (determine_types[j] > max) {
+						max = determine_types[j];
+						id = (short) j;
+					}
 				}
+				(*i)->type = id;
 			}
-			points[i]->type = id;
-		}
-		convert << trans_type(points[i]->type);
-		convert << "00";
-		convert << i;
-		convert << "SUR";
-		fprintf(file, "%s", convert.str().c_str());
-		fprintf(file, "%s", "\t");
-		for (size_t j = 0; j < points[i]->caller_info.size(); j++) {
-			if (!points[i]->caller_info[j]->starts.empty()) {
-				fprintf(file, "%i", 1);
-			} else {
-				fprintf(file, "%i", 0);
-			}
+			convert << trans_type((*i)->type);
+			convert << "00";
+			convert << id;
+			id++;
+			convert << "SUR";
+			fprintf(file, "%s", convert.str().c_str());
 			fprintf(file, "%s", "\t");
+			for (size_t j = 0; j < (*i)->caller_info.size(); j++) {
+				if (!(*i)->caller_info[j]->starts.empty()) {
+					fprintf(file, "%i", 1);
+				} else {
+					fprintf(file, "%i", 0);
+				}
+				fprintf(file, "%s", "\t");
+			}
+			if ((*i)->type != 3) {
+				fprintf(file, "%f", get_avglen((*i)->caller_info));
+			} else {
+				fprintf(file, "%i", 100000);
+			}
+			fprintf(file, "%s", "\n");
 		}
-		if (points[i]->type != 3) {
-			fprintf(file, "%f", get_avglen(points[i]->caller_info));
-		} else {
-			fprintf(file, "%i", 100000);
-		}
-		fprintf(file, "%s", "\n");
 	}
 	fclose(file);
 
@@ -399,7 +452,7 @@ void summarize_VCF_files(std::string filename, int min_size, std::string output)
 	IntervallTree bst;
 	TNode *root = NULL;
 
-	std::vector<std::vector<std::vector<int> > > svs;   //first: caller, second: type, third: size
+	std::vector<std::vector<std::vector<int> > > svs; //first: caller, second: type, third: size
 	std::vector<std::vector<int> > caller;
 	std::vector<int> tmp;
 	tmp.assign(5, 0);   //sizes
@@ -426,17 +479,23 @@ void summarize_VCF_files(std::string filename, int min_size, std::string output)
 	FILE * file;
 	file = fopen(output.c_str(), "w");
 	fprintf(file, "%s", "Caller\tDEL20\tDEL50bp\tDEL100\tDEL1k\tDEL10k\tDUP20\tDUP50bp\tDUP100\tDUP1k\tDUP10k\t");
-	fprintf(file, "%s", "INV20\tINV50bp\tINV100\tINV1k\tINV10k\tTRA20\tTRA50bp\tTRA100\tTRA1k\tTRA10\t");
+	fprintf(file, "%s", "INV20\tINV50bp\tINV100\tINV1k\tINV10k\tTRA10k\t");
 	fprintf(file, "%s", "INS20\tINS50bp\tINS100\tINS1k\tINS10k\tUNK20\tUNK50bp\tUNK100\tUNK1k\tUNK10k\n");
 	for (size_t i = 0; i < svs.size(); i++) {
 
 		fprintf(file, "%i", (int) i);
 		fprintf(file, "%s", "\t");
 		for (size_t types = 0; types < svs[i].size(); types++) {
-			for (size_t len = 0; len < svs[i][types].size(); len++) {
-				fprintf(file, "%i", svs[i][types][len]);
+			if (types != 3) {
+				for (size_t len = 0; len < svs[i][types].size(); len++) {
+					fprintf(file, "%i", svs[i][types][len]);
+					fprintf(file, "%s", "\t");
+				}
+			} else {
+				fprintf(file, "%i", svs[i][types][4]);
 				fprintf(file, "%s", "\t");
 			}
+
 		}
 		fprintf(file, "%s", "\n");
 	}

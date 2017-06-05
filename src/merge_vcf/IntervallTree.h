@@ -38,6 +38,7 @@ public:
 	void postorder(TNode*);
 	int bsheight(TNode*);
 	void get_breakpoints(TNode *p,std::vector<SVS_Node *> & points);
+	void get_breakpoints(TNode *p, std::map<std::string,std::vector<SVS_Node *> > & points);
 	int nonodes(TNode*);
 	void collapse_intervalls(TNode *&p);
 
