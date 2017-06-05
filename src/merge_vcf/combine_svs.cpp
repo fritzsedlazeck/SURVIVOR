@@ -235,8 +235,8 @@ bool numeric_string_compare(const std::string& s1, const std::string& s2)
 
         if (n1 != n2) return n1 < n2;
 
-        it1 = std::find_if(s1.begin(), s1.end(), is_not_digit);
-        it2 = std::find_if(s2.begin(), s2.end(), is_not_digit);
+        it1 = find_if(s1.begin(), s1.end(), is_not_digit);
+        it2 = find_if(s2.begin(), s2.end(), is_not_digit);
     }
 
     return std::lexicographical_compare(it1, s1.end(), it2, s2.end());
@@ -448,9 +448,6 @@ void summarize_VCF_files(std::string filename, int min_size, std::string output)
 	Parameter::Instance()->max_caller = names.size();
 	Parameter::Instance()->min_length = min_size;
 	Parameter::Instance()->dynamic_size = false;   //(dynamic_size==1);
-
-	IntervallTree bst;
-	TNode *root = NULL;
 
 	std::vector<std::vector<std::vector<int> > > svs; //first: caller, second: type, third: size
 	std::vector<std::vector<int> > caller;

@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <iosfwd>
+#include <algorithm>
 #include "../simulator/Eval_vcf.h"
 #include "Paramer.h"
 

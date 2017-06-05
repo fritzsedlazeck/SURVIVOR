@@ -8,7 +8,7 @@
 #include "Summarize_SV.h"
 
 void adjust(std::vector<int> & vec, int dist) {
-	while (vec.size() < dist + 1) {
+	while ((int)vec.size() < dist + 1) {
 		vec.push_back(0);
 	}
 }
@@ -70,7 +70,6 @@ void summary_SV(std::string vcf_file, std::string output) {
 	std::vector<int> len_unk;
 	std::vector<int> support;
 	int TRA = 0;
-	int step = 1000;
 	std::map<std::string, std::map<int, int> > SV_chrs;
 
 	std::vector<strvcfentry> entries = parse_vcf(vcf_file, 0);
@@ -79,7 +78,7 @@ void summary_SV(std::string vcf_file, std::string output) {
 		//summarize the support:
 		int id = get_support(entries[i].caller_supports);
 		if (id != 0) {
-			while (id >= support.size()) {
+			while (id >= (int)support.size()) {
 				support.push_back(0);
 			}
 			if (id == 1) {
@@ -128,7 +127,7 @@ void summary_SV(std::string vcf_file, std::string output) {
 	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()),std::max( (int) len_Inv.size(),(int)len_unk.size()));
 	file = fopen(output.c_str(), "w");
 	fprintf(file, "%s", "Len\tDel\tDup\tInv\tINS\tTRA\tUNK\n");
-	for (size_t i = 0; i < maxim + 1; i++) {
+	for (int i = 0; i < maxim + 1; i++) {
 		switch (i) {
 		case 0:
 			fprintf(file, "%s", "0-50bp");
@@ -274,7 +273,7 @@ void summary_venn(std::string filename, std::string output) {
 			mat.assign(names.size(), tmp);
 			num++;
 		} else {
-			int count = 0;
+			size_t count = 0;
 			std::vector<int> ids;
 			for (size_t i = 0; i < buffer_size && count <= names.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 				if (buffer[i - 1] == '\t' && buffer[i] == '1') {
