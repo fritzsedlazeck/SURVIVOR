@@ -305,7 +305,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 			if ((*i)->type == -1) {
 				type = 5;
 			}
-			while (support >= svs_summary.size()) {
+			while (support >= (int)svs_summary.size()) {
 				svs_summary.push_back(support_vec);
 			}
 			if (len < 50) {
@@ -334,7 +334,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 				print_entry_overlap(file, (*i), id);
 
 			}
-			while (support >= hist.size()) {
+			while (support >= (int)hist.size()) {
 				hist.push_back(0);
 			}
 			hist[support]++;

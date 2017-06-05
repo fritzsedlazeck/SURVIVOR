@@ -131,7 +131,7 @@ std::map<std::string, std::string> read_fasta(std::string ref_file, int min_leng
 	std::string name;
 	while (!myfile.eof()) {
 		if (buffer[0] == '>') {
-			if (seq.size() > min_length) {
+			if ((int)seq.size() > min_length) {
 				genome[name] = seq;
 			}
 			name.clear();
@@ -151,7 +151,7 @@ std::map<std::string, std::string> read_fasta(std::string ref_file, int min_leng
 		seq += toupper(buffer[i]);
 	}
 	myfile.close();
-	if (seq.size() > min_length) {
+	if ((int)seq.size() > min_length) {
 		genome[name] = seq;
 	}
 	seq.clear();
@@ -221,7 +221,7 @@ position get_pos(std::map<std::string, std::string> genome, int min_pos, int max
 
 		int num = 0;
 
-		while ((*chr).second.size() < tmp.stop && num < 100) { //choose chr,start, stop such that the mutation fits. Allow max 50 iterations!
+		while ((int)(*chr).second.size() < tmp.stop && num < 100) { //choose chr,start, stop such that the mutation fits. Allow max 50 iterations!
 			tmp.start = rand() % (((*chr).second.size() - max_pos)); //choose random start pos within chr length
 			tmp.stop = tmp.start + min_pos + (rand() % (max_pos - min_pos)); // choose stop location
 			num++;
@@ -548,7 +548,7 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 		case 4: //deletion: //just mark those regions
 			//std::cout<<"DEL: "<<svs[i].pos.chr<<" "<<svs[i].pos.start <<" "<<svs[i].pos.stop<<" g: "<< genome[svs[i].pos.chr].size()<<std::endl;
 			//	std::cout << "size: " << genome[svs[i].pos.chr].size() << " " << svs[i].pos.start << " " << (svs[i].pos.stop - svs[i].pos.start) << std::endl;
-			for (size_t j = svs[i].pos.start; j < svs[i].pos.stop; j++) {
+			for (int j = svs[i].pos.start; j < svs[i].pos.stop; j++) {
 				genome[svs[i].pos.chr][j] = 'X';
 			}
 			break;

@@ -149,25 +149,25 @@ void summary_SV(std::string vcf_file, std::string output) {
 		}
 
 		fprintf(file, "%c", '\t');
-		if (i < len_Del.size()) {
+		if (i < (int)len_Del.size()) {
 			fprintf(file, "%i", len_Del[i]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if (i < len_Dup.size()) {
+		if (i < (int)len_Dup.size()) {
 			fprintf(file, "%i", len_Dup[i]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if (i < len_Inv.size()) {
+		if (i < (int)len_Inv.size()) {
 			fprintf(file, "%i", len_Inv[i]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if (i < len_Ins.size()) {
+		if (i <(int) len_Ins.size()) {
 			fprintf(file, "%i", len_Ins[i]);
 		} else {
 			fprintf(file, "%i", 0);
@@ -179,7 +179,7 @@ void summary_SV(std::string vcf_file, std::string output) {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if (i < len_unk.size()) {
+		if (i < (int)len_unk.size()) {
 			fprintf(file, "%i", len_unk[i]);
 		} else {
 			fprintf(file, "%i", 0);
