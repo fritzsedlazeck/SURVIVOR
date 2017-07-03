@@ -23,10 +23,10 @@ CPP_DEPS :=
 
 # Every subdirectory with source files must be described here
 SUBDIRS := \
-src/vcfs \
-src/simulator \
-src/merge_vcf \
-src/convert \
-src/analysis_sv \
 src \
+src/analysis_sv \
+src/convert \
+src/merge_vcf \
+src/simulator \
+src/vcfs \
 

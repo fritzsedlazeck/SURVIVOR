@@ -31,6 +31,11 @@
 #include "convert/Process_Coverage.h"
 #include "analysis_sv/GIAB_summary.h"
 #include "vcfs/Detect_nested.h"
+#include "simulator/Error_scanner.h"
+#include "simulator/Sim_reads.h"
+
+
+
 Parameter* Parameter::m_pInstance = NULL;
 int main(int argc, char *argv[]) {
 	if (argc > 1) {
@@ -54,13 +59,37 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 2:
-			if (argc == 4) {
-				simulate_pac(std::string(argv[2]), std::string(argv[3]));
-				std::cout << "SV simulated" << std::endl;
+			if (argc > 2) {
+				if (strcmp(argv[2], "scan") == 0) {
+					if (argc == 5) {
+						generate_error_profile(atoi(argv[3]), std::string(argv[4]));
+					} else {
+						std::cerr << "Required parameters:" << std::endl;
+						std::cerr << "How to run: samtools view your_file.bam | ./SURVIVOR 2 scan 10000 error.txt"<<std::endl;
+						std::cerr << "1: Min read length" << std::endl;
+						std::cerr << "2: output " << std::endl;
+					}
+				} else if (strcmp(argv[2], "simul") == 0) {
+					if (argc == 7) {
+						simulate_reads(std::string(argv[3]), std::string(argv[4]),atoi(argv[5]), std::string(argv[6]));
+
+					} else {
+						std::cerr << "No parameters provided:" << std::endl;
+						std::cerr << "1: Reference fasta file" << std::endl;
+						std::cerr << "2: error profile file (see scan)" << std::endl;
+						std::cerr << "3: Coverage" << std::endl;
+						std::cerr << "4: output prefix" << std::endl;
+					}
+
+
+				} else {
+					std::cerr << "Unkown option!" << std::endl;
+				}
 			} else {
-				std::cerr << "No parameters provided:" << std::endl;
-				std::cerr << "1: Reference fasta file" << std::endl;
-				std::cerr << "2: output prefix" << std::endl;
+				std::cerr << "Choose options:" << std::endl;
+				std::cerr << "\'scan\': generate error profile" << std::endl;
+				std::cerr << "\'simul\': simulate reads (Pacbio / Nanopore)" << std::endl;
+				std::cerr << "We included a error profile for Nanopore and Pacbio data in the SURVIVOR folder."<<std::endl;
 			}
 			break;
 		case 3:
@@ -173,11 +202,13 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 13:
-			if (argc == 4) {
-				summary_SV(std::string(argv[2]), std::string(argv[3]));
+			if (argc == 6) {
+				summary_SV(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
 				std::cout << "You can find an R script in the src/R-scripts/ to create plots given the summary output files." << std::endl;
 			} else {
 				std::cerr << "vcf file" << std::endl;
+				std::cerr << "Min SV size (disable: -1)" << std::endl;
+				std::cerr << "Max SV size (disable: -1)" << std::endl;
 				std::cerr << "output summary file" << std::endl;
 			}
 			break;

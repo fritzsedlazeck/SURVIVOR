@@ -602,8 +602,8 @@ void generate_gene_list(std::string vcf_file, std::string annotation, int max_di
 	myfile.getline(buffer, buffer_size);
 	while (!myfile.eof()) {
 		int count = 0;
-		int start;
-		int stop;
+		int start=0;
+		int stop=0;
 		std::string chr;
 		int overlaps = -1;
 		std::string gene_name;

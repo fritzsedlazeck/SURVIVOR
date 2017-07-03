@@ -330,9 +330,8 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 				}
 			}
 
-			if (support >= min_support) {
+			if (support >= min_support && len>min_svs) {
 				print_entry_overlap(file, (*i), id);
-
 			}
 			while (support >= (int)hist.size()) {
 				hist.push_back(0);
@@ -403,6 +402,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 			} else {
 				fprintf(file, "%i", 100000);
 			}
+
 			fprintf(file, "%s", "\n");
 		}
 	}

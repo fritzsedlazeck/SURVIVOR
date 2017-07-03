@@ -40,7 +40,7 @@ int find_SV(strvcfentry caller, std::vector<strvcfentry> & merged, int max_dist)
 std::vector<int> init_vec(int length) {
 	std::vector<int> tmp;
 
-	for (size_t i = 0; i < length; i++) {
+	for (int i = 0; i < length; i++) {
 		tmp.push_back(0);
 	}
 	return tmp;

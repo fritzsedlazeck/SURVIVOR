@@ -392,7 +392,7 @@ void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::stri
 	file = fopen(output.c_str(), "w");
 
 	for (size_t i = 0; i < entries.size(); i++) {
-		if ((entries[i].type == 0 && entries[i].sv_len < 3000) || (entries[i].type == 4 && entries[i].sv_len < 311)) {
+	//	if ((entries[i].type == 0 && entries[i].sv_len < 3000) || (entries[i].type == 4 && entries[i].sv_len < 311)) {
 			fprintf(file, "%s", entries[i].start.chr.c_str());
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%i", entries[i].start.pos);
@@ -417,7 +417,7 @@ void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::stri
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", "PASS");
 			fprintf(file, "%c", '\n');
-		}
+	//	}
 		//	fprintf(file, "%s", entries[i].stop.chr.c_str());
 		//	fprintf(file, "%c", '\t');
 		//	fprintf(file, "%i", entries[i].stop.pos);

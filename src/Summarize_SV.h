@@ -19,7 +19,7 @@
 #include "vcfs/Merge_VCF.h"
 
 using namespace std;
-void summary_SV(std::string filename, std::string output);
+void summary_SV(std::string filename, int min_size, int max_size,std::string output);
 void summary_venn(std::string filename, std::string output);
 
 

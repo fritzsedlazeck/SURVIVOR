@@ -8,7 +8,7 @@
 #include "Summarize_SV.h"
 
 void adjust(std::vector<int> & vec, int dist) {
-	while ((int)vec.size() < dist + 1) {
+	while ((int) vec.size() < dist + 1) {
 		vec.push_back(0);
 	}
 }
@@ -61,8 +61,8 @@ int bin_size(int dist) {
 	}
 	return 4;
 }
-void summary_SV(std::string vcf_file, std::string output) {
-
+void summary_SV(std::string vcf_file, int min_size, int max_size, std::string output) {
+	cout<<min_size<< " MAX "<<max_size<<endl;
 	std::vector<int> len_Del;
 	std::vector<int> len_Dup;
 	std::vector<int> len_Inv;
@@ -70,49 +70,63 @@ void summary_SV(std::string vcf_file, std::string output) {
 	std::vector<int> len_unk;
 	std::vector<int> support;
 	int TRA = 0;
+	int DEL=0;
+	int DUP=0;
+	int INS=0;
+	int INV=0;
+	int UNK=0;
 	std::map<std::string, std::map<int, int> > SV_chrs;
 
-	std::vector<strvcfentry> entries = parse_vcf(vcf_file, 0);
+	std::vector<strvcfentry> entries = parse_vcf(vcf_file, min_size);
 
 	for (size_t i = 0; i < entries.size(); i++) {
-		//summarize the support:
-		int id = get_support(entries[i].caller_supports);
-		if (id != 0) {
-			while (id >= (int)support.size()) {
-				support.push_back(0);
+		if (max_size <0 || (entries[i].sv_len< max_size|| entries[i].type == 3)) {
+			//summarize the support:
+			int id = get_support(entries[i].caller_supports);
+			if (id != 0) {
+				while (id >= (int) support.size()) {
+					support.push_back(0);
+				}
+				if (id == 1) {
+					std::cout << entries[i].start.pos << std::endl;
+				}
+				support[id]++;
 			}
-			if (id == 1) {
-				std::cout << entries[i].start.pos << std::endl;
+			int dist = bin_size(entries[i].sv_len); // /step; //abs(entries[i].stop.pos - entries[i].start.pos) / step;
+			if (entries[i].type == 0) {
+				adjust(len_Del, dist);
+				len_Del[dist]++;
+				DEL++;
+			} else if (entries[i].type == 2) {
+				adjust(len_Inv, dist);
+				len_Inv[dist]++;
+				INV++;
+			} else if (entries[i].type == 1) {
+				adjust(len_Dup, dist);
+				len_Dup[dist]++;
+				DUP++;
+			} else if (entries[i].type == 4) {
+				adjust(len_Ins, dist);
+				len_Ins[dist]++;
+				INS++;
+			} else if (entries[i].type == 3) {
+				TRA++;
+			} else if (entries[i].type == -1) {
+				adjust(len_unk, dist);
+				len_unk[dist]++;
+				UNK++;
 			}
-			support[id]++;
-		}
-		int dist = bin_size(entries[i].sv_len); // /step; //abs(entries[i].stop.pos - entries[i].start.pos) / step;
-		if (entries[i].type == 0) {
-			adjust(len_Del, dist);
-			len_Del[dist]++;
-		} else if (entries[i].type == 1) {
-			adjust(len_Inv, dist);
-			len_Inv[dist]++;
-		} else if (entries[i].type == 2) {
-			adjust(len_Dup, dist);
-			len_Dup[dist]++;
-		} else if (entries[i].type == 4) {
-			adjust(len_Ins, dist);
-			len_Ins[dist]++;
-		} else if (entries[i].type == 3) {
-			TRA++;
-		} else if (entries[i].type == -1) {
-			adjust(len_unk, dist);
-			len_unk[dist]++;
-		}
-		std::string chr = entries[i].start.chr;
-		if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(entries[i].type) != SV_chrs[chr].end()) {
-			SV_chrs[chr][entries[i].type]++;
-		} else {
-			SV_chrs[chr][entries[i].type] = 1;
+			std::string chr = entries[i].start.chr;
+			if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(entries[i].type) != SV_chrs[chr].end()) {
+				SV_chrs[chr][entries[i].type]++;
+			} else {
+				SV_chrs[chr][entries[i].type] = 1;
+			}
 		}
 	}
-	std::cout << "Parsing done: " << TRA << endl;
+	std::cout << "Parsing done: " << endl;
+	cout<<"DEL\tDUP\tINS\tINV\tTRA"<<endl;
+	cout<<DEL<<"\t"<<DUP<<"\t"<<INS<<"\t"<<INV<<"\t"<<TRA<<endl;
 	FILE * file;
 	std::string out = output;
 	out += "support";
@@ -124,7 +138,7 @@ void summary_SV(std::string vcf_file, std::string output) {
 		fprintf(file, "%c", '\n');
 	}
 	fclose(file);
-	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()),std::max( (int) len_Inv.size(),(int)len_unk.size()));
+	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()), std::max((int) len_Inv.size(), (int) len_unk.size()));
 	file = fopen(output.c_str(), "w");
 	fprintf(file, "%s", "Len\tDel\tDup\tInv\tINS\tTRA\tUNK\n");
 	for (int i = 0; i < maxim + 1; i++) {
@@ -149,25 +163,25 @@ void summary_SV(std::string vcf_file, std::string output) {
 		}
 
 		fprintf(file, "%c", '\t');
-		if (i < (int)len_Del.size()) {
+		if (i < (int) len_Del.size()) {
 			fprintf(file, "%i", len_Del[i]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if (i < (int)len_Dup.size()) {
+		if (i < (int) len_Dup.size()) {
 			fprintf(file, "%i", len_Dup[i]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if (i < (int)len_Inv.size()) {
+		if (i < (int) len_Inv.size()) {
 			fprintf(file, "%i", len_Inv[i]);
 		} else {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if (i <(int) len_Ins.size()) {
+		if (i < (int) len_Ins.size()) {
 			fprintf(file, "%i", len_Ins[i]);
 		} else {
 			fprintf(file, "%i", 0);
@@ -179,7 +193,7 @@ void summary_SV(std::string vcf_file, std::string output) {
 			fprintf(file, "%i", 0);
 		}
 		fprintf(file, "%c", '\t');
-		if (i < (int)len_unk.size()) {
+		if (i < (int) len_unk.size()) {
 			fprintf(file, "%i", len_unk[i]);
 		} else {
 			fprintf(file, "%i", 0);
@@ -308,8 +322,8 @@ void summary_venn(std::string filename, std::string output) {
 	fprintf(file, "%c", '\n');
 
 	for (size_t i = 0; i < mat.size(); i++) {
-	//	fprintf(file, "%i", (int) i);
-	//	fprintf(file, "%c", '\t');
+		//	fprintf(file, "%i", (int) i);
+		//	fprintf(file, "%c", '\t');
 		for (size_t j = 0; j < mat.size(); j++) {
 			fprintf(file, "%i", mat[i][j]);
 			fprintf(file, "%c", '\t');
