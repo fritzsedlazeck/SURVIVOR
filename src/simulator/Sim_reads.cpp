@@ -47,7 +47,7 @@ std::map<std::string, std::string> parse_genome(std::string genome_file, int min
 			}
 			name.clear();
 			seq.clear();
-			for (size_t i = 0; i < buffer_size && buffer[i] != '\n' && buffer[i] != ' ' &&buffer[i] != '\0'; i++) {
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\n' && buffer[i] != ' ' && buffer[i] != '\0'; i++) {
 				name += toupper(buffer[i]);
 			}
 		} else {
@@ -68,6 +68,28 @@ std::map<std::string, std::string> parse_genome(std::string genome_file, int min
 	seq.clear();
 	myfile.close();
 	return genome;
+}
+char complementbp(char old) {
+
+	switch (old) {
+	case 'A':
+		return 'T';
+		break;
+	case 'C':
+		return 'G';
+		break;
+	case 'G':
+
+		return 'C';
+		break;
+	case 'T':
+
+		return 'A';
+		break;
+	default:
+		return 'N';
+		break;
+	}
 }
 
 char new_nuc(char old) {
@@ -180,23 +202,20 @@ std::vector<read_position> parse_error_profile(std::string error_profile_file) {
 void simulate_reads(std::string genome_file, std::string error_profile_file, int coverage, std::string output) {
 	srand(time(NULL));
 
-	int min_length = 500;					//think about!
-	std::map<std::string, std::string> genome = parse_genome(genome_file, min_length);
+	std::vector<read_position> error_profile = parse_error_profile(error_profile_file);
+	int avg_readlen = 0;
+	///int max_size = error_profile.size() - 1;
+	for (size_t i = 0; i < error_profile.size() && error_profile[i].total < 0.6; i++) {
+		avg_readlen++;
+	}
+
+	std::map<std::string, std::string> genome = parse_genome(genome_file, avg_readlen * 3);
 	std::cout << "\tParsing done: " << genome.size() << " chrs " << std::endl;
 	long genome_size = 0;
 	int hits = 0;
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
-	//	size_t found = (*i).first.find("_0");
-	//	if (found != std::string::npos) {
-			hits++;
-			genome_size += (*i).second.size();
-	//	}
-	}
-	std::vector<read_position> error_profile = parse_error_profile(error_profile_file);
-	int avg_readlen = 0;
-	///int max_size = error_profile.size() - 1;
-	for (size_t i = 0; i < error_profile.size() && error_profile[i].total < 0.51; i++) {
-		avg_readlen++;
+		hits++;
+		genome_size += (*i).second.size();
 	}
 
 	std::cout << "\tAVG read length: " << avg_readlen << std::endl;
@@ -207,79 +226,101 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 
 	for (size_t i = 0; i < num_reads; i++) {
 		double bp = (rand() % 1000000);
-		bp=bp/1000000;
+		bp = bp / 1000000;
 		int size = 0;
-		while(size<error_profile.size()){
-			if(bp < error_profile[size].total){
+		while (size < error_profile.size()) {
+			if (bp < error_profile[size].total) {
 				break;
 			}
 			size++;
 		}
 
-		//cout<<size<<": "<<bp<<endl;
+	//	cout << size << ": " << bp << endl;
 		//std::cout<<"Read init: "<<size<<std::endl;
-		int pos = rand() % (int) (genome.size());
-	//	cout<<"chr: "<<pos;
-		//std::cout<<" pos: "<<pos<<" "<<genome.size()<<std::endl;
-		std::string chr = (*genome.begin()).first; //check that again...
-		for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end() && pos >= 0; j++) {
-			chr = (*j).first;
-			pos--;
+		int len=0;
+		std::string chr;
+		while (size > len) {
+			int pos = rand() % (int) (genome.size());
+			 chr = (*genome.begin()).first; //check that again...
+			for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end() && pos >= 0; j++) {
+				chr = (*j).first;
+				pos--;
+			}
+			len=genome[chr].size();
 		}
-		//std::cout<<"chr: "<<chr<<std::endl;
+	//	cout << "choose subregion" << chr << endl;
 		std::string read = "N";
 		double num_N = 1;
 		int start_pos = 0;
-		while (num_N / (double) read.size() > 0.1) { //optaining the sequence (avoid large regions of N's)
+		while (num_N / (double) read.size() > 0.1) { //Obtaining the sequence (avoid large regions of N's)
 			read = "";
 			num_N = 0;
-			start_pos = rand() % (int) genome[chr].size();
+			//cout << "lim: " << ((int) genome[chr].size() - size) << endl;
+			start_pos = rand() % (int) (genome[chr].size() - size);
 			while ((start_pos + size) >= genome[chr].size()) { // check such that we dont always just get the ends.
-				start_pos = rand() % (int) genome[chr].size();
+				start_pos = rand() % (int) (genome[chr].size() - size);
+				cout << "st: " << (start_pos + size) << " " << genome[chr].size() << endl;
 			}
 
 			for (size_t j = 0; j < size && j + (size_t) start_pos < genome[chr].size(); j++) {
 				read += genome[chr][start_pos + j];
-				if (genome[chr][start_pos + j] == 'N' || genome[chr][start_pos + j] == 'n' ) {
+				if (genome[chr][start_pos + j] == 'N' || genome[chr][start_pos + j] == 'n') {
 					num_N++;
 				}
 			}
+		//	cout << "Ns: " << num_N / (double) read.size() << endl;
 		}
-
+		//cout << "apply errors" << endl;
 		size_t t = 0;
 		std::string final_read = "";
 		while (t < read.size()) {
-
 			double bp = (rand() % 1000000); //bp probability
-			bp=bp/1000000;
+			bp = bp / 1000000;
 
-			//if (bp < error_profile[t].total) { //break the read!
-			//	cout<<t<<": "<<bp<<endl;
-			//	break;
-			//}
+			//0.801476  0.061494        0.088794        0.048237
 			if (bp < error_profile[t].match) {
 				final_read += read[t];
-			} else if (bp - error_profile[t].match < error_profile[t].mismatch) {
+			} else if (bp < error_profile[t].mismatch + error_profile[t].match) {
 				final_read += new_nuc(read[t]);
-			} else if (bp - (error_profile[t].match + error_profile[t].mismatch) < error_profile[t].ins) {
+			} else if (bp < error_profile[t].ins + error_profile[t].match + error_profile[t].mismatch) {
+				final_read += read[t];
 				final_read += new_nuc('N');
 			} //else is a deletion!
 			t++;
+		}
+		//cout << "Pick strand" << endl;
+		bool flag=true;
+		if (rand() % 100 < 51) {
+			flag=false;
+			//reverse read.
+			std::string new_read;
+			for (std::string::reverse_iterator ri = final_read.rbegin(); ri != final_read.rend(); ri++) {
+			//cout<<read<<endl;
+
+				new_read += complementbp((*ri));
+			}
+		//	cout << "done" << endl;
+			final_read = new_read;
 		}
 
 		std::stringstream name;
 		name << chr;
 		name << "_";
 		name << start_pos;
-		//	std::cout<<"Read: "<<read.size()<<std::endl;
-		if (read.size() > min_length) {
-			fprintf(file, "%s", name.str().c_str());
-			fprintf(file, "%c", '\n');
-			fprintf(file, "%s", final_read.c_str());
-			fprintf(file, "%c", '\n');
+		if(flag){
+			name << "_+";
+		}else{
+			name << "_-";
 		}
+		//std::cout << "Read: " << read.size() << std::endl;
+		//if (read.size() > min_length) {
+		fprintf(file, "%s", name.str().c_str());
+		fprintf(file, "%c", '\n');
+		fprintf(file, "%s", final_read.c_str());
+		fprintf(file, "%c", '\n');
+		//	}
 		if (i % 1000 == 0) {
-			cout << "\t\tReads simulated: " << (i*100)/num_reads<<"%" << std::endl;
+			cout << "\t\tReads simulated: " << (i * 100) / num_reads << "%" << std::endl;
 		}
 	}
 
