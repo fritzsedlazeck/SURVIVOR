@@ -34,7 +34,7 @@ choose the ID from these options:
 ```
 Possible options
 1: Simulate SV on genome
-2: Simulate PacBio reads
+2: Simulate long reads
 3: Evaluate SV calling
 4: Merge SV calls (vcf) 
 5: Merge + Consensus call from different callers/vcf files
