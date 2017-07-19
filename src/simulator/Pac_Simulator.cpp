@@ -105,7 +105,7 @@ void simulate_reads(std::string name, std::string seq, FILE*& file, FILE*& sam, 
 			//AGCTTTTCATTCTA CG CA
 			char mod = ' ';
 			size_t pos = 0;
-			while (new_seq.size() < len && pos < read.size()) {
+			while ((int)new_seq.size() < len && pos < read.size()) {
 				if (rand() % 100 < 15 && (pos > 0 && pos < read.size() - 1)) { //why 4?? // ADD MISMATCHES
 					if (rand() % 100 < 40) {
 						if (mod != 'D' && mod != ' ') {

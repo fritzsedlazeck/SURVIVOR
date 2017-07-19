@@ -24,7 +24,7 @@ void process_patterns(std::vector<std::string> mat, FILE *& file) {
 	}
 
 	for (std::map<std::string, int>::iterator i = patterns.begin(); i != patterns.end(); i++) {
-		while ((*i).second >= vec.size()) {
+		while ((*i).second >= (int)vec.size()) {
 			vec.push_back(0);
 		}
 		vec[(*i).second]++;

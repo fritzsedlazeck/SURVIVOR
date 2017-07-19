@@ -237,7 +237,7 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 
 	//	cout << size << ": " << bp << endl;
 		//std::cout<<"Read init: "<<size<<std::endl;
-		int len=0;
+		size_t len=0;
 		std::string chr;
 		while (size > len) {
 			int pos = rand() % (int) (genome.size());
@@ -251,13 +251,13 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 	//	cout << "choose subregion" << chr << endl;
 		std::string read = "N";
 		double num_N = 1;
-		int start_pos = 0;
+		size_t start_pos = 0;
 		while (num_N / (double) read.size() > 0.1) { //Obtaining the sequence (avoid large regions of N's)
 			read = "";
 			num_N = 0;
 			//cout << "lim: " << ((int) genome[chr].size() - size) << endl;
 			start_pos = rand() % (int) (genome[chr].size() - size);
-			while ((start_pos + size) >= (int)genome[chr].size()) { // check such that we dont always just get the ends.
+			while ((start_pos + size) >= genome[chr].size()) { // check such that we dont always just get the ends.
 				start_pos = rand() % (int) (genome[chr].size() - size);
 				cout << "st: " << (start_pos + size) << " " << genome[chr].size() << endl;
 			}
