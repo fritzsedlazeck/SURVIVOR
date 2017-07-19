@@ -283,9 +283,6 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	svs_summary.assign(25, support_vec);
 	int id = 0;
 
-
-
-
 	std::vector<std::string> keys;
 	for (std::map<std::string, std::vector<SVS_Node *> >::iterator i = union_set.begin(); i != union_set.end(); i++) {
 

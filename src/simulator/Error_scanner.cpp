@@ -58,7 +58,7 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 	//cout<<" comp len: "<<this->ref_len<<" "<<pos<<" "<<this->getPosition()<<endl;
 	pos = 0;
 	bool match = false;
-	bool gap;
+	bool gap=false;
 	int ref_pos = 0;
 	size_t pos_events = 0;
 	//comp_aln = clock();
@@ -70,7 +70,7 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 		if ((atoi(&md[i]) == 0 && md[i] != '0')) { //is not a number
 			if (!gap) { // only mismatches are stored. We should have the rest from CIGAR
 				//correct for shift in position with respect to the ref:
-				while (ref_pos < events.size() && pos > events[ref_pos].position) {
+				while (ref_pos < (int)events.size() && pos > events[ref_pos].position) {
 					if (events[ref_pos].type > 0) {
 						pos += events[ref_pos].type;
 					}
@@ -173,7 +173,7 @@ void store_diffs(vector<differences_str> diffs, std::vector<read_position> & err
 		}
 
 	}
-	while (pos < size) {
+	while (pos < (int)size) {
 		error_profile[pos].match++;
 		error_profile[pos].total++;
 		pos++;
@@ -198,7 +198,7 @@ void generate_error_profile(int min_length, std::string output) {
 					if (count == 5 && line[i - 1] == '\t') {
 
 						cigar_data = parse_cigar(&line[i]); //TODO
-						if (get_length(cigar_data) < min_length) {
+						if ((int)get_length(cigar_data) < min_length) {
 							break;
 						}
 					}

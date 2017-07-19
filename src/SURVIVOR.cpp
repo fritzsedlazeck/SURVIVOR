@@ -33,8 +33,9 @@
 #include "vcfs/Detect_nested.h"
 #include "simulator/Error_scanner.h"
 #include "simulator/Sim_reads.h"
-
-
+#include "analysis_sv/Summ_mat.h"
+#include "vcfs/Generate_distMat.h"
+#include "snp_overlap/Overlap_snps.h"
 
 Parameter* Parameter::m_pInstance = NULL;
 int main(int argc, char *argv[]) {
@@ -65,13 +66,13 @@ int main(int argc, char *argv[]) {
 						generate_error_profile(atoi(argv[3]), std::string(argv[4]));
 					} else {
 						std::cerr << "Required parameters:" << std::endl;
-						std::cerr << "How to run: samtools view your_file.bam | ./SURVIVOR 2 scan 10000 error.txt"<<std::endl;
+						std::cerr << "How to run: samtools view your_file.bam | ./SURVIVOR 2 scan 10000 error.txt" << std::endl;
 						std::cerr << "1: Min read length" << std::endl;
 						std::cerr << "2: output " << std::endl;
 					}
 				} else if (strcmp(argv[2], "simul") == 0) {
 					if (argc == 7) {
-						simulate_reads(std::string(argv[3]), std::string(argv[4]),atoi(argv[5]), std::string(argv[6]));
+						simulate_reads(std::string(argv[3]), std::string(argv[4]), atoi(argv[5]), std::string(argv[6]));
 
 					} else {
 						std::cerr << "No parameters provided:" << std::endl;
@@ -81,7 +82,6 @@ int main(int argc, char *argv[]) {
 						std::cerr << "4: output prefix" << std::endl;
 					}
 
-
 				} else {
 					std::cerr << "Unkown option!" << std::endl;
 				}
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 				std::cerr << "Choose options:" << std::endl;
 				std::cerr << "\'scan\': generate error profile" << std::endl;
 				std::cerr << "\'simul\': simulate reads (Pacbio / Nanopore)" << std::endl;
-				std::cerr << "We included a error profile for Nanopore and Pacbio data in the SURVIVOR folder."<<std::endl;
+				std::cerr << "We included a error profile for Nanopore and Pacbio data in the SURVIVOR folder." << std::endl;
 			}
 			break;
 		case 3:
@@ -356,8 +356,55 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 
+		case 29:
+			// Make matrix for Y: sample X SV (varianten)
+			//Run through window (X achse) count # times same vector is observed.
+			//a1=#unique. a2=#2 times observed,.... jede zeile = 1 window.
+			if (argc == 5) {
+				summarize_svs_table_window(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
+			} else {
+				std::cerr << "input vcf sumary file" << std::endl;
+				std::cerr << "window size" << std::endl;
+				std::cerr << "output  file" << std::endl;
+			}
+			break;
+		case 30:
+			if (argc == 6) {
+				generate_dist_mat(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]), std::string(argv[5]));
+			} else {
+				std::cerr << "input vcf SVs file" << std::endl;
+				std::cerr << "input vcf SNP file" << std::endl;
+				std::cerr << "input weighted file" << std::endl;
+				std::cerr << "output  file" << std::endl;
+			}
+			break;
+
+		case 31:
+			if (argc == 7) {
+				overlap_snps(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
+			} else {
+				std::cerr << "input vcf SVs file" << std::endl;
+				std::cerr << "input vcf SNP file" << std::endl;
+				std::cerr << "max distance" << std::endl;
+				std::cerr << "min SV length" << std::endl;
+				std::cerr << "output  file" << std::endl;
+			}
+			break;
+		case 32:
+			if (argc == 7) {
+				overlap_snps_gwas(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
+			} else {
+				std::cerr << "input vcf SVs file" << std::endl;
+				std::cerr << "input vcf SNP file" << std::endl;
+				std::cerr << "max distance" << std::endl;
+				std::cerr << "min SV length" << std::endl;
+				std::cerr << "output  file" << std::endl;
+			}
+			break;
+
 		default:
 			break;
+
 		}
 	} else {
 		std::cerr << "Possible options" << std::endl;

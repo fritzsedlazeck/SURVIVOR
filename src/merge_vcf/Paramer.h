@@ -19,6 +19,7 @@
 class Parameter {
 private:
 	Parameter() {
+		min_freq=-1;
 	}
 	~Parameter() {
 
@@ -32,6 +33,7 @@ public:
 	bool use_strand;
 	bool dynamic_size;
 	int min_length;
+	float min_freq;
 
 	static Parameter* Instance() {
 		if (!m_pInstance) {

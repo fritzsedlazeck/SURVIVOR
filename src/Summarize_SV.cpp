@@ -62,7 +62,7 @@ int bin_size(int dist) {
 	return 4;
 }
 void summary_SV(std::string vcf_file, int min_size, int max_size, std::string output) {
-	cout<<min_size<< " MAX "<<max_size<<endl;
+	//cout<<min_size<< " MAX "<<max_size<<endl;
 	std::vector<int> len_Del;
 	std::vector<int> len_Dup;
 	std::vector<int> len_Inv;
@@ -78,7 +78,7 @@ void summary_SV(std::string vcf_file, int min_size, int max_size, std::string ou
 	std::map<std::string, std::map<int, int> > SV_chrs;
 
 	std::vector<strvcfentry> entries = parse_vcf(vcf_file, min_size);
-
+	std::cout<<"Processing: "<<entries.size()<<std::endl;
 	for (size_t i = 0; i < entries.size(); i++) {
 		if (max_size <0 || (entries[i].sv_len< max_size|| entries[i].type == 3)) {
 			//summarize the support:
@@ -125,8 +125,8 @@ void summary_SV(std::string vcf_file, int min_size, int max_size, std::string ou
 		}
 	}
 	std::cout << "Parsing done: " << endl;
-	cout<<"DEL\tDUP\tINS\tINV\tTRA"<<endl;
-	cout<<DEL<<"\t"<<DUP<<"\t"<<INS<<"\t"<<INV<<"\t"<<TRA<<endl;
+	cout<<"Tot\tDEL\tDUP\tINS\tINV\tTRA"<<endl;
+	cout<<(DEL+DUP+INS+INV+TRA)<<"\t" <<DEL<<"\t"<<DUP<<"\t"<<INS<<"\t"<<INV<<"\t"<<TRA<<endl;
 	FILE * file;
 	std::string out = output;
 	out += "support";

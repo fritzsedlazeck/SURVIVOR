@@ -35,7 +35,7 @@ void detect_nested(std::string vcf_file, std::string output) {
 		if (buffer[0] != '#') {
 			int count = 0;
 			std::string type;
-			int id;
+			int id=0;
 			std::string chr;
 			bool flag = false;
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {

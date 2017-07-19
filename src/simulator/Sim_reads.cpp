@@ -30,7 +30,7 @@ std::map<std::string, std::string> parse_genome(std::string genome_file, int min
 	std::map<std::string, std::string> genome;
 	while (!myfile.eof()) {
 		if (buffer[0] == '>') {
-			if (seq.size() > min_length) {
+			if ((int)seq.size() > min_length) {
 
 				//	int border=distribution(generator);
 				//cout<<"max copies: "<<border<<std::endl;
@@ -57,7 +57,7 @@ std::map<std::string, std::string> parse_genome(std::string genome_file, int min
 		}
 		myfile.getline(buffer, buffer_size);
 	}
-	if (seq.size() > min_length) {
+	if ((int)seq.size() > min_length) {
 		stringstream ss;
 		ss << name;
 		//	ss << i;
@@ -224,10 +224,10 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 	FILE *file;
 	file = fopen(output.c_str(), "w");
 
-	for (size_t i = 0; i < num_reads; i++) {
+	for (int i = 0; i < num_reads; i++) {
 		double bp = (rand() % 1000000);
 		bp = bp / 1000000;
-		int size = 0;
+		size_t size = 0;
 		while (size < error_profile.size()) {
 			if (bp < error_profile[size].total) {
 				break;
@@ -257,7 +257,7 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 			num_N = 0;
 			//cout << "lim: " << ((int) genome[chr].size() - size) << endl;
 			start_pos = rand() % (int) (genome[chr].size() - size);
-			while ((start_pos + size) >= genome[chr].size()) { // check such that we dont always just get the ends.
+			while ((start_pos + size) >= (int)genome[chr].size()) { // check such that we dont always just get the ends.
 				start_pos = rand() % (int) (genome[chr].size() - size);
 				cout << "st: " << (start_pos + size) << " " << genome[chr].size() << endl;
 			}

@@ -9,6 +9,7 @@ CPP_SRCS += \
 ../src/vcfs/Compoverlap_VCF.cpp \
 ../src/vcfs/Detect_nested.cpp \
 ../src/vcfs/Filter_vcf.cpp \
+../src/vcfs/Generate_distMat.cpp \
 ../src/vcfs/Merge_VCF.cpp 
 
 OBJS += \
@@ -17,6 +18,7 @@ OBJS += \
 ./src/vcfs/Compoverlap_VCF.o \
 ./src/vcfs/Detect_nested.o \
 ./src/vcfs/Filter_vcf.o \
+./src/vcfs/Generate_distMat.o \
 ./src/vcfs/Merge_VCF.o 
 
 CPP_DEPS += \
@@ -25,6 +27,7 @@ CPP_DEPS += \
 ./src/vcfs/Compoverlap_VCF.d \
 ./src/vcfs/Detect_nested.d \
 ./src/vcfs/Filter_vcf.d \
+./src/vcfs/Generate_distMat.d \
 ./src/vcfs/Merge_VCF.d 
 
 
