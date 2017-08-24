@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 		case 1: // ADD SNPs -> make VCF file with simulated events!
 			if (argc == 7) {
 				bool coordinates = bool(atoi(argv[5]) == 0);
-				simulate_SV(std::string(argv[2]), std::string(argv[3]),atoi(argv[4]), coordinates, std::string(argv[6]));
+				simulate_SV(std::string(argv[2]), std::string(argv[3]),atof(argv[4]), coordinates, std::string(argv[6]));
 				std::cout << "Done: SV+SNP simulated" << std::endl;
 			} else if (argc == 3) {
 				generate_parameter_file(std::string(argv[2]));
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 				std::cerr << "To simulate SV:" << std::endl;
 				std::cerr << "1: Reference fasta file" << std::endl;
 				std::cerr << "2: Parameter file" << std::endl;
-				std::cerr << "3: SNP mutations frequency (0-100%)"<<std::endl;
+				std::cerr << "3: SNP mutations frequency (0-1)"<<std::endl;
 				std::cerr << "4: 0= simulated reads; 1= real reads " << std::endl;
 				std::cerr << "5: output prefix" << std::endl;
 			}

@@ -938,7 +938,7 @@ void print_vcf_svs(FILE *& file, std::vector<struct_var> svs,int id) {
 	}
 }
 
-void simulate_SV(std::string ref_file, std::string parameter_file,double snp_freq, bool coordinates, std::string output_prefix) {
+void simulate_SV(std::string ref_file, std::string parameter_file,float snp_freq, bool coordinates, std::string output_prefix) {
 	//read in list of SVs over vcf?
 	//apply vcf to genome?
 	srand(time(NULL));
@@ -973,7 +973,8 @@ void simulate_SV(std::string ref_file, std::string parameter_file,double snp_fre
 	int id=0;
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 		for (size_t pos = 0; pos < (*i).second.size(); pos++) {
-			if (rand() % 100 < snp_freq) {
+			float x= ((float)rand()/(float)(RAND_MAX));
+			if ( x < snp_freq) {
 				char new_nuc = mut_char(toupper((*i).second[pos]));
 				print_snp_vcf((*i).first, pos, (*i).second[pos], new_nuc, file2,id);
 				id++;
