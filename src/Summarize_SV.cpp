@@ -61,7 +61,7 @@ int bin_size(int dist) {
 	}
 	return 4;
 }
-void summary_SV(std::string vcf_file, int min_size, int max_size, std::string output) {
+void summary_SV(std::string vcf_file, int min_size, int max_size, int min_reads, std::string output) {
 	//cout<<min_size<< " MAX "<<max_size<<endl;
 	std::vector<int> len_Del;
 	std::vector<int> len_Dup;
@@ -70,63 +70,65 @@ void summary_SV(std::string vcf_file, int min_size, int max_size, std::string ou
 	std::vector<int> len_unk;
 	std::vector<int> support;
 	int TRA = 0;
-	int DEL=0;
-	int DUP=0;
-	int INS=0;
-	int INV=0;
-	int UNK=0;
+	int DEL = 0;
+	int DUP = 0;
+	int INS = 0;
+	int INV = 0;
+	int UNK = 0;
 	std::map<std::string, std::map<int, int> > SV_chrs;
 
 	std::vector<strvcfentry> entries = parse_vcf(vcf_file, min_size);
-	std::cout<<"Processing: "<<entries.size()<<std::endl;
+	std::cout << "Processing: " << entries.size() << std::endl;
 	for (size_t i = 0; i < entries.size(); i++) {
-		if (max_size <0 || (entries[i].sv_len< max_size|| entries[i].type == 3)) {
-			//summarize the support:
-			int id = get_support(entries[i].caller_supports);
-			if (id != 0) {
-				while (id >= (int) support.size()) {
-					support.push_back(0);
+		if (entries[i].num_reads.second > min_reads) {
+			if (max_size < 0 || (entries[i].sv_len < max_size || entries[i].type == 3)) {
+				//summarize the support:
+				int id = get_support(entries[i].caller_supports);
+				if (id != 0) {
+					while (id >= (int) support.size()) {
+						support.push_back(0);
+					}
+					if (id == 1) {
+						std::cout << entries[i].start.pos << std::endl;
+					}
+					support[id]++;
 				}
-				if (id == 1) {
-					std::cout << entries[i].start.pos << std::endl;
+				int dist = bin_size(entries[i].sv_len); // /step; //abs(entries[i].stop.pos - entries[i].start.pos) / step;
+				if (entries[i].type == 0) {
+					adjust(len_Del, dist);
+					len_Del[dist]++;
+					DEL++;
+				} else if (entries[i].type == 2) {
+					adjust(len_Inv, dist);
+					len_Inv[dist]++;
+					INV++;
+				} else if (entries[i].type == 1) {
+					adjust(len_Dup, dist);
+					len_Dup[dist]++;
+					DUP++;
+				} else if (entries[i].type == 4) {
+					adjust(len_Ins, dist);
+					len_Ins[dist]++;
+					INS++;
+				} else if (entries[i].type == 3) {
+					TRA++;
+				} else if (entries[i].type == -1) {
+					adjust(len_unk, dist);
+					len_unk[dist]++;
+					UNK++;
 				}
-				support[id]++;
-			}
-			int dist = bin_size(entries[i].sv_len); // /step; //abs(entries[i].stop.pos - entries[i].start.pos) / step;
-			if (entries[i].type == 0) {
-				adjust(len_Del, dist);
-				len_Del[dist]++;
-				DEL++;
-			} else if (entries[i].type == 2) {
-				adjust(len_Inv, dist);
-				len_Inv[dist]++;
-				INV++;
-			} else if (entries[i].type == 1) {
-				adjust(len_Dup, dist);
-				len_Dup[dist]++;
-				DUP++;
-			} else if (entries[i].type == 4) {
-				adjust(len_Ins, dist);
-				len_Ins[dist]++;
-				INS++;
-			} else if (entries[i].type == 3) {
-				TRA++;
-			} else if (entries[i].type == -1) {
-				adjust(len_unk, dist);
-				len_unk[dist]++;
-				UNK++;
-			}
-			std::string chr = entries[i].start.chr;
-			if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(entries[i].type) != SV_chrs[chr].end()) {
-				SV_chrs[chr][entries[i].type]++;
-			} else {
-				SV_chrs[chr][entries[i].type] = 1;
+				std::string chr = entries[i].start.chr;
+				if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(entries[i].type) != SV_chrs[chr].end()) {
+					SV_chrs[chr][entries[i].type]++;
+				} else {
+					SV_chrs[chr][entries[i].type] = 1;
+				}
 			}
 		}
 	}
 	std::cout << "Parsing done: " << endl;
-	cout<<"Tot\tDEL\tDUP\tINS\tINV\tTRA"<<endl;
-	cout<<(DEL+DUP+INS+INV+TRA)<<"\t" <<DEL<<"\t"<<DUP<<"\t"<<INS<<"\t"<<INV<<"\t"<<TRA<<endl;
+	cout << "Tot\tDEL\tDUP\tINS\tINV\tTRA" << endl;
+	cout << (DEL + DUP + INS + INV + TRA) << "\t" << DEL << "\t" << DUP << "\t" << INS << "\t" << INV << "\t" << TRA << endl;
 	FILE * file;
 	std::string out = output;
 	out += "support";

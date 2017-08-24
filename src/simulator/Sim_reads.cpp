@@ -274,10 +274,11 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 		size_t t = 0;
 		std::string final_read = "";
 		while (t < read.size()) {
+			if(read[t]=='N'){
+				read[t]=new_nuc('N');
+			}
 			double bp = (rand() % 1000000); //bp probability
 			bp = bp / 1000000;
-
-			//0.801476  0.061494        0.088794        0.048237
 			if (bp < error_profile[t].match) {
 				final_read += read[t];
 			} else if (bp < error_profile[t].mismatch + error_profile[t].match) {
@@ -285,10 +286,10 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 			} else if (bp < error_profile[t].ins + error_profile[t].match + error_profile[t].mismatch) {
 				final_read += read[t];
 				final_read += new_nuc('N');
-			} //else is a deletion!
+			}
 			t++;
 		}
-		//cout << "Pick strand" << endl;
+
 		bool flag=true;
 		if (rand() % 100 < 51) {
 			flag=false;

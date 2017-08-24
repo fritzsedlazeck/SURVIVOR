@@ -14,17 +14,17 @@ void process_patterns(std::vector<std::string> mat, FILE *& file) {
 	for (size_t j = 0; j < mat[0].size(); j++) {
 		std::string patt;
 		for (size_t i = 0; i < mat.size(); i++) {
-			patt+=mat[i][j];
+			patt += mat[i][j];
 		}
-		if(patterns.find(patt)==patterns.end()){
-			patterns[patt]=1;
-		}else{
+		if (patterns.find(patt) == patterns.end()) {
+			patterns[patt] = 1;
+		} else {
 			patterns[patt]++;
 		}
 	}
 
 	for (std::map<std::string, int>::iterator i = patterns.begin(); i != patterns.end(); i++) {
-		while ((*i).second >= (int)vec.size()) {
+		while ((*i).second >= (int) vec.size()) {
 			vec.push_back(0);
 		}
 		vec[(*i).second]++;
@@ -78,27 +78,13 @@ void summarize_svs_table_window(std::string venn_file, int window, std::string o
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 				if (count == 0 && buffer[i] != '\t') {
 					chr += buffer[i];
-					if (strcmp(chr.c_str(), last_chr.c_str()) != 0) {
-						if (!mat.empty()) {
-							fprintf(file, "%s", last_chr.c_str());
-							fprintf(file, "%c", ':');
-							fprintf(file, "%i", (int) last_pos);
-							fprintf(file, "%c", ':');
-							//	fprintf(file, "%i", (int) (*patterns.begin()).first.size());
-							//	fprintf(file, "%c", ':');
-							process_patterns(mat, file);
-						}
-						last_pos = 0;
-						mat.clear();
-						last_chr = chr;
-					}
 				}
 				if (count == 1 && buffer[i - 1] == '\t') {
 					pos = atoi(&buffer[i]);
-					//	cout << pos << " " << last_pos << endl;
-					if (pos - last_pos > window) {
+
+					if (pos - last_pos > window || (strcmp(chr.c_str(), last_chr.c_str()) != 0)) {
 						//process entries;
-						if (!mat.empty()) {
+						if (mat.size() > 0) {
 							fprintf(file, "%s", last_chr.c_str());
 							fprintf(file, "%c", ':');
 							fprintf(file, "%i", (int) last_pos);
@@ -106,10 +92,11 @@ void summarize_svs_table_window(std::string venn_file, int window, std::string o
 							//	fprintf(file, "%s", (*patterns.begin()).first.c_str());
 							//	fprintf(file, "%c", ':');
 							process_patterns(mat, file);
+							mat.clear();
 						}
 						last_pos = pos;
 						last_chr = chr;
-						mat.clear();
+
 					}
 				}
 				if (count > 9 && buffer[i - 1] == '\t') {
@@ -125,6 +112,5 @@ void summarize_svs_table_window(std::string venn_file, int window, std::string o
 		myfile.getline(buffer, buffer_size);
 	}
 	fclose(file);
-
 }
 

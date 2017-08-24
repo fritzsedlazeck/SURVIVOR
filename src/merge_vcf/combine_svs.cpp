@@ -455,7 +455,7 @@ void summarize_VCF_files(std::string filename, int min_size, std::string output)
 
 	for (size_t id = 0; id < names.size(); id++) {
 		std::vector<strvcfentry> entries = parse_vcf(names[id], min_size);
-		std::cout << "merging entries: " << entries.size() << std::endl;
+		std::cout << "processing entries: " << entries.size() << std::endl;
 		for (size_t j = 0; j < entries.size(); j++) {
 			int len = get_len_id(entries[j].sv_len);
 			if (entries[j].type == -1) {
@@ -477,7 +477,7 @@ void summarize_VCF_files(std::string filename, int min_size, std::string output)
 	fprintf(file, "%s", "INS20\tINS50bp\tINS100\tINS1k\tINS10k\tUNK20\tUNK50bp\tUNK100\tUNK1k\tUNK10k\n");
 	for (size_t i = 0; i < svs.size(); i++) {
 
-		fprintf(file, "%i", (int) i);
+		fprintf(file, "%s", names[i].c_str());
 		fprintf(file, "%s", "\t");
 		for (size_t types = 0; types < svs[i].size(); types++) {
 			if (types != 3) {

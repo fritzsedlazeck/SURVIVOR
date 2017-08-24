@@ -36,16 +36,18 @@
 #include "analysis_sv/Summ_mat.h"
 #include "vcfs/Generate_distMat.h"
 #include "snp_overlap/Overlap_snps.h"
+#include "convert/Convert_MUMmer.h"
+#include "simulator/test_cov.h"
 
 Parameter* Parameter::m_pInstance = NULL;
 int main(int argc, char *argv[]) {
 	if (argc > 1) {
 		switch (atoi(argv[1])) {
-		case 1:
-			if (argc == 6) {
-				bool coordinates = bool(atoi(argv[4]) == 0);
-				simulate_SV(std::string(argv[2]), std::string(argv[3]), coordinates, std::string(argv[5]));
-				std::cout << "SV simulated" << std::endl;
+		case 1: // ADD SNPs -> make VCF file with simulated events!
+			if (argc == 7) {
+				bool coordinates = bool(atoi(argv[5]) == 0);
+				simulate_SV(std::string(argv[2]), std::string(argv[3]),atoi(argv[4]), coordinates, std::string(argv[6]));
+				std::cout << "Done: SV+SNP simulated" << std::endl;
 			} else if (argc == 3) {
 				generate_parameter_file(std::string(argv[2]));
 				std::cout << "Parameter file generated" << std::endl;
@@ -55,8 +57,9 @@ int main(int argc, char *argv[]) {
 				std::cerr << "To simulate SV:" << std::endl;
 				std::cerr << "1: Reference fasta file" << std::endl;
 				std::cerr << "2: Parameter file" << std::endl;
-				std::cerr << "3: 0= simulated reads; 1= real reads " << std::endl;
-				std::cerr << "4: output prefix" << std::endl;
+				std::cerr << "3: SNP mutations frequency (0-100%)"<<std::endl;
+				std::cerr << "4: 0= simulated reads; 1= real reads " << std::endl;
+				std::cerr << "5: output prefix" << std::endl;
 			}
 			break;
 		case 2:
@@ -114,18 +117,22 @@ int main(int argc, char *argv[]) {
 				std::cerr << "Output vcf file" << std::endl;
 			}
 			break;
-			/*case 5:
-			 if (argc == 7) {
-			 //merge 3 SV calls from the same strain
-			 combine_calls(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]), atoi(argv[5]), std::string(argv[6]));
-			 } else {
-			 std::cerr << "VCF delly" << std::endl;
-			 std::cerr << "VCF lumpy" << std::endl;
-			 std::cerr << "VCF pindel" << std::endl;
-			 std::cerr << "max dist" << std::endl;
-			 std::cerr << "Output prefix" << std::endl;
-			 }
-			 break;*/
+		case 5:
+			if (argc == 10) {
+				//merge 3 SV calls from the same strain
+				//	combine_calls_new(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
+				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), atoi(argv[8]), std::string(argv[9]));
+			} else {
+				std::cerr << "Tab file with names" << std::endl;
+				std::cerr << "max distance between breakpoints " << std::endl;
+				std::cerr << "Minimum number of supporting caller" << std::endl;
+				std::cerr << "Take the type into account (1==yes, else no)" << std::endl;
+				std::cerr << "Take the strands of SVs into account (1==yes, else no)" << std::endl;
+				std::cerr << "Estimate distance based on the size of SV (1==yes, else no)." << std::endl;
+				std::cerr << "Minimum size of SVs to be taken into account." << std::endl;
+				std::cerr << "Output prefix" << std::endl;
+			}
+			break;
 		case 6:
 			if (argc == 6) {
 				generate_gene_list(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), std::string(argv[5]));
@@ -202,31 +209,24 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 13:
-			if (argc == 6) {
-				summary_SV(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
+			if (argc == 7) {
+				summary_SV(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
 				std::cout << "You can find an R script in the src/R-scripts/ to create plots given the summary output files." << std::endl;
 			} else {
 				std::cerr << "vcf file" << std::endl;
 				std::cerr << "Min SV size (disable: -1)" << std::endl;
 				std::cerr << "Max SV size (disable: -1)" << std::endl;
+				std::cerr << "Min number read support (disable: -1)" << std::endl;
 				std::cerr << "output summary file" << std::endl;
 			}
 			break;
 
-		case 5: //prev 14!
-			if (argc == 10) {
-				//merge 3 SV calls from the same strain
-				//	combine_calls_new(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
-				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), atoi(argv[8]), std::string(argv[9]));
+		/*case 14:
+			if (argc == 7) {
+		//		summary_MT(std::string(argv[2]), std::string(argv[6]));
 			} else {
-				std::cerr << "Tab file with names" << std::endl;
-				std::cerr << "max distance between breakpoints " << std::endl;
-				std::cerr << "Minimum number of supporting caller" << std::endl;
-				std::cerr << "Take the type into account (1==yes, else no)" << std::endl;
-				std::cerr << "Take the strands of SVs into account (1==yes, else no)" << std::endl;
-				std::cerr << "Estimate distance based on the size of SV (1==yes, else no)." << std::endl;
-				std::cerr << "Minimum size of SVs to be taken into account." << std::endl;
-				std::cerr << "Output prefix" << std::endl;
+				std::cerr << "Parsed sam file" << std::endl;
+				std::cerr << "output summary file" << std::endl;
 			}
 			break;
 		case 15:
@@ -277,15 +277,7 @@ int main(int argc, char *argv[]) {
 				std::cerr << "output file" << std::endl;
 			}
 			break;
-		case 20:
-			if (argc == 5) {
-				filter_vcf_sniffles(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
-			} else {
-				std::cerr << "vcf input file" << std::endl;
-				std::cerr << "min length" << std::endl;
-				std::cerr << "output file" << std::endl;
-			}
-			break;
+
 		case 21:
 			if (argc == 3) {
 				summarize_paper_gaib(std::string(argv[2]));
@@ -325,7 +317,7 @@ int main(int argc, char *argv[]) {
 				summary_giab(std::string(argv[2]), std::string(argv[3]));
 
 			} else {
-				std::cerr << "input file _venn" << std::endl;
+				std::cerr << "input file merged vcf file" << std::endl;
 				std::cerr << "output file" << std::endl;
 			}
 			break;
@@ -344,19 +336,18 @@ int main(int argc, char *argv[]) {
 				std::cerr << "input vcf file" << std::endl;
 				std::cerr << "output file" << std::endl;
 			}
-			break;
-		case 28:
-			if (argc == 6) {
-				prepare_svviz(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]), std::string(argv[5]));
-			} else {
-				std::cerr << "input vcf file" << std::endl;
-				std::cerr << "input bam file" << std::endl;
-				std::cerr << "input ref file" << std::endl;
-				std::cerr << "output svviz file" << std::endl;
-			}
-			break;
-
-		case 29:
+			break;*/
+			/*case 28:
+			 if (argc == 6) {
+			 prepare_svviz(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]), std::string(argv[5]));
+			 } else {
+			 std::cerr << "input vcf file" << std::endl;
+			 std::cerr << "input bam file" << std::endl;
+			 std::cerr << "input ref file" << std::endl;
+			 std::cerr << "output svviz file" << std::endl;
+			 }
+			 break;*/
+		/*case 29:
 			// Make matrix for Y: sample X SV (varianten)
 			//Run through window (X achse) count # times same vector is observed.
 			//a1=#unique. a2=#2 times observed,.... jede zeile = 1 window.
@@ -391,17 +382,37 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 32:
-			if (argc == 7) {
-				overlap_snps_gwas(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
+			if (argc == 6) {
+				overlap_snps_gwas(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
 			} else {
 				std::cerr << "input vcf SVs file" << std::endl;
-				std::cerr << "input vcf SNP file" << std::endl;
 				std::cerr << "max distance" << std::endl;
 				std::cerr << "min SV length" << std::endl;
 				std::cerr << "output  file" << std::endl;
 			}
 			break;
-
+		case 33:
+			if (argc == 5) {
+				convert_mummer_svs(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
+			} else {
+				std::cerr << "input SVs MUMmer file" << std::endl;
+				std::cerr << "min SV length" << std::endl;
+				std::cerr << "output vcf file" << std::endl;
+			}
+			break;
+		case 34:
+			//if(argc == 4){
+			if (argc == 7) {
+				est_cov(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]));
+			} else {
+				std::cerr << "Read length" << std::endl;
+				std::cerr << "Number of SVs" << std::endl;
+				std::cerr << "Minimum overlap of read (bp)" << std::endl;
+				std::cerr << "Minimum required overlapp of reads (support)" << std::endl;
+				std::cerr << "Targeted genome coverage" << std::endl;
+			}
+			//	}
+			break;*/
 		default:
 			break;
 
@@ -421,7 +432,26 @@ int main(int argc, char *argv[]) {
 		std::cerr << "11: Convert SV calls from Assemblytics" << std::endl;
 		std::cerr << "12: Summarize MQ 0 coverage to bed file" << std::endl;
 		std::cerr << "13: Summarize SVs events in VCF file" << std::endl;
-		//	std::cerr << "14: Combine calls from different vcf files" << std::endl;
+	/*	std::cerr << "15: Fast eval for Sniffles paper" << std::endl;
+		std::cerr << "16: Convert Bionano (.smap) to vcf" << std::endl;
+		std::cerr << "17: Convert Bionano (.smap) to vcf" << std::endl;
+		std::cerr << "18: Convert vcf SV calls to bed" << std::endl;
+		std::cerr << "19: Pairwise overlap of large SV merged calls (option 5)" << std::endl;
+		std::cerr << "20: Summarize MQ 0 coverage to bed file" << std::endl;
+		std::cerr << "21: NA" << std::endl;
+		std::cerr << "22: NA" << std::endl;
+		std::cerr << "23: Summarize sambada coverage file for filtering" << std::endl;
+		std::cerr << "24: Summarize GiaB input call sets" << std::endl;
+		std::cerr << "25: Summarize GiaB merged calls" << std::endl;
+		std::cerr << "26: VCF -> BED" << std::endl;
+		std::cerr << "27: Detect potential nested/adjecent SVs based on Sniffles" << std::endl;
+		std::cerr << "28: NA" << std::endl;
+		std::cerr << "29: Summarize SVs events per window based on multi sample file (option 5)" << std::endl;
+		std::cerr << "30: Generate pairwise distance matrix of SVs merged file (option 5)" << std::endl;
+		std::cerr << "31: NA" << std::endl;
+		std::cerr << "32: NA" << std::endl;
+		std::cerr << "33: Convert MUMmer diff to vcf" << std::endl;
+		std::cerr << "34: Estimate ability to detect SVs" << std::endl;*/
 	}
 	return 0;
 }

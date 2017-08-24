@@ -361,6 +361,9 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 				if (count == 7 && strncmp(&buffer[i], ";SU=", 4) == 0) { //for lumpy!
 					tmp.num_reads.second = atoi(&buffer[i + 4]);
 				}
+				if (count == 7 && strncmp(&buffer[i], ";RE=", 4) == 0) { //for sniffles!
+					tmp.num_reads.second = atoi(&buffer[i + 4]);
+				}
 				if (count == 7 && strncmp(&buffer[i],"EUR_AF=",7)==0){
 					freq=atof(&buffer[i+7]);
 				}

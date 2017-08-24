@@ -131,7 +131,7 @@ std::map<std::string, std::string> read_fasta(std::string ref_file, int min_leng
 	std::string name;
 	while (!myfile.eof()) {
 		if (buffer[0] == '>') {
-			if ((int)seq.size() > min_length) {
+			if ((int) seq.size() > min_length) {
 				genome[name] = seq;
 			}
 			name.clear();
@@ -151,7 +151,7 @@ std::map<std::string, std::string> read_fasta(std::string ref_file, int min_leng
 		seq += toupper(buffer[i]);
 	}
 	myfile.close();
-	if ((int)seq.size() > min_length) {
+	if ((int) seq.size() > min_length) {
 		genome[name] = seq;
 	}
 	seq.clear();
@@ -221,7 +221,7 @@ position get_pos(std::map<std::string, std::string> genome, int min_pos, int max
 
 		int num = 0;
 
-		while ((int)(*chr).second.size() < tmp.stop && num < 100) { //choose chr,start, stop such that the mutation fits. Allow max 50 iterations!
+		while ((int) (*chr).second.size() < tmp.stop && num < 100) { //choose chr,start, stop such that the mutation fits. Allow max 50 iterations!
 			tmp.start = rand() % (((*chr).second.size() - max_pos)); //choose random start pos within chr length
 			tmp.stop = tmp.start + min_pos + (rand() % (max_pos - min_pos)); // choose stop location
 			num++;
@@ -299,7 +299,7 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 	}
 
 	//tra inter
-	std::cout << par.intrachr_num << std::endl;
+	/*std::cout << par.intrachr_num << std::endl;
 	for (int i = 0; i < par.intrachr_num; i++) {
 		mut.type = 6;
 		mut.pos = choose_pos(genome, par.translocations_min, par.translocations_max, svs);
@@ -316,7 +316,7 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 		mut.pos.stop = mut.pos.start + std::min(size1, size2);
 		mut.target.stop = mut.target.start + std::min(size1, size2);
 		svs.push_back(mut);
-	}
+	}*/
 	//tra
 	for (int i = 0; i < par.translocations_num; i++) {
 		//	std::cout << "tra" << std::endl;
@@ -732,7 +732,7 @@ void write_sv(std::string output_prefix, std::vector<struct_var> svs) {
 			fprintf(file, "%c", '\n');
 		}
 		//write pseudo bed:
-		if (svs[i].type == 3 || svs[i].type == 6) {
+		if (svs[i].type == 3) {
 			fprintf(file2, "%s", svs[i].pos.chr.c_str());
 			fprintf(file2, "%c", '\t');
 			fprintf(file2, "%i", svs[i].pos.start);
@@ -743,8 +743,6 @@ void write_sv(std::string output_prefix, std::vector<struct_var> svs) {
 			fprintf(file2, "%c", '\t');
 			if (svs[i].type == 3) {
 				fprintf(file2, "%s", "TRA\n");
-			} else {
-				fprintf(file2, "%s", "INTRATRA\n");
 			}
 			fprintf(file2, "%s", svs[i].pos.chr.c_str());
 			fprintf(file2, "%c", '\t');
@@ -783,9 +781,6 @@ void write_sv(std::string output_prefix, std::vector<struct_var> svs) {
 		case 5:
 			fprintf(file2, "%s", "INVDUP");
 			break;
-		case 6:
-			fprintf(file2, "%s", "INTRATRA");
-			break;
 		default:
 			break;
 		}
@@ -795,32 +790,203 @@ void write_sv(std::string output_prefix, std::vector<struct_var> svs) {
 	fclose(file2);
 }
 
-void simulate_SV(std::string ref_file, std::string parameter_file, bool coordinates, std::string output_prefix) {
+char mut_char(char old) {
+	std::string nucs = "ACGT";
+	int index = rand() % 4;
+	switch (old) {
+	case 'A':
+		while (index != 0) {
+			index = rand() % 4;
+		}
+		return nucs[index];
+		break;
+	case 'C':
+		while (index != 1) {
+			index = rand() % 4;
+		}
+		return nucs[index];
+		break;
+	case 'G':
+		while (index != 2) {
+			index = rand() % 4;
+		}
+		return nucs[index];
+		break;
+	case 'T':
+		while (index != 3) {
+			index = rand() % 4;
+		}
+		return nucs[index];
+		break;
 
+	default:
+		return nucs[index];
+		break;
+	}
+}
+const std::string currentDateTime2() {
+	time_t now = time(0);
+	struct tm tstruct;
+	char buf[80];
+	tstruct = *localtime(&now);
+	// Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+	// for more information about date/time format
+	strftime(buf, sizeof(buf), "%Y%m%d", &tstruct);
+	return buf;
+}
+void print_vcf_header2(FILE *&file, std::map<std::string, std::string> genome) {
+	fprintf(file, "%s", "##fileformat=VCFv4.2\n");
+	fprintf(file, "%s", "##source=Sniffles\n");
+	std::string time = currentDateTime2();
+	fprintf(file, "%s", "##fileDate=");
+	fprintf(file, "%s", time.c_str());
+
+	//REport over all chrs:
+	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
+		fprintf(file, "%s", "\n");
+		fprintf(file, "%s", "##contig=<ID=");
+		fprintf(file, "%s", (*i).first.c_str());
+		fprintf(file, "%s", ",length=");
+		fprintf(file, "%i", (int) (*i).second.size());
+		fprintf(file, "%c", '>');
+	}
+
+	fprintf(file, "%s", "\n");
+	fprintf(file, "%s", "##ALT=<ID=DEL,Description=\"Deletion\">\n");
+	fprintf(file, "%s", "##ALT=<ID=DUP,Description=\"Duplication\">\n");
+	fprintf(file, "%s", "##ALT=<ID=INV,Description=\"Inversion\">\n");
+	fprintf(file, "%s", "##ALT=<ID=INVDUP,Description=\"InvertedDUP with unknown boundaries\">\n");
+	fprintf(file, "%s", "##ALT=<ID=TRA,Description=\"Translocation\">\n");
+	fprintf(file, "%s", "##ALT=<ID=INS,Description=\"Insertion\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CHR2,Number=1,Type=String,Description=\"Chromosome for END coordinate in case of a translocation\">\n");
+	fprintf(file, "%s", "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of the structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVLEN,Number=1,Type=Integer,Description=\"Length of the SV\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Type of approach used to detect SV\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=AF,Number=.,Type=Integer,Description=\"Allele Frequency.\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
+	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\n");
+}
+void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, FILE *&file,int id) {
+	std::ostringstream convert;   // stream used for the conversion
+	convert << chr;
+	convert << "\t";
+	convert << pos;      // insert the textual representation of 'Number' in the characters in the stream
+	convert << "\t";
+	convert << "SNP";
+	convert << id;
+	convert << "SURVIVOR\t";
+	convert << old_allele;
+	convert << "\t";
+	convert << new_allele;
+	convert << "\tPRECISE;SVMETHOD=SURVIVOR_sim;SVLEN=1\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t1/1";
+	fprintf(file, "%s", convert.str().c_str());
+	fprintf(file, "%c", '\n');
+}
+
+std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string end_chr, int end_pos,int id) {
+	std::ostringstream convert;   // stream used for the conversion
+	convert << chr;
+	convert << "\t";
+	convert << pos;      // insert the textual representation of 'Number' in the characters in the stream
+	convert << "\t";
+	convert << type;
+	convert << id;
+	convert << "SURVIVOR\tN\t<";
+	convert << type;
+	convert << ">\t.\tLowQual\tPRECISE;SVTYPE=";
+	convert << type;
+	convert << ";SVMETHOD=SURVIVOR_sim;CHR2=";
+	convert << end_chr;
+	convert << ";END=";
+	convert << end_pos;
+	convert << ";SVLEN=";
+	convert << end_pos - pos;
+	convert << "\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t1/1\n";
+	return convert.str();
+}
+void print_vcf_svs(FILE *& file, std::vector<struct_var> svs,int id) {
+	for (size_t i = 0; i < svs.size(); i++) {
+		//write pseudo bed:
+		if (svs[i].type == 3) {
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, "TRA", svs[i].target.chr, svs[i].target.start,id).c_str());
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.stop, "TRA", svs[i].target.chr, svs[i].target.stop,id).c_str());
+		} else { // all other types:
+			std::string type = "";
+			switch (svs[i].type) {
+			case 0:
+				type = "DUP";
+				break;
+			case 1:
+				type = "INS";
+				break;
+			case 2:
+				type = "INV";
+				break;
+			case 4:
+				type = "DEL";
+				break;
+			case 5:
+				type = "INVDUP";
+				break;
+			default:
+				break;
+			}
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, type, svs[i].pos.chr, svs[i].pos.stop,id).c_str());
+		}
+		id++;
+	}
+}
+
+void simulate_SV(std::string ref_file, std::string parameter_file,double snp_freq, bool coordinates, std::string output_prefix) {
 	//read in list of SVs over vcf?
 	//apply vcf to genome?
 	srand(time(NULL));
 	parameter par = parse_param(parameter_file);
 	int min_chr_len = std::max(std::max(par.dup_max, par.indel_max), std::max(par.inv_max, par.translocations_max));
 	std::map<std::string, std::string> genome = read_fasta(ref_file, min_chr_len);
-	check_genome(genome, "First:");
+	//check_genome(genome, "First:");
 	std::cout << "generate SV" << std::endl;
 	std::vector<struct_var> svs;
 	if (coordinates) {
 		//simulate reads
 		svs = generate_mutations(parameter_file, genome);
-		check_genome(genome, "Sec:");
+	//	check_genome(genome, "Sec:");
 		apply_mutations(genome, svs);	//problem: We need two different coordinates. Simulate once for one and then for the other???
 	} else { //real read fake ref!
 		svs = generate_mutations_ref(parameter_file, genome);
-		check_genome(genome, "Sec:");
-		apply_mutations_ref(genome, svs);	//problem: We need two different coordinates. Simulate once for one and then for the other???
+	//	check_genome(genome, "Sec:");
+		apply_mutations_ref(genome, svs); //problem: We need two different coordinates. Simulate once for one and then for the other???
 	}
-	check_genome(genome, "Last:");
+	check_genome(genome, "Post SV simulation");
+
+	std::string out = output_prefix;
+	out += ".vcf";
+	FILE *file2;
+	file2 = fopen(out.c_str(), "w");
+	if (file2 == NULL) {
+		std::cout << "Error in printing: The file or path that you set " << out.c_str() << " is not valid. It can be that there is no disc space available." << std::endl;
+		exit(0);
+	}
+	std::cout << "generate SNP" << std::endl;
+	print_vcf_header2(file2, genome);
+	int id=0;
+	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
+		for (size_t pos = 0; pos < (*i).second.size(); pos++) {
+			if (rand() % 100 < snp_freq) {
+				char new_nuc = mut_char(toupper((*i).second[pos]));
+				print_snp_vcf((*i).first, pos, (*i).second[pos], new_nuc, file2,id);
+				id++;
+				(*i).second[pos] = new_nuc;
+			}
+		}
+	}
+
 	std::cout << "write genome" << std::endl;
 	write_fasta(output_prefix, genome);
 	std::cout << "write SV" << std::endl;
 	write_sv(output_prefix, svs);
+	print_vcf_svs(file2, svs,id);
 }
 
 void generate_parameter_file(std::string parameter_file) {
@@ -855,8 +1021,5 @@ void generate_parameter_file(std::string parameter_file) {
 	fprintf(file2, "%s", "INV_dup_maximum_length: 800\n");
 	fprintf(file2, "%s", "INV_dup_number: 2\n");
 
-	/*fprintf(file2, "%s", "INTRA_TRANS_minimum_length: 600\n");
-	 fprintf(file2, "%s", "INTRA_TRANS_maximum_length: 800\n");
-	 fprintf(file2, "%s", "INTRA_TRANS_number: 2\n");*/
 	fclose(file2);
 }
