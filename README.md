@@ -48,6 +48,7 @@ Possible options
 13: Summarize SVs events in VCF file
 ```
 
+__Please note:__ SURIVOVR assumes that the sequences in the fasta file for the reference does not exceed 200,000bp.
 **************************************
 ## CONTACT:
 
