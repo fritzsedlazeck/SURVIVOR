@@ -37,7 +37,7 @@ Possible options
 2: Simulate PacBio/ONT reads
 3: Evaluate SV calling
 4: Convert Bionano smap to vcf file
-5: Consensus call from 2/3 callers
+5: Consensus call from multipe SV calls (vcf files)
 6: Extract genes influenced by SVs
 7: Filter and convert SV calls from Delly
 8: Converts vcf to bedpe
