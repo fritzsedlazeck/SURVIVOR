@@ -68,15 +68,25 @@ std::map<std::string, std::string> parse_vcf(std::string vcf_file) {
 	}
 	return genome;
 }
-void overlap_snps(std::string svs_file, std::string snp_file, int max_dist, int min_svs, std::string output) {
 
-	Parameter::Instance()->min_freq = 0.05;   //TODO parameter?
+//check this out!
+
+void overlap_snps(std::string svs_file, std::string snp_file, int max_dist, int min_svs, int allele, std::string output) {
+
+	Parameter::Instance()->min_freq = (double) allele / 100; // 0.05;   //TODO parameter?
+	//cout << "AF: " << Parameter::Instance()->min_freq << endl;
 
 	std::map<std::string, std::string> genome = parse_vcf(svs_file);
 
 	std::vector<strvcfentry> entries = parse_vcf(svs_file, min_svs);
+
+	/*	for (size_t j = 0; j < entries.size(); j++) {
+	 cout << entries[j].start.pos << "\t" << entries[j].stop.pos << "\t" << entries[j].type << endl;
+	 }
+	 exit(0);*/
 	std::cout << "merging entries: " << entries.size() << std::endl;
 	for (size_t j = 0; j < entries.size(); j++) {
+
 		int start = std::max(0, (int) entries[j].start.pos - max_dist);
 		int stop = std::min((int) genome[entries[j].start.chr].size(), (int) entries[j].stop.pos + max_dist);
 
@@ -124,7 +134,7 @@ void overlap_snps(std::string svs_file, std::string snp_file, int max_dist, int 
 		exit(0);
 	}
 	myfile.getline(buffer, buffer_size); //avoid header
-//	fprintf(file, "%s", buffer);
+	//fprintf(file, "%s", buffer);
 //	fprintf(file, "%s", "\tSV\n");
 
 	myfile.getline(buffer, buffer_size);
@@ -133,90 +143,113 @@ void overlap_snps(std::string svs_file, std::string snp_file, int max_dist, int 
 		if (buffer[0] != '#') {
 			int count = 0;
 			breakpoint_str snp;
-
+			double pval = 1000;
 			int start = 0;
 			int stop = 0;
+			int pop = 0;
+			bool flag = true;
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-				if (count == 0 && buffer[i] != '\t') {
-					snp.chr += buffer[i];
+				if (count == 11 && buffer[i] != '\t') {
+					if (buffer[i] == ';') {
+						flag = false;
+					}
+					if (flag) {
+						snp.chr += buffer[i];
+					}
 					//std::cout << "to find" << snp.chr << " ";
 				}
-				if (count == 1 && buffer[i - 1] == '\t') {
+				if (count == 12 && buffer[i - 1] == '\t') {
 					start = atoi(&buffer[i]);
-					//std::cout << snp.position << std::endl;
+					stop = start;
+					//std::cout << snp.chr <<" " <<start << std::endl;
 				}
-				if (count == 2 && buffer[i - 1] == '\t') {
-					stop = atoi(&buffer[i]);
+				if (count == 30 && buffer[i - 1] == '\t') {
+					pval = atof(&buffer[i]);
+					//if (start == 119380704) {
+					//	cout << pval<<" "<<buffer[i]<<buffer[i+1]<<buffer[i+2]<< endl;
+					//}
 				}
+				if (count == 37 && buffer[i - 1] == '\t') {
+					pop = atoi(&buffer[i]);
+
+					//	cout<<pop<<" "<<pval<<endl;
+					//	exit(0);
+					break;
+				}
+				/*if (count == 2 && buffer[i - 1] == '\t') {
+				 stop = atoi(&buffer[i]);
+				 }*/
 				if (buffer[i] == '\t') {
 					count++;
+					flag = true;
 				}
 			}
-
-			std::string SV = "NA";
-			for (size_t i = start; i <= stop; i++) {
-				if (genome.find(snp.chr) != genome.end() && genome[snp.chr].size() > i) {
-					if (genome[snp.chr][i] == 'T') {
-						SV = "TRA";
-						break;
-					} else if (genome[snp.chr][i] == 'I') {
-						SV = "INS";
-						break;
-					} else if (genome[snp.chr][i] == 'U') {
-						SV = "UNK";
-						break;
-					} else if (genome[snp.chr][i] == 'D') {
-						SV = "DEL";
-						break;
-					} else if (genome[snp.chr][i] == 'P') {
-						SV = "DUP";
-						break;
-					} else if (genome[snp.chr][i] == 'C') {
-						SV = "CNV";
-						break;
-					} else if (genome[snp.chr][i] == 'V') {
-						SV = "INV";
-						break;
-					} else {
-						SV = "NA";
+			if (start == 119380704) {
+				cout << "pop: " << pop << " " << pval << endl;
+			}
+			if (pop >= 1000 && pval > 0) {
+				std::string SV = "NA";
+				for (size_t i = start; i <= stop; i++) {
+					if (genome.find(snp.chr) != genome.end() && genome[snp.chr].size() > i) {
+						if (genome[snp.chr][i] == 'T') {
+							SV = "TRA";
+							break;
+						} else if (genome[snp.chr][i] == 'I') {
+							SV = "INS";
+							break;
+						} else if (genome[snp.chr][i] == 'U') {
+							SV = "UNK";
+							break;
+						} else if (genome[snp.chr][i] == 'D') {
+							SV = "DEL";
+							break;
+						} else if (genome[snp.chr][i] == 'P') {
+							SV = "DUP";
+							break;
+						} else if (genome[snp.chr][i] == 'C') {
+							SV = "CNV";
+							break;
+						} else if (genome[snp.chr][i] == 'V') {
+							SV = "INV";
+							break;
+						} else {
+							SV = "NA";
+						}
 					}
 				}
+
+				/*fprintf(file, "%s", snp.chr.c_str());
+				 fprintf(file, "%c", '\t');
+				 fprintf(file, "%i", start);
+				 fprintf(file, "%c", '\t');*/
+				fprintf(file, "%e", pval);
+				//	fprintf(file, "%s", std::string(buffer).c_str());
+				fprintf(file, "%c", '\t');
+				/*	if (genome.find(snp.chr) != genome.end() && genome[snp.chr].size() > snp.position) {
+				 if (genome[snp.chr][snp.position] == 'T') {
+				 fprintf(file, "%s", "TRA");
+				 } else if (genome[snp.chr][snp.position] == 'I') {
+				 fprintf(file, "%s", "INS");
+				 } else if (genome[snp.chr][snp.position] == 'U') {
+				 fprintf(file, "%s", "UNK");
+				 } else if (genome[snp.chr][snp.position] == 'D') {
+				 fprintf(file, "%s", "DEL");
+				 } else if (genome[snp.chr][snp.position] == 'P') {
+				 fprintf(file, "%s", "DUP");
+				 } else if (genome[snp.chr][snp.position] == 'C') {
+				 fprintf(file, "%s", "CNV");
+				 } else if (genome[snp.chr][snp.position] == 'V') {
+				 fprintf(file, "%s", "INV");
+				 } else {
+				 fprintf(file, "%s", "NA");
+				 }
+				 } else {
+				 std::cout << "error: " << snp.chr << " " << snp.position << std::endl;
+				 fprintf(file, "%s", "ERR");
+				 }*/
+				fprintf(file, "%s", SV.c_str());
+				fprintf(file, "%c", '\n');
 			}
-
-			/*fprintf(file, "%s", snp.chr.c_str());
-			 fprintf(file, "%c", '\t');
-			 fprintf(file, "%i", snp.position);
-			 fprintf(file, "%c", '\t');
-			 fprintf(file, "%f", eaf);
-			 fprintf(file, "%c", '\t');
-			 fprintf(file, "%f", pval);*/
-			fprintf(file, "%s", buffer);
-			fprintf(file, "%c", '\t');
-			/*	if (genome.find(snp.chr) != genome.end() && genome[snp.chr].size() > snp.position) {
-			 if (genome[snp.chr][snp.position] == 'T') {
-			 fprintf(file, "%s", "TRA");
-			 } else if (genome[snp.chr][snp.position] == 'I') {
-			 fprintf(file, "%s", "INS");
-			 } else if (genome[snp.chr][snp.position] == 'U') {
-			 fprintf(file, "%s", "UNK");
-			 } else if (genome[snp.chr][snp.position] == 'D') {
-			 fprintf(file, "%s", "DEL");
-			 } else if (genome[snp.chr][snp.position] == 'P') {
-			 fprintf(file, "%s", "DUP");
-			 } else if (genome[snp.chr][snp.position] == 'C') {
-			 fprintf(file, "%s", "CNV");
-			 } else if (genome[snp.chr][snp.position] == 'V') {
-			 fprintf(file, "%s", "INV");
-			 } else {
-			 fprintf(file, "%s", "NA");
-			 }
-			 } else {
-			 std::cout << "error: " << snp.chr << " " << snp.position << std::endl;
-			 fprintf(file, "%s", "ERR");
-			 }*/
-			fprintf(file, "%s", SV.c_str());
-			fprintf(file, "%c", '\n');
-
 		}
 		myfile.getline(buffer, buffer_size);
 	}
@@ -245,17 +278,44 @@ std::vector<breakpoint_str> parse_chrs(char * buffer) {
 
 void parse_pos(char *buffer, std::vector<breakpoint_str>&snps) {
 	size_t i = 0;
-	size_t id = 1;
+	size_t id = 0;
 	breakpoint_str tmp;
-	snps[0].position = atoi(&buffer[i]);
-	while (buffer[i] != '\t' && buffer[i] != ' ') {
+	int pos = atoi(&buffer[i]);
+	while (buffer[i] != '\t') {
 		if (buffer[i - 1] == ';') {
-			snps[id].position = atoi(&buffer[i]);
+			if (id < snps.size()) {
+				snps[id].position = pos;					//
+			}
+			pos = atoi(&buffer[i]);
 			id++;
 		}
 		i++;
 	}
-	snps[id].position = atoi(&buffer[i]);
+	if (id < snps.size()) {
+		snps[id].position = pos;
+
+	} else {
+		cout << "Strange" << endl;
+	}
+}
+
+void parse_pos(std::string buffer, int& pos, std::string& chr) {
+	size_t i = 0;
+	int count = 0;
+
+	while (buffer[i] != '\t') {
+		if (count == 0 && buffer[i] != ':') {
+			chr += buffer[i];
+		}
+		if (count == 1 && buffer[i - 1] == ':') {
+			pos = atoi(&buffer[i]);
+			break;
+		}
+		if (buffer[i] == ':') {
+			count++;
+		}
+		i++;
+	}
 }
 void overlap_snps_gwas(std::string svs_file, int max_dist, int min_svs, std::string output) {
 
@@ -298,13 +358,12 @@ void overlap_snps_gwas(std::string svs_file, int max_dist, int min_svs, std::str
 		}
 	}
 
-	cout<<"Start parsing"<<endl;
+	cout << "Start parsing" << endl;
 	FILE *file;
 	file = fopen(output.c_str(), "w");
 
 	int num = 0;
-	while (
-			!cin.eof()) {
+	while (!cin.eof()) {
 		std::string buffer;
 		getline(cin, buffer);
 		if (!cin.fail()) {
@@ -314,21 +373,23 @@ void overlap_snps_gwas(std::string svs_file, int max_dist, int min_svs, std::str
 				fprintf(file, "%s", "SVs");
 				fprintf(file, "%c", '\n');
 			} else {
-				int count = 0;
+				//	int count = 0;
 				std::string chr = "";
 				int pos = 0;
-				for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-					if (count == 3 && buffer[i] != '\t') {
-						chr += buffer[i];
-					}
-					if (count == 4 && buffer[i - 1] == '\t') {
-						pos = atoi(&buffer[i]);
-						break;
-					}
-					if (buffer[i] == '\t') {
-						count++;
-					}
-				}
+				parse_pos(buffer, pos, chr);
+				/*	for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+
+				 if (count == 3 && buffer[i] != '\t') {
+				 chr += buffer[i];
+				 }
+				 if (count == 4 && buffer[i - 1] == '\t') {
+				 pos = atoi(&buffer[i]);
+				 break;
+				 }
+				 if (buffer[i] == '\t') {
+				 count++;
+				 }
+				 }*/
 				//cout<<chr<<" "<<pos<<endl;
 				fprintf(file, "%s", buffer.c_str());
 				fprintf(file, "%c", '\t');
@@ -439,5 +500,146 @@ void overlap_snps_gwas(std::string svs_file, int max_dist, int min_svs, std::str
 	 }
 	 myfile.close();*/
 	fclose(file);
+}
+
+void overlap_snpsGWASDB(std::string svs_file, std::string snp_file, int max_dist, int min_svs, int allele, std::string output) {
+
+	Parameter::Instance()->min_freq = 0.05;   //TODO parameter?
+	std::map<std::string, std::string> genome = parse_vcf(svs_file);
+
+	std::vector<strvcfentry> entries = parse_vcf(svs_file, min_svs);
+	srand(time(NULL));
+	for (size_t i = 0; i < entries.size(); i++) {
+		int chr = rand() % genome.size();
+		int num = 0;
+		for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end(); j++) {
+			if (num == chr) {
+				entries[i].start.chr=(*j).first;
+				entries[i].stop.chr=(*j).first;
+				int len = entries[i].stop.pos - entries[i].start.pos;
+				entries[i].start.pos=rand() % ((*j).second.size() - len);
+				entries[i].stop.pos=entries[i].start.pos+len;
+			//	cout<<(*j).first<<" "<< entries[i].start.pos<<endl;
+				break;
+			}
+			num++;
+		}
+	}
+
+	std::cout << "merging entries: " << entries.size() << std::endl;
+	for (size_t j = 0; j < entries.size(); j++) {
+		int start = std::max(0, (int) entries[j].start.pos - max_dist);
+		int stop = std::min((int) genome[entries[j].start.chr].size(), (int) entries[j].stop.pos + max_dist);
+		if (entries[j].type == 0 || (entries[j].type == 1 || entries[j].type == 6)) {
+			char sv = 'D';   //del
+			if (entries[j].type == 1) {
+				sv = 'P'; //DUP
+			} else if (entries[j].type == 6) {
+				sv = 'C'; //CNV
+			}
+			for (int pos = start; pos < stop; pos++) {
+				genome[entries[j].start.chr][pos] = sv;
+			}
+		} else {
+			char sv = 'V'; //INV
+			if (entries[j].type == 3) {
+				sv = 'T'; //TRA
+			} else if (entries[j].type == 4) {
+				sv = 'I'; //INS
+			} else if (entries[j].type == 5) {
+				sv = 'U';
+			}
+
+			for (int pos = start; pos < entries[j].start.pos + max_dist && pos < (int) genome[entries[j].start.chr].size(); pos++) {
+				genome[entries[j].start.chr][pos] = sv;
+			}
+
+			for (int pos = stop; pos < entries[j].stop.pos + max_dist && pos < (int) genome[entries[j].stop.chr].size(); pos++) {
+				genome[entries[j].stop.chr][pos] = sv;
+			}
+		}
+	}
+
+	size_t buffer_size = 2000000;
+	char*buffer = new char[buffer_size];
+	std::ifstream myfile;
+	myfile.open(snp_file.c_str(), std::ifstream::in);
+	if (!myfile.good()) {
+		std::cout << "SNP Parser: could not open file: " << snp_file.c_str() << std::endl;
+		exit(0);
+	}
+	FILE *file;
+	file = fopen(output.c_str(), "w");
+
+	myfile.getline(buffer, buffer_size);
+	//fprintf(file, "%s", buffer);
+//	fprintf(file, "%c", '\t');
+	fprintf(file, "%s", "CHR\tPOS\tPval\tSVs");
+	fprintf(file, "%c", '\n');
+	myfile.getline(buffer, buffer_size);
+
+	while (!myfile.eof()) {
+		//cout << "parse" << endl;
+		int pop = 0;
+		int count = 0;
+		std::vector<breakpoint_str> snps;
+
+		snps = parse_chrs(buffer);
+
+		double pvalue = 10000;
+		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+
+			if (count == 1 && buffer[i - 1] == '\t') {
+				parse_pos(&buffer[i], snps);
+			}
+			if (count == 4 && buffer[i - 1] == '\t') {
+				pvalue = atof(&buffer[i]);
+			}
+			if (count == 5 && buffer[i]!='N' &&  buffer[i - 1] == '\t') {
+				pop = atoi(&buffer[i]);
+			}
+			if (buffer[i] == '\t') {
+				count++;
+			}
+		}
+
+		if (pop > 1000) {
+			//cout<<snps[0].chr<<" "<< snps[0].position<<endl;
+			//cout << "print: " << snps.size() << endl;
+			for (size_t i = 0; i < snps.size(); i++) {
+				if (genome.find(snps[i].chr) != genome.end() && genome[snps[i].chr].size() > snps[i].position) {
+
+					breakpoint_str snp = snps[i];
+					fprintf(file, "%s", snps[i].chr.c_str());
+					fprintf(file, "%c", '\t');
+					fprintf(file, "%i", snps[i].position);
+					fprintf(file, "%c", '\t');
+					fprintf(file, "%e", pvalue);
+					fprintf(file, "%c", '\t');
+					std::string SV = "NA";
+					if (genome[snp.chr][snp.position] == 'T') {
+						SV = "TRA";
+					} else if (genome[snp.chr][snp.position] == 'I') {
+						SV = "INS";
+					} else if (genome[snp.chr][snp.position] == 'U') {
+						SV = "UNK";
+					} else if (genome[snp.chr][snp.position] == 'D') {
+						SV = "DEL";
+					} else if (genome[snp.chr][snp.position] == 'P') {
+						SV = "DUP";
+					} else if (genome[snp.chr][snp.position] == 'C') {
+						SV = "CNV";
+					} else if (genome[snp.chr][snp.position] == 'V') {
+						SV = "INV";
+					}
+					fprintf(file, "%s", SV.c_str());
+					fprintf(file, "%c", '\n');
+				}
+			}
+		}
+		//	cout << "fin" << endl;
+		myfile.getline(buffer, buffer_size);
+	}
+	myfile.close();
 }
 

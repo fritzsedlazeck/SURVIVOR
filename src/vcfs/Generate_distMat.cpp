@@ -11,7 +11,7 @@ bool is_file_exist(const char *fileName) {
 	return infile.good();
 }
 
-std::map<std::string, size_t> parse_sample_names(std::string filename) {
+std::vector<std::string> parse_sample_names(std::string filename) {
 	size_t buffer_size = 200000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
@@ -23,30 +23,28 @@ std::map<std::string, size_t> parse_sample_names(std::string filename) {
 	}
 
 	myfile.getline(buffer, buffer_size);
-	int num = 0;
-	std::map<std::string, size_t> names;
+
+	std::vector<std::string> names;
 	while (!myfile.eof()) {
 		if (buffer[0] == '#' && buffer[1] != '#') {
 			//parse line!
 			int count = 0;
 			std::string name = "";
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\n' && buffer[i] != '\0'; i++) {
-				if (count > 8 && buffer[i] != '\t') {
+				if (count > 8 && buffer[i] != '\t' && name.size()<64) {
 					name += buffer[i];
 				}
 				if (buffer[i] == '\t') {
 					if (!name.empty()) {
-						//std::cout<<"Name: "<<name<<std::endl;
-						names[name] = num;
-						num++;
+						names.push_back(name);
 						name.clear();
 					}
 					count++;
 				}
 			}
+
 			if (!name.empty()) {
-				names[name] = num;
-				num++;
+				names.push_back(name);
 				name.clear();
 			}
 		} else if (buffer[0] != '#') {
@@ -67,7 +65,8 @@ bool not_set(char * buffer){
 	}
 	return false;
 }
-void update_mat(std::string filename, std::vector<std::vector<int> > &samples_mat, std::map<std::string, size_t> sample_names) {
+void update_mat(std::string filename, std::vector<std::vector<int> > &samples_mat, std::vector<std::string> sample_names) {
+	//std::cerr<<"Parser was adapted for bug with two tabs!"<<std::endl;
 	size_t buffer_size = 200000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
@@ -78,6 +77,7 @@ void update_mat(std::string filename, std::vector<std::vector<int> > &samples_ma
 		exit(0);
 	}
 	myfile.getline(buffer, buffer_size);
+	int num=0;
 	while (!myfile.eof()) {
 		if (buffer[0] != '#') {
 			int count = 0;
@@ -90,17 +90,23 @@ void update_mat(std::string filename, std::vector<std::vector<int> > &samples_ma
 						ids.push_back(id);
 					}
 					id++;
+
 				}
 				if (buffer[i] == '\t') {
 					count++;
 				}
 			}
+			//std::cout<<"ID: "<<id <<" maxx: "<<samples_mat.size()<<std::endl;
 			//update mat:
 			for (size_t i = 0; i < ids.size(); i++) {
 				for (size_t j = 0; j < ids.size(); j++) { //check me!
 					samples_mat[ids[i]][ids[j]]++;
 				}
 			}
+			if(num%10000==0){
+				std::cout<<" Processed SV: "<<num<<std::endl;
+			}
+			num++;
 		}
 		myfile.getline(buffer, buffer_size);
 	}
@@ -108,7 +114,7 @@ void update_mat(std::string filename, std::vector<std::vector<int> > &samples_ma
 
 void generate_dist_mat(std::string svs_vcf, std::string snp_vcf, std::string weighted_file, std::string output) {
 	//determine # samples:
-	std::map<std::string, size_t> sample_names;
+	std::vector<std::string> sample_names;
 	if (is_file_exist(svs_vcf.c_str())) {
 		sample_names = parse_sample_names(svs_vcf);
 	} else if (is_file_exist(snp_vcf.c_str())) {
@@ -125,6 +131,8 @@ void generate_dist_mat(std::string svs_vcf, std::string snp_vcf, std::string wei
 	tmp.assign(sample_names.size(), 0);
 	samples_mat.assign(sample_names.size(), tmp);
 
+	std::cout<<"Finished int"<<std::endl;
+
 	if (is_file_exist(svs_vcf.c_str())) {
 		update_mat(svs_vcf, samples_mat, sample_names);
 	}
@@ -134,19 +142,17 @@ void generate_dist_mat(std::string svs_vcf, std::string snp_vcf, std::string wei
 	if (is_file_exist(weighted_file.c_str())) {
 		//	update_mat_weights(weighted_file, samples_mat, sample_names);
 	}
-
+	std::cout<<"Printing:"<<std::endl;
 	//print matrix:
 	FILE * file = fopen(output.c_str(), "w");
 	fprintf(file, "%i",(int)sample_names.size());
 	fprintf(file, "%c", '\n');
 
-	for (std::map<std::string, size_t>::iterator i = sample_names.begin(); i != sample_names.end(); i++) {
-		for(size_t j=0;j<63 && j<(*i).first.size();j++){
-			fprintf(file, "%c", (*i).first[j]);
-		}
-		for (std::map<std::string, size_t>::iterator j = sample_names.begin(); j != sample_names.end(); j++) {
+	for (size_t i = 0; i != sample_names.size(); i++) {
+		fprintf(file, "%s",sample_names[i].c_str());
+		for (size_t j = 0; j <sample_names.size(); j++) {
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", samples_mat[(*i).second][(*j).second]);
+			fprintf(file, "%i", samples_mat[i][j]);
 		}
 		fprintf(file, "%c", '\n');
 	}

@@ -333,7 +333,9 @@ void IntervallTree::get_breakpoints(TNode *p, std::vector<SVS_Node *> & points) 
 void IntervallTree::get_breakpoints(TNode *p, std::map<std::string, std::vector<SVS_Node *> > & points) {
 	if (p != NULL) {
 		get_breakpoints(p->left, points);
-		points[p->get_data()->first.chr].push_back(p->get_data());
+		if(p->get_data()->caller_info.size()>=Parameter::Instance()->min_support){
+			points[p->get_data()->first.chr].push_back(p->get_data());
+		}
 		get_breakpoints(p->right, points);
 	}
 }

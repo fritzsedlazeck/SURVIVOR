@@ -203,7 +203,7 @@ void comp_overlap(std::vector<strvcfentry> entries, std::vector<strgene> genes, 
 }
 
 void overlap_gtf(std::string vcf_file, std::string gtf_file, int max_distance, int min_num_occurance, int max_num_occurance, int type, std::string output) {
-	std::vector<strvcfentry> entries = parse_vcf(vcf_file,0);
+	std::vector<strvcfentry> entries = parse_vcf(vcf_file, 0);
 	std::vector<strgene> genes = parse_annotation_bed(gtf_file);
 	std::cout << "parsed genes: " << genes.size() << std::endl;
 	//std::cout<<"gene[0] "<< genes[0].region.start<<std::endl;
@@ -505,7 +505,9 @@ short get_type(char * buffer) {
 	size_t i = 0;
 	std::string type;
 	while (buffer[i] != '>' && buffer[i] != '\t') {
-		type += buffer[i];
+		if (buffer[i] != '<') {
+			type += buffer[i];
+		}
 		i++;
 	}
 	if (strcmp(type.c_str(), "DEL") == 0) {
@@ -597,13 +599,12 @@ void generate_gene_list(std::string vcf_file, std::string annotation, int max_di
 		exit(0);
 	}
 
-
 	std::map<std::string, bool> gene_names;
 	myfile.getline(buffer, buffer_size);
 	while (!myfile.eof()) {
 		int count = 0;
-		int start=0;
-		int stop=0;
+		int start = 0;
+		int stop = 0;
 		std::string chr;
 		int overlaps = -1;
 		std::string gene_name;

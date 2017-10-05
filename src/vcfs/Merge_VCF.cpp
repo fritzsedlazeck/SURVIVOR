@@ -373,6 +373,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 					tmp.strands.first = (bool) (buffer[i + 4] != '5');
 					tmp.strands.second = (bool) (buffer[i + 7] != '5');
 				}
+
 				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i], "HOMLEN=", 7) == 0 || strncmp(&buffer[i], "AVGLEN=", 7) == 0)) {
 					tmp.sv_len = abs((int) atof(&buffer[i + 7]));
 					//		std::cout<<"LEN: "<<tmp.sv_len<<std::endl;
@@ -388,7 +389,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 					tmp.strands.second = (bool) (buffer[i + 10] == '+');
 				}
 
-				if (count == 9 && buffer[i - 1] == '\t') { //parsing genotype;
+				if (count >= 9 && buffer[i - 1] == '\t' && (!tmp.genotype.empty() && tmp.genotype[0]!='.')) { //parsing genotype;
 					size_t j = i;
 					tmp.genotype = "";
 					while (buffer[j] != '\0' && buffer[j] != ':') {

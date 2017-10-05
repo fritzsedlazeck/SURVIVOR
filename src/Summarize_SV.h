@@ -21,6 +21,6 @@
 using namespace std;
 void summary_SV(std::string filename, int min_size, int max_size, int min_reads,std::string output);
 void summary_venn(std::string filename, std::string output);
-
+void summary_SV_stream(int min_size, int max_size, std::string output);
 
 #endif /* SUMMARIZE_SV_H_ */

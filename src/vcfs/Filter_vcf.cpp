@@ -73,10 +73,8 @@ bool pass_filter(strentry entry, strregion region, std::vector<strregion> ignore
 		}
 
 	}
-	if (entry.valid > 0) {
-		return true;
-	}
-	return false;
+
+	return true;
 }
 
 //parse the bed file that defines regions that should be ignored:
@@ -118,7 +116,7 @@ std::vector<strregion> parse_bed(std::string filename) {
 	return ignore_regions;
 }
 
-void filter_vcf(std::string vcf_file, std::string genomic_regions, int min_alternative_pairs, float min_alt_ref_ratio, int max_genotype, std::string outputvcf) {
+void filter_vcf(std::string vcf_file, std::string genomic_regions, std::string outputvcf) {
 
 	std::vector<strregion> ignore_regions = parse_bed(genomic_regions);
 	//parse vcf file and write vcf file in one go:
@@ -149,7 +147,7 @@ void filter_vcf(std::string vcf_file, std::string genomic_regions, int min_alter
 			entry.not_covered = 0;
 			entry.not_valid = 0;
 			entry.valid = 0;
-			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n' && count < 9; i++) {
 				if (count == 0 && buffer[i] != '\t') {
 					region.start.chr += buffer[i];
 				}
@@ -161,9 +159,6 @@ void filter_vcf(std::string vcf_file, std::string genomic_regions, int min_alter
 				}
 				if (count == 7 && strncmp(&buffer[i], "SVLEN=", 5) == 0) {
 					region.stop = parse_stop(&buffer[i]);
-				}
-				if (count >= 9 && buffer[i - 1] == '\t') {
-					translate(&buffer[i], min_alternative_pairs, min_alt_ref_ratio, max_genotype, entry);
 				}
 				if (buffer[i] == '\t') {
 					count++;

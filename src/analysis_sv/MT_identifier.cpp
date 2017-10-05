@@ -11,7 +11,7 @@ int parse_read_start(std::string cigar, bool strand) {
 	int pos = 0;
 	if (strand) {
 		size_t found = cigar.find_first_of("S");
-		pos = std::stoi(cigar.substr(0, found), &sz);
+		pos = 0;//stoi(cigar.substr(0, found), &sz);
 	} else {
 		std::string tmp="";
 		std::string::reverse_iterator i = cigar.rbegin();
@@ -20,7 +20,7 @@ int parse_read_start(std::string cigar, bool strand) {
 			tmp+=(*i);
 		}
 		cout<<"Check Cigar backend:" << tmp<<std::endl;
-		pos = std::stoi(tmp, &sz);
+		pos = 0;//stoi(tmp, &sz);
 	}
 	return pos;
 }
@@ -88,7 +88,7 @@ void detect_MT_copies(std::string chr_identifier) {
 					found = line.find_first_of("LN:");
 					found += 3;
 					std::string::size_type sz;   // alias of size_t
-					int len = std::stoi(line.substr(found), &sz);   //get chr size
+					int len = 0;//std::stoi(line.substr(found), &sz);   //get chr size
 					min_len = len * 2;
 					std::cout << "LEN: " << min_len << std::endl;
 				} else {

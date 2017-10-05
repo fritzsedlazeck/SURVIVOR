@@ -30,6 +30,7 @@ struct breakpoint_str {
 class Support_Node{
 public:
 	Support_Node(){
+		id=0;
 		len=0;
 		num_support.first=0;
 		num_support.second=0;
@@ -40,11 +41,12 @@ public:
 	~Support_Node(){
 
 	}
+	int id;
 	int len;
 	std::vector<short> types;
 	std::vector<short> sv_lengths;
-	std::vector<breakpoint_str> starts;
-	std::vector<breakpoint_str> stops;
+	std::vector<int> starts;
+	std::vector<int> stops;
 	std::pair<int,int> num_support;
 	std::pair<bool,bool> strand;
 	std::string genotype;

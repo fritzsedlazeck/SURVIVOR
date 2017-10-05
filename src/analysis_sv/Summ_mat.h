@@ -20,6 +20,6 @@
 using namespace std;
 
 void summarize_svs_table_window (std::string venn_file,int window,std::string output);
-
+void summarize_svs_table_window_stream(int window, std::string output);
 
 #endif /* ANALYSIS_SV_SUMM_MAT_H_ */

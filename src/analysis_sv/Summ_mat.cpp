@@ -65,6 +65,11 @@ void summarize_svs_table_window(std::string venn_file, int window, std::string o
 	FILE *file;
 	file = fopen(output.c_str(), "w");
 
+	FILE* file2;
+	std::string out = output;
+	out += "perpatient";
+	file2 = fopen(out.c_str(), "w");
+
 	int last_pos = 0;
 
 	std::vector<std::string> mat;
@@ -92,7 +97,30 @@ void summarize_svs_table_window(std::string venn_file, int window, std::string o
 							//	fprintf(file, "%s", (*patterns.begin()).first.c_str());
 							//	fprintf(file, "%c", ':');
 							process_patterns(mat, file);
+
+							fprintf(file2, "%s", last_chr.c_str());
+							fprintf(file2, "%c", ':');
+							fprintf(file2, "%i", (int) last_pos);
+							fprintf(file2, "%c", ':');
+
+							vector<short> patients;
+							patients.assign(mat[0].size(), 0);
+							for (size_t i = 0; i < mat.size(); i++) {
+								for (size_t j = 0; j < mat[i].size(); j++) {
+									if (mat[i][j] == '1') {
+										patients[j]++;
+									}
+								}
+							}
+
+							for (size_t i = 0; i < patients.size(); i++) {
+								fprintf(file2, "%c", '\t');
+								fprintf(file2, "%i", (int) patients[i]);
+
+							}
+							fprintf(file2, "%c", '\n');
 							mat.clear();
+
 						}
 						last_pos = pos;
 						last_chr = chr;
@@ -101,7 +129,6 @@ void summarize_svs_table_window(std::string venn_file, int window, std::string o
 				}
 				if (count > 9 && buffer[i - 1] == '\t') {
 					pattern += parse_inf(&buffer[i]);
-
 				}
 				if (buffer[i] == '\t') {
 					count++;
@@ -110,6 +137,92 @@ void summarize_svs_table_window(std::string venn_file, int window, std::string o
 			mat.push_back(pattern);
 		}
 		myfile.getline(buffer, buffer_size);
+	}
+	fclose(file);
+}
+
+void summarize_svs_table_window_stream(int window, std::string output) {
+
+	FILE *file;
+	file = fopen(output.c_str(), "w");
+
+	FILE* file2;
+	std::string out = output;
+	out += "perpatient";
+	file2 = fopen(out.c_str(), "w");
+
+	int last_pos = 0;
+
+	std::vector<std::string> mat;
+	std::string last_chr = "";
+	while (!cin.eof()) {
+		std::string buffer;
+		getline(cin, buffer);
+		if (!cin.fail()) {
+			if (buffer[0] != '#') {
+				int pos = 0;
+				std::string chr;
+				int count = 0;
+				std::string pattern;
+				for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+					if (count == 0 && buffer[i] != '\t') {
+						chr += buffer[i];
+					}
+					if (count == 1 && buffer[i - 1] == '\t') {
+						pos = atoi(&buffer[i]);
+
+						if (pos - last_pos > window || (strcmp(chr.c_str(), last_chr.c_str()) != 0)) {
+							//process entries;
+							if (mat.size() > 0) {
+								fprintf(file, "%s", last_chr.c_str());
+								fprintf(file, "%c", ':');
+								fprintf(file, "%i", (int) last_pos);
+								fprintf(file, "%c", ':');
+								//	fprintf(file, "%s", (*patterns.begin()).first.c_str());
+								//	fprintf(file, "%c", ':');
+								process_patterns(mat, file);
+
+								fprintf(file2, "%s", last_chr.c_str());
+								fprintf(file2, "%c", ':');
+								fprintf(file2, "%i", (int) last_pos);
+								fprintf(file2, "%c", ':');
+
+								vector<short> patients;
+								patients.assign(mat[0].size(), 0);
+								for (size_t i = 0; i < mat.size(); i++) {
+									for (size_t j = 0; j < mat[i].size(); j++) {
+										if (mat[i][j] == '1') {
+											patients[j]++;
+										}
+									}
+								}
+
+								for (size_t i = 0; i < patients.size(); i++) {
+									fprintf(file2, "%c", '\t');
+									fprintf(file2, "%i", (int) patients[i]);
+
+								}
+								fprintf(file2, "%c", '\n');
+								mat.clear();
+
+							}
+							last_pos = pos;
+							last_chr = chr;
+
+						}
+					}
+					if(count==7 && strncmp(&buffer[i],"SUPP_VEC=",9)==0){
+						std::string tmp=buffer.substr(i+9);
+						std::size_t found = tmp.find_first_of(";");
+						pattern=tmp.substr(0,found);
+					}
+					if (buffer[i] == '\t') {
+						count++;
+					}
+				}
+				mat.push_back(pattern);
+			}
+		}
 	}
 	fclose(file);
 }

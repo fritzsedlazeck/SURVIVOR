@@ -300,23 +300,23 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 
 	//tra inter
 	/*std::cout << par.intrachr_num << std::endl;
-	for (int i = 0; i < par.intrachr_num; i++) {
-		mut.type = 6;
-		mut.pos = choose_pos(genome, par.translocations_min, par.translocations_max, svs);
-		//std::cout<<i<<": "<<mut.pos.chr<<" "<<mut.pos.start<<" size: "<<mut.pos.stop-mut.pos.start<<std::endl;
-		mut.target = choose_pos(genome, mut.pos.stop - mut.pos.start, (mut.pos.stop - mut.pos.start) + 1, svs); //TRA has to be of the same size!
-		while (strcmp(mut.target.chr.c_str(), mut.pos.chr.c_str()) != 0) {
-			mut.target = choose_pos(genome, mut.pos.stop - mut.pos.start, (mut.pos.stop - mut.pos.start) + 1, svs);
-		}
+	 for (int i = 0; i < par.intrachr_num; i++) {
+	 mut.type = 6;
+	 mut.pos = choose_pos(genome, par.translocations_min, par.translocations_max, svs);
+	 //std::cout<<i<<": "<<mut.pos.chr<<" "<<mut.pos.start<<" size: "<<mut.pos.stop-mut.pos.start<<std::endl;
+	 mut.target = choose_pos(genome, mut.pos.stop - mut.pos.start, (mut.pos.stop - mut.pos.start) + 1, svs); //TRA has to be of the same size!
+	 while (strcmp(mut.target.chr.c_str(), mut.pos.chr.c_str()) != 0) {
+	 mut.target = choose_pos(genome, mut.pos.stop - mut.pos.start, (mut.pos.stop - mut.pos.start) + 1, svs);
+	 }
 
-		//I need to be sure about the same lenght of the tra!:
-		int size1 = mut.pos.stop - mut.pos.start;
-		int size2 = mut.target.stop - mut.target.start;
+	 //I need to be sure about the same lenght of the tra!:
+	 int size1 = mut.pos.stop - mut.pos.start;
+	 int size2 = mut.target.stop - mut.target.start;
 
-		mut.pos.stop = mut.pos.start + std::min(size1, size2);
-		mut.target.stop = mut.target.start + std::min(size1, size2);
-		svs.push_back(mut);
-	}*/
+	 mut.pos.stop = mut.pos.start + std::min(size1, size2);
+	 mut.target.stop = mut.target.start + std::min(size1, size2);
+	 svs.push_back(mut);
+	 }*/
 	//tra
 	for (int i = 0; i < par.translocations_num; i++) {
 		//	std::cout << "tra" << std::endl;
@@ -677,6 +677,7 @@ void write_fasta(std::string output_prefix, std::map<std::string, std::string> g
 		exit(0);
 	}
 
+	bool flag=false;
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 		fprintf(file2, "%c", '>');
 		fprintf(file2, "%s", (*i).first.c_str());
@@ -689,8 +690,10 @@ void write_fasta(std::string output_prefix, std::map<std::string, std::string> g
 			if ((*i).second[j - 1] != 'X') {
 				fprintf(file2, "%c", (*i).second[j - 1]);
 				len++;
+				flag=true;
 			}
-			if (len % 100 == 0) {
+			if (len % 100 == 0 && flag) {
+				flag=false;
 				fprintf(file2, "%c", '\n');
 			}
 
@@ -818,11 +821,11 @@ char mut_char(char old) {
 		}
 		return nucs[index];
 		break;
-
 	default:
-		return nucs[index];
+		return old;
 		break;
 	}
+	return old;
 }
 const std::string currentDateTime2() {
 	time_t now = time(0);
@@ -867,7 +870,7 @@ void print_vcf_header2(FILE *&file, std::map<std::string, std::string> genome) {
 	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
 	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\n");
 }
-void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, FILE *&file,int id) {
+void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, FILE *&file, int id) {
 	std::ostringstream convert;   // stream used for the conversion
 	convert << chr;
 	convert << "\t";
@@ -884,7 +887,7 @@ void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, F
 	fprintf(file, "%c", '\n');
 }
 
-std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string end_chr, int end_pos,int id) {
+std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string end_chr, int end_pos, int id) {
 	std::ostringstream convert;   // stream used for the conversion
 	convert << chr;
 	convert << "\t";
@@ -905,12 +908,12 @@ std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string
 	convert << "\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t1/1\n";
 	return convert.str();
 }
-void print_vcf_svs(FILE *& file, std::vector<struct_var> svs,int id) {
+void print_vcf_svs(FILE *& file, std::vector<struct_var> svs, int id) {
 	for (size_t i = 0; i < svs.size(); i++) {
 		//write pseudo bed:
 		if (svs[i].type == 3) {
-			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, "TRA", svs[i].target.chr, svs[i].target.start,id).c_str());
-			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.stop, "TRA", svs[i].target.chr, svs[i].target.stop,id).c_str());
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, "TRA", svs[i].target.chr, svs[i].target.start, id).c_str());
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.stop, "TRA", svs[i].target.chr, svs[i].target.stop, id).c_str());
 		} else { // all other types:
 			std::string type = "";
 			switch (svs[i].type) {
@@ -932,13 +935,13 @@ void print_vcf_svs(FILE *& file, std::vector<struct_var> svs,int id) {
 			default:
 				break;
 			}
-			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, type, svs[i].pos.chr, svs[i].pos.stop,id).c_str());
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, type, svs[i].pos.chr, svs[i].pos.stop, id).c_str());
 		}
 		id++;
 	}
 }
 
-void simulate_SV(std::string ref_file, std::string parameter_file,float snp_freq, bool coordinates, std::string output_prefix) {
+void simulate_SV(std::string ref_file, std::string parameter_file, float snp_freq, bool coordinates, std::string output_prefix) {
 	//read in list of SVs over vcf?
 	//apply vcf to genome?
 	srand(time(NULL));
@@ -951,11 +954,11 @@ void simulate_SV(std::string ref_file, std::string parameter_file,float snp_freq
 	if (coordinates) {
 		//simulate reads
 		svs = generate_mutations(parameter_file, genome);
-	//	check_genome(genome, "Sec:");
+		//	check_genome(genome, "Sec:");
 		apply_mutations(genome, svs);	//problem: We need two different coordinates. Simulate once for one and then for the other???
 	} else { //real read fake ref!
 		svs = generate_mutations_ref(parameter_file, genome);
-	//	check_genome(genome, "Sec:");
+		//	check_genome(genome, "Sec:");
 		apply_mutations_ref(genome, svs); //problem: We need two different coordinates. Simulate once for one and then for the other???
 	}
 	check_genome(genome, "Post SV simulation");
@@ -970,15 +973,20 @@ void simulate_SV(std::string ref_file, std::string parameter_file,float snp_freq
 	}
 	std::cout << "generate SNP" << std::endl;
 	print_vcf_header2(file2, genome);
-	int id=0;
+	int id = 0;
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 		for (size_t pos = 0; pos < (*i).second.size(); pos++) {
-			float x= ((float)rand()/(float)(RAND_MAX));
-			if ( x < snp_freq) {
-				char new_nuc = mut_char(toupper((*i).second[pos]));
-				print_snp_vcf((*i).first, pos, (*i).second[pos], new_nuc, file2,id);
-				id++;
-				(*i).second[pos] = new_nuc;
+			if ((*i).second[pos] != 'X') {
+				float x = ((float) rand() / (float) (RAND_MAX));
+				if (x < snp_freq) {
+					char new_nuc = mut_char(toupper((*i).second[pos]));
+					print_snp_vcf((*i).first, pos, (*i).second[pos], new_nuc, file2, id);
+					id++;
+					(*i).second[pos] = new_nuc;
+				}
+				if ((*i).second[pos] == ' ') {
+					std::cout << "ERR" << std::endl;
+				}
 			}
 		}
 	}
@@ -987,7 +995,7 @@ void simulate_SV(std::string ref_file, std::string parameter_file,float snp_freq
 	write_fasta(output_prefix, genome);
 	std::cout << "write SV" << std::endl;
 	write_sv(output_prefix, svs);
-	print_vcf_svs(file2, svs,id);
+	print_vcf_svs(file2, svs, id);
 }
 
 void generate_parameter_file(std::string parameter_file) {

@@ -18,7 +18,30 @@ void add_event(int pos, size_t & i, vector<differences_str> & events) {
 	events.insert(events.begin() + i, ev);
 }
 
-vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char * md) {
+int get_index(char nuc){
+	switch (nuc) {
+		case 'A':
+			return 0;
+			break;
+		case 'C':
+			return 1;
+			break;
+		case 'G':
+			return 2;
+			break;
+		case 'T':
+			return 3;
+			break;
+		case '-':
+			return 4;
+			break;
+		default:
+			return 5;
+			break;
+	}
+	return 5;
+}
+vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char * md){//,std::string read_seq, vector<vector<int > >error_mat) {
 	//clock_t comp_aln = clock();
 	vector<differences_str> events;
 	int pos = 0; //this->getPosition();
@@ -26,6 +49,7 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 
 	for (size_t i = 0; i < cigar_data.size(); i++) {
 		if (cigar_data[i].Type == 'D') {
+			// in MD!
 			ev.position = pos;
 			ev.type = cigar_data[i].Length; //deletion
 			events.push_back(ev);
@@ -33,8 +57,11 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 		} else if (cigar_data[i].Type == 'I') {
 			ev.position = pos;
 			ev.type = cigar_data[i].Length * -1; //insertion
+			//run pos - pos+len -> X vs. -
+		//	error_mat['-'][get_index(read_seq[pos])]; //ref read
 			events.push_back(ev);
 		} else if (cigar_data[i].Type == 'M') {
+			//in MD
 			pos += cigar_data[i].Length;
 		} else if (cigar_data[i].Type == 'N') {
 			pos += cigar_data[i].Length;
@@ -64,12 +91,13 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 	//comp_aln = clock();
 	size_t i = 0;
 	while (md[i] != '\t') {
-		if (md[i] == '^') {
+		if (md[i] == '^') { //deletion!
 			gap = true;
 		}
 		if ((atoi(&md[i]) == 0 && md[i] != '0')) { //is not a number
 			if (!gap) { // only mismatches are stored. We should have the rest from CIGAR
 				//correct for shift in position with respect to the ref:
+				//
 				while (ref_pos < (int)events.size() && pos > events[ref_pos].position) {
 					if (events[ref_pos].type > 0) {
 						pos += events[ref_pos].type;
@@ -78,6 +106,7 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 				}
 				//store in sorted order:
 				add_event(pos, pos_events, events);
+		//		error_mat[get_index(md[i])][read_seq[pos]];//check that out!
 				pos++; //just the pos on ref!
 			}
 			match = false;
@@ -184,8 +213,14 @@ void generate_error_profile(int min_length, std::string output) {
 
 	std::vector<read_position> error_profile;
 
+	std::vector< vector<int> > error_mat;
+	vector<int> tmp ;
+	tmp.assign(6,0);
+	error_mat.assign(6,tmp);
+
 	//we are using cin to get the data.
 	double num = 0;
+	std::string seq;
 	while (!cin.eof()) {
 		string line;
 		getline(cin, line);
@@ -202,11 +237,14 @@ void generate_error_profile(int min_length, std::string output) {
 							break;
 						}
 					}
-					if (count > 5) {
+					if(count==10 && line[i]!='\t'){
+						seq+=line[i];
+					}
+					if (count > 11) {
 						if (strncmp(&line[i], "MD:Z:", 5) == 0) {
 							//cout << "MD!" << endl;
 							num++;
-							vector<differences_str> diffs = summarizeAlignment(cigar_data, &line[i + 5]);
+							vector<differences_str> diffs= summarizeAlignment(cigar_data, &line[i + 5]);
 							store_diffs(diffs, error_profile);
 							if((int)num%10000==0){
 								cout<<"Scanned: "<<num<<endl;

@@ -48,7 +48,7 @@ int get_support(vector<int> support) {
 	}
 	return count;
 }
-int bin_size(int dist) {
+int bin_size(double dist) {
 	//20-50, 50-100, 100-1000, 1000/
 	if (dist < 50) {
 		return 0;
@@ -252,6 +252,272 @@ void summary_SV(std::string vcf_file, int min_size, int max_size, int min_reads,
 	fclose(file);
 }
 
+void summary_SV_stream(int min_size, int max_size, std::string output) {
+
+	//cout<<min_size<< " MAX "<<max_size<<endl;
+	std::vector<int> len_Del;
+	std::vector<int> len_Dup;
+	std::vector<int> len_Inv;
+	std::vector<int> len_Ins;
+	std::vector<int> len_unk;
+	std::vector<int> support;
+	int TRA = 0;
+	int DEL = 0;
+	int DUP = 0;
+	int INS = 0;
+	int INV = 0;
+	int UNK = 0;
+	std::map<std::string, std::map<int, int> > SV_chrs;
+	int num = 0;
+	while (!cin.eof()) {
+		string line;
+		getline(cin, line);
+		if (!cin.fail()) {
+			if (line[0] != '#') {
+				int count = 0;
+				std::string chr = "";
+				double leng = 0;
+				int supp = 0;
+				short type;
+				for (size_t i = 0; i < line.size(); i++) {
+					if (count == 0 && line[i] != '\t') {
+						chr += line[i];
+					}
+					if (count == 4 && line[i - 1] == '\t') {
+						//	cout<<"T: "<<line[i]<<line[i+1]<<line[i+2]<<endl;
+						type = get_type(&line[i + 1]);
+					}
+					if (count == 7 && strncmp(&line[i], "SUPP=", 5) == 0) { //for lumpy!
+						supp = atoi(&line[i + 5]);
+					}
+					if (count == 7 && strncmp(&line[i], "AVGLEN=", 7) == 0) {
+						leng = atof(&line[i + 7]);
+						break;
+					}
+					if (line[i] == '\t') {
+						count++;
+					}
+				}
+				//		cout<<"chr: "<<chr<<" type: "<<type<<" supp: "<<supp<< " len: "<<leng<<endl;
+				if (max_size < 0 || (leng < max_size || type == 3)) {
+					//summarize the support:
+
+					if (supp != 0) {
+						while (supp >= (int) support.size()) {
+							support.push_back(0);
+						}
+						support[supp]++;
+					}
+					//write it out! based on support + size
+
+					int dist = bin_size(leng); // /step; //abs(entries[i].stop.pos - entries[i].start.pos) / step;
+					if (type == 0) {
+						adjust(len_Del, dist);
+						len_Del[dist]++;
+						DEL++;
+					} else if (type == 2) {
+						adjust(len_Inv, dist);
+						len_Inv[dist]++;
+						INV++;
+					} else if (type == 1) {
+						adjust(len_Dup, dist);
+						len_Dup[dist]++;
+						DUP++;
+					} else if (type == 4) {
+						adjust(len_Ins, dist);
+						len_Ins[dist]++;
+						INS++;
+					} else if (type == 3) {
+						TRA++;
+					} else if (type == -1) {
+						adjust(len_unk, dist);
+						len_unk[dist]++;
+						UNK++;
+					}
+
+					std::string out = output;
+
+					if (supp < 3) {
+						out += "_AF0";
+					} else if (supp < 10) {
+						out += "_AF10";
+					} else if (supp < 100) {
+						out += "_AF100";
+					} else if (supp < 1000) {
+						out += "_AF1000";
+					} else {
+						out += "_AF10000";
+					}
+
+					switch (dist) {
+					case 0:
+						out+="_0bp";
+						break;
+					case 1:
+						out+="_50bp";
+						break;
+					case 2:
+						out+="_100bp";
+						break;
+					case 3:
+						out+="_1000bp";
+						break;
+					case 4:
+						out+="_10000bp";
+						break;
+					default:
+						break;
+					}
+
+					FILE * file = fopen(out.c_str(), "a");
+					fprintf(file,"%s",line.c_str());
+					fprintf(file,"%c",'\n');
+					fclose(file);
+
+
+					//std::string chr = entries[i].start.chr;
+					if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(type) != SV_chrs[chr].end()) {
+						SV_chrs[chr][type]++;
+					} else {
+						SV_chrs[chr][type] = 1;
+					}
+				}
+				if (num % 10 == 0) {
+					cout << "\t Streamed " << num << " SV entries" << endl;
+				}
+				num++;
+			}
+		} else {
+			break;
+		}
+
+	}
+	std::cout << "Parsing done: " << endl;
+	cout << "Tot\tDEL\tDUP\tINS\tINV\tTRA" << endl;
+	cout << (DEL + DUP + INS + INV + TRA) << "\t" << DEL << "\t" << DUP << "\t" << INS << "\t" << INV << "\t" << TRA << endl;
+	FILE * file;
+	std::string out = output;
+	out += "support";
+	file = fopen(out.c_str(), "w");
+	for (size_t i = 0; i < support.size(); i++) {
+		fprintf(file, "%i", (int) (i));
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", support[i]);
+		fprintf(file, "%c", '\n');
+	}
+	fclose(file);
+	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()), std::max((int) len_Inv.size(), (int) len_unk.size()));
+	file = fopen(output.c_str(), "w");
+	fprintf(file, "%s", "Len\tDel\tDup\tInv\tINS\tTRA\tUNK\n");
+	for (int i = 0; i < maxim + 1; i++) {
+		switch (i) {
+		case 0:
+			fprintf(file, "%s", "0-50bp");
+			break;
+		case 1:
+			fprintf(file, "%s", "50-100bp");
+			break;
+		case 2:
+			fprintf(file, "%s", "100-1000bp");
+			break;
+		case 3:
+			fprintf(file, "%s", "1000-10000bp");
+			break;
+		case 4:
+			fprintf(file, "%s", "10000+bp");
+			break;
+		default:
+			break;
+		}
+
+		fprintf(file, "%c", '\t');
+		if (i < (int) len_Del.size()) {
+			fprintf(file, "%i", len_Del[i]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\t');
+		if (i < (int) len_Dup.size()) {
+			fprintf(file, "%i", len_Dup[i]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\t');
+		if (i < (int) len_Inv.size()) {
+			fprintf(file, "%i", len_Inv[i]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\t');
+		if (i < (int) len_Ins.size()) {
+			fprintf(file, "%i", len_Ins[i]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\t');
+		if (i == 0) {
+			fprintf(file, "%i", TRA);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\t');
+		if (i < (int) len_unk.size()) {
+			fprintf(file, "%i", len_unk[i]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\n');
+	}
+	fclose(file);
+
+	out = output;
+	out += "_CHR";
+	file = fopen(out.c_str(), "w");
+	bool flag = true;
+	for (std::map<std::string, std::map<int, int> >::iterator i = SV_chrs.begin(); i != SV_chrs.end(); i++) {
+
+		if (flag) { //print the header:
+			fprintf(file, "%s", "Chr\tDEL\tDUP\tINV\tINS\tTRA\n");
+			flag = false;
+		}
+
+		fprintf(file, "%s", (*i).first.c_str());
+		fprintf(file, "%c", '\t');
+		if ((*i).second.find(0) != (*i).second.end()) {
+			fprintf(file, "%i", (*i).second[0]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\t');
+		if ((*i).second.find(1) != (*i).second.end()) {
+			fprintf(file, "%i", (*i).second[1]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+
+		fprintf(file, "%c", '\t');
+		if ((*i).second.find(2) != (*i).second.end()) {
+			fprintf(file, "%i", (*i).second[2]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\t');
+		if ((*i).second.find(4) != (*i).second.end()) {
+			fprintf(file, "%i", (*i).second[4]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\t');
+		if ((*i).second.find(3) != (*i).second.end()) {
+			fprintf(file, "%i", (*i).second[3]);
+		} else {
+			fprintf(file, "%i", 0);
+		}
+		fprintf(file, "%c", '\n');
+	}
+	fclose(file);
+}
+
 void summary_venn(std::string filename, std::string output) {
 	std::vector<std::vector<int> > mat;
 	std::vector<std::string> names;
@@ -316,7 +582,7 @@ void summary_venn(std::string filename, std::string output) {
 	}
 	myfile.close();
 	FILE * file = fopen(output.c_str(), "w");
-	//fprintf(file, "%s", "Caller");
+//fprintf(file, "%s", "Caller");
 	for (size_t i = 0; i < names.size(); i++) {
 		fprintf(file, "%c", '\t');
 		fprintf(file, "%s", names[i].c_str());

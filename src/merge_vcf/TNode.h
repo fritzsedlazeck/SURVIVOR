@@ -43,35 +43,29 @@ public:
 		height = 0;
 	}
 
-	TNode(breakpoint_str start, breakpoint_str stop, short type, std::pair<int,int> num_reads, int caller_id,std::string genotype, std::pair<bool,bool> strands,int sv_len) {
+	TNode(breakpoint_str start, breakpoint_str stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, std::pair<bool, bool> strands, int sv_len) {
 		this->data = new SVS_Node();
 		this->data->first = start;
 		this->data->second = stop;
 		this->data->type = type;
-		this->data->strand=strands;
-		this->data->genotype=genotype;
+		this->data->strand = strands;
+		this->data->genotype = genotype; //do I need this?
 
 		init();
-		for (int i = 0; i < Parameter::Instance()->max_caller; i++) {
-			Support_Node * tmp = new Support_Node();
-			tmp->len = 0;
-			tmp->num_support.first = 0;
-			tmp->num_support.second = 0;
-			tmp->types.clear();
-
-			data->caller_info.push_back(tmp);
+		Support_Node * tmp = new Support_Node();
+		if (sv_len == -1) {
+			tmp->len = stop.position - start.position;
+		} else {
+			tmp->len = sv_len;
 		}
-		//this->data->caller_info[caller_id].num_reads= //TODO!
-		this->data->caller_info[caller_id]->starts.push_back(start);
-		this->data->caller_info[caller_id]->stops.push_back(stop);
-		this->data->caller_info[caller_id]->types.push_back(type);
-		this->data->caller_info[caller_id]->len = sv_len;
-		if(this->data->caller_info[caller_id]->len==-1){
-			this->data->caller_info[caller_id]->len = stop.position - start.position; // take the length of the svs as identifier.
-		}
-		this->data->caller_info[caller_id]->num_support=num_reads;
-		this->data->caller_info[caller_id]->genotype=genotype;
-		this->data->caller_info[caller_id]->strand=strands;
+		tmp->num_support = num_reads;
+		tmp->id = caller_id;
+		tmp->starts.push_back(start.position);
+		tmp->stops.push_back(stop.position);
+		tmp->types.push_back(type);
+		tmp->genotype = genotype;
+		tmp->strand = strands;
+		data->caller_info.push_back(tmp);
 		height = 0;
 	}
 
@@ -89,18 +83,32 @@ public:
 		this->height = val;
 	}
 
-	void add(breakpoint_str start, breakpoint_str stop, short type,std::pair<int,int> num_reads, int caller_id,std::string genotype,int svlen,std::pair<bool,bool> strands) {
-		this->data->caller_info[caller_id]->starts.push_back(start);
-		this->data->caller_info[caller_id]->stops.push_back(stop);
-		this->data->caller_info[caller_id]->types.push_back(type);
-		this->data->caller_info[caller_id]->num_support.first=std::max(num_reads.first,this->data->caller_info[caller_id]->num_support.first);
-		this->data->caller_info[caller_id]->num_support.second=std::max(num_reads.second,this->data->caller_info[caller_id]->num_support.second);
-	    this->data->caller_info[caller_id]->genotype=genotype;
-		this->data->caller_info[caller_id]->strand=strands;
-		if (this->data->caller_info[caller_id]->len == 0) { //first time
-			this->data->caller_info[caller_id]->len = svlen;//stop.position-start.position; // take the length of the svs as identifier.
+	void add(breakpoint_str start, breakpoint_str stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, int svlen, std::pair<bool, bool> strands) {
+		int index = -1;
+		for (size_t i = 0; i < this->data->caller_info.size(); i++) {
+			if (this->data->caller_info[i]->id == caller_id) {
+				index = i;
+			}
+		}
+
+		if (index == -1) {
+			index = this->data->caller_info.size(); //todo check!
+			Support_Node * tmp = new Support_Node();
+			tmp->id = caller_id;
+			this->data->caller_info.push_back(tmp);
+		}
+
+		this->data->caller_info[index]->starts.push_back(start.position);
+		this->data->caller_info[index]->stops.push_back(stop.position);
+		this->data->caller_info[index]->types.push_back(type);
+		this->data->caller_info[index]->num_support.first = std::max(num_reads.first, this->data->caller_info[index]->num_support.first);
+		this->data->caller_info[index]->num_support.second = std::max(num_reads.second, this->data->caller_info[index]->num_support.second);
+		this->data->caller_info[index]->genotype = genotype;
+		this->data->caller_info[index]->strand = strands;
+		if (this->data->caller_info[index]->len == 0) { //first time
+			this->data->caller_info[index]->len = svlen; //stop.position-start.position; // take the length of the svs as identifier.
 		} else {
-			this->data->caller_info[caller_id]->len = std::max( svlen,this->data->caller_info[caller_id]->len);//stop.position-start.position;
+			this->data->caller_info[index]->len = std::max(svlen, this->data->caller_info[index]->len); //stop.position-start.position;
 		}
 	}
 };

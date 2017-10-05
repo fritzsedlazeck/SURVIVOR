@@ -34,6 +34,7 @@ public:
 	bool dynamic_size;
 	int min_length;
 	float min_freq;
+	int min_support;
 
 	static Parameter* Instance() {
 		if (!m_pInstance) {
