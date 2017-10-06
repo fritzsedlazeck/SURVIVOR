@@ -8,21 +8,24 @@ CPP_SRCS += \
 ../src/simulator/Eval_vcf.cpp \
 ../src/simulator/Pac_Simulator.cpp \
 ../src/simulator/SV_Simulator.cpp \
-../src/simulator/Sim_reads.cpp 
+../src/simulator/Sim_reads.cpp \
+../src/simulator/test_cov.cpp 
 
 OBJS += \
 ./src/simulator/Error_scanner.o \
 ./src/simulator/Eval_vcf.o \
 ./src/simulator/Pac_Simulator.o \
 ./src/simulator/SV_Simulator.o \
-./src/simulator/Sim_reads.o 
+./src/simulator/Sim_reads.o \
+./src/simulator/test_cov.o 
 
 CPP_DEPS += \
 ./src/simulator/Error_scanner.d \
 ./src/simulator/Eval_vcf.d \
 ./src/simulator/Pac_Simulator.d \
 ./src/simulator/SV_Simulator.d \
-./src/simulator/Sim_reads.d 
+./src/simulator/Sim_reads.d \
+./src/simulator/test_cov.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

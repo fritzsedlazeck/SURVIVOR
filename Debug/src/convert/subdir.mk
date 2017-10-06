@@ -8,6 +8,7 @@ CPP_SRCS += \
 ../src/convert/Convert_Assemblytics.cpp \
 ../src/convert/Convert_Bionano.cpp \
 ../src/convert/Convert_Honey_tails.cpp \
+../src/convert/Convert_MUMmer.cpp \
 ../src/convert/Convert_Pindel.cpp \
 ../src/convert/Convert_VCF_to_BED.cpp \
 ../src/convert/Process_Coverage.cpp \
@@ -18,6 +19,7 @@ OBJS += \
 ./src/convert/Convert_Assemblytics.o \
 ./src/convert/Convert_Bionano.o \
 ./src/convert/Convert_Honey_tails.o \
+./src/convert/Convert_MUMmer.o \
 ./src/convert/Convert_Pindel.o \
 ./src/convert/Convert_VCF_to_BED.o \
 ./src/convert/Process_Coverage.o \
@@ -28,6 +30,7 @@ CPP_DEPS += \
 ./src/convert/Convert_Assemblytics.d \
 ./src/convert/Convert_Bionano.d \
 ./src/convert/Convert_Honey_tails.d \
+./src/convert/Convert_MUMmer.d \
 ./src/convert/Convert_Pindel.d \
 ./src/convert/Convert_VCF_to_BED.d \
 ./src/convert/Process_Coverage.d \
