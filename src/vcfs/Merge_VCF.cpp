@@ -389,7 +389,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 					tmp.strands.second = (bool) (buffer[i + 10] == '+');
 				}
 
-				if (count >= 9 && buffer[i - 1] == '\t' && (!tmp.genotype.empty() && tmp.genotype[0]!='.')) { //parsing genotype;
+				if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0]=='.')) { //parsing genotype;
 					size_t j = i;
 					tmp.genotype = "";
 					while (buffer[j] != '\0' && buffer[j] != ':') {
