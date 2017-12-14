@@ -357,7 +357,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	 out += "_venn";
 	 file = fopen(out.c_str(), "w");
 
-	 fprintf(file, "%s", "Identifier");
+	 fprintf(file, "%s", "Identifier\t");
 	 for (size_t i = 0; i < names.size(); i++) {
 	 fprintf(file, "%s", names[i].c_str());
 	 fprintf(file, "%s", "\t");
