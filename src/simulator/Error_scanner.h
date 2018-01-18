@@ -38,6 +38,6 @@ struct read_position {
 	double total;
 };
 
-void generate_error_profile(int min_length, std::string output);
+void generate_error_profile(int min_length,bool comp_error_mat, std::string output);
 
 #endif /* SIMULATOR_ERROR_SCANNER_H_ */

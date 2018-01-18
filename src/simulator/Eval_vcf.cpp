@@ -81,7 +81,7 @@ bool match_coords(strsimul c1, strvcfentry c2, int max_allowed_dist) {
 
 	if ((strcmp(c1.start.chr.c_str(), c2.start.chr.c_str()) == 0 && abs(c1.start.pos - c2.start.pos) < max_allowed_dist)) {
 		if (c2.type == 4 || c2.type == 3) {
-			std::cout<<"HIT"<<std::endl;
+			std::cout << "HIT" << std::endl;
 			return true;
 		}
 		return (strcmp(c1.stop.chr.c_str(), c2.stop.chr.c_str()) == 0 && abs(c1.stop.pos - c2.stop.pos) < max_allowed_dist);
@@ -240,7 +240,7 @@ void eval_calls(std::vector<strvcfentry> entries, std::vector<strsimul> simul, i
 		}
 	}
 
-	std::cout<<"Missing SVs: "<<std::endl;
+	std::cout << "Missing SVs: " << std::endl;
 	for (size_t j = 0; j < simul.size(); j++) {
 		if (!simul[j].identified) {
 			add_to_report(notfound, simul[j].type);
@@ -319,14 +319,14 @@ void eval_calls_paper(std::vector<strvcfentry> entries, std::vector<strsimul> si
 				found = true;
 				simul[j].identified = true;
 				/*std::cout << "found: " << std::endl;
-				std::cout << "\t" << entries[i].type << " start " << entries[i].start.chr << " " << entries[i].start.pos << " " << entries[i].stop.chr << " " << entries[i].stop.pos << std::endl;
-				std::cout << "\t" << simul[j].type << " start " << simul[j].start.chr << " " << simul[j].start.pos << " " << simul[j].stop.chr << " " << simul[j].stop.pos << std::endl;
-*/
+				 std::cout << "\t" << entries[i].type << " start " << entries[i].start.chr << " " << entries[i].start.pos << " " << entries[i].stop.chr << " " << entries[i].stop.pos << std::endl;
+				 std::cout << "\t" << simul[j].type << " start " << simul[j].start.chr << " " << simul[j].start.pos << " " << simul[j].stop.chr << " " << simul[j].stop.pos << std::endl;
+				 */
 			} else if (match_coords_paper(simul[j], entries[i], max_allowed_dist * 100)) {
-		/*		std::cout << "incorrect: " << std::endl;
-				std::cout << "\t" << entries[i].type << " start " << entries[i].start.chr << " " << entries[i].start.pos << " " << entries[i].stop.chr << " " << entries[i].stop.pos << std::endl;
-				std::cout << "\t" << simul[j].type << " start " << simul[j].start.chr << " " << simul[j].start.pos << " " << simul[j].stop.chr << " " << simul[j].stop.pos << std::endl;
-*/
+				/*		std::cout << "incorrect: " << std::endl;
+				 std::cout << "\t" << entries[i].type << " start " << entries[i].start.chr << " " << entries[i].start.pos << " " << entries[i].stop.chr << " " << entries[i].stop.pos << std::endl;
+				 std::cout << "\t" << simul[j].type << " start " << simul[j].start.chr << " " << simul[j].start.pos << " " << simul[j].stop.chr << " " << simul[j].stop.pos << std::endl;
+				 */
 				found = true;
 				simul[j].wrong = true;
 			}
@@ -336,15 +336,50 @@ void eval_calls_paper(std::vector<strvcfentry> entries, std::vector<strsimul> si
 		}
 	}
 
+	int del_found = 0;
+	int del_incorrect = 0;
+	int del_notfound = 0;
+	int ins_found = 0;
+	int ins_incorrect = 0;
+	int ins_notfound = 0;
+
+
+	bool flag=false;
 	for (size_t j = 0; j < simul.size(); j++) {
 		if (simul[j].identified) {
 			found++;
+			if (simul[j].type == 0) {
+
+				del_found++;
+			}else if(simul[j].type == 4) {
+				flag=true;
+				ins_found++;
+			}
 		} else if (simul[j].wrong) {
 			incorrect++;
+			if (simul[j].type == 0) {
+
+				del_incorrect ++;
+			}else if(simul[j].type == 4) {
+				flag=true;
+				ins_incorrect++;
+			}
 		} else {
 			//std::cout<<"Not: "<<simul[j].start.chr <<" "<<simul[j].start.pos<<" "<<simul[j].stop.chr <<" "<<simul[j].stop.pos<<" "<<simul[j].type<<std::endl;
 			notfound++;
+			if (simul[j].type == 0) {
+
+				del_notfound++;
+			}else if(simul[j].type == 4) {
+				flag=true;
+				ins_notfound++;
+			}
 		}
+	}
+	if(flag){ //TODO remove!
+		std::cout<<"DEL: "<<del_found<< " "<<del_incorrect<<" "<<del_notfound<<std::endl;
+		std::cout<<"INS: "<<ins_found<< " "<<ins_incorrect<<" "<<ins_notfound<<std::endl;
+
 	}
 	std::cout << "chr\tstart\tstop\tTYPE\tLEN\t" << simul.size() << "\t" << found << "\t" << incorrect << "\t" << notfound << "\t" << additional << std::endl;
 }

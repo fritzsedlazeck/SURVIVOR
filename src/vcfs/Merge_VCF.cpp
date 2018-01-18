@@ -111,7 +111,7 @@ short get_type(std::string type) {
 		return 2;
 	} else if (strncmp(type.c_str(), "TRA", 3) == 0) {
 		return 3;
-	} else if ((strncmp(type.c_str(), "INS", 3) == 0 || strncmp(type.c_str(), "ALU", 3) == 0 )||(strncmp(type.c_str(),  "LINE1",3)==0 || strncmp(type.c_str(),"SVA",3)==0)) {//needed for 1k genomes project
+	} else if ((strncmp(type.c_str(), "INS", 3) == 0 || strncmp(type.c_str(), "ALU", 3) == 0) || (strncmp(type.c_str(), "LINE1", 3) == 0 || strncmp(type.c_str(), "SVA", 3) == 0)) { //needed for 1k genomes project
 		return 4;
 	} else if (strncmp(type.c_str(), "BND", 3) == 0) { //can be inv/inter/tra
 		return 5;
@@ -331,7 +331,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 			tmp.num_reads.first = 0;
 			tmp.num_reads.second = 0;
 			tmp.sv_len = -1;
-			float freq=0;
+			float freq = 0;
 			//std::cout<<buffer<<std::endl;
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 
@@ -364,8 +364,9 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 				if (count == 7 && strncmp(&buffer[i], ";RE=", 4) == 0) { //for sniffles!
 					tmp.num_reads.second = atoi(&buffer[i + 4]);
 				}
-				if (count == 7 && strncmp(&buffer[i],"EUR_AF=",7)==0){
-					freq=atof(&buffer[i+7]);
+
+				if (count == 7 && strncmp(&buffer[i], "EAS_AF=", 7) == 0) { //EAS_AF
+					freq = atof(&buffer[i + 7]);
 				}
 				if (count == 7 && strncmp(&buffer[i], ";CT=", 4) == 0) {
 					//parse strand delly:
@@ -389,7 +390,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 					tmp.strands.second = (bool) (buffer[i + 10] == '+');
 				}
 
-				if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0]=='.')) { //parsing genotype;
+				if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
 					size_t j = i;
 					tmp.genotype = "";
 					while (buffer[j] != '\0' && buffer[j] != ':') {
@@ -484,7 +485,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 					}
 
 				}
-				if(freq > Parameter::Instance()->min_freq){
+				if (freq > Parameter::Instance()->min_freq ) {
 					calls.push_back(tmp);
 				}
 

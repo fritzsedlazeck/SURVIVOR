@@ -7,21 +7,41 @@
 
 #include "Summ_mat.h"
 
-void process_patterns(std::vector<std::string> mat, FILE *& file) {
+void process_patterns(std::vector<std::string> mat, FILE *& file, FILE *& file2) {
 
 	std::map<std::string, int> patterns;
+	std::map<std::string, std::vector<int> > patterns2;
 	std::vector<int> vec;
 	for (size_t j = 0; j < mat[0].size(); j++) {
 		std::string patt;
+		bool useful = false;
 		for (size_t i = 0; i < mat.size(); i++) {
 			patt += mat[i][j];
+			if (mat[i][j] == '1') {
+				useful = true;
+			}
+		}
+		if (useful) {
+
+			patterns2[patt].push_back(j);
 		}
 		if (patterns.find(patt) == patterns.end()) {
 			patterns[patt] = 1;
 		} else {
 			patterns[patt]++;
 		}
+
 	}
+
+	for (std::map<std::string, std::vector<int> >::iterator i = patterns2.begin(); i != patterns2.end(); i++) {
+		fprintf(file2, "%c", '\t');
+		fprintf(file2, "%i", (*i).second[0]);
+		for (size_t j = 1; j < (*i).second.size(); j++) {
+			fprintf(file2, "%c", ',');
+			fprintf(file2, "%i", (*i).second[j]);
+		}
+	}
+	fprintf(file2, "%c", '\n');
 
 	for (std::map<std::string, int>::iterator i = patterns.begin(); i != patterns.end(); i++) {
 		while ((*i).second >= (int) vec.size()) {
@@ -67,7 +87,7 @@ void summarize_svs_table_window(std::string venn_file, int window, std::string o
 
 	FILE* file2;
 	std::string out = output;
-	out += "perpatient";
+	out += "patient_hist";
 	file2 = fopen(out.c_str(), "w");
 
 	int last_pos = 0;
@@ -96,12 +116,10 @@ void summarize_svs_table_window(std::string venn_file, int window, std::string o
 							fprintf(file, "%c", ':');
 							//	fprintf(file, "%s", (*patterns.begin()).first.c_str());
 							//	fprintf(file, "%c", ':');
-							process_patterns(mat, file);
-
 							fprintf(file2, "%s", last_chr.c_str());
 							fprintf(file2, "%c", ':');
 							fprintf(file2, "%i", (int) last_pos);
-							fprintf(file2, "%c", ':');
+							process_patterns(mat, file, file2);
 
 							vector<short> patients;
 							patients.assign(mat[0].size(), 0);
@@ -180,12 +198,12 @@ void summarize_svs_table_window_stream(int window, std::string output) {
 								fprintf(file, "%c", ':');
 								//	fprintf(file, "%s", (*patterns.begin()).first.c_str());
 								//	fprintf(file, "%c", ':');
-								process_patterns(mat, file);
 
 								fprintf(file2, "%s", last_chr.c_str());
 								fprintf(file2, "%c", ':');
 								fprintf(file2, "%i", (int) last_pos);
-								fprintf(file2, "%c", ':');
+
+								process_patterns(mat, file, file2);
 
 								vector<short> patients;
 								patients.assign(mat[0].size(), 0);
@@ -196,13 +214,6 @@ void summarize_svs_table_window_stream(int window, std::string output) {
 										}
 									}
 								}
-
-								for (size_t i = 0; i < patients.size(); i++) {
-									fprintf(file2, "%c", '\t');
-									fprintf(file2, "%i", (int) patients[i]);
-
-								}
-								fprintf(file2, "%c", '\n');
 								mat.clear();
 
 							}
@@ -211,10 +222,10 @@ void summarize_svs_table_window_stream(int window, std::string output) {
 
 						}
 					}
-					if(count==7 && strncmp(&buffer[i],"SUPP_VEC=",9)==0){
-						std::string tmp=buffer.substr(i+9);
+					if (count == 7 && strncmp(&buffer[i], "SUPP_VEC=", 9) == 0) {
+						std::string tmp = buffer.substr(i + 9);
 						std::size_t found = tmp.find_first_of(";");
-						pattern=tmp.substr(0,found);
+						pattern = tmp.substr(0, found);
 					}
 					if (buffer[i] == '\t') {
 						count++;

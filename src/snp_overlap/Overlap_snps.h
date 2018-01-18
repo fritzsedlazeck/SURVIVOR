@@ -24,5 +24,6 @@
 using namespace std;
 void overlap_snpsGWASDB(std::string svs_file, std::string snp_file, int max_dist, int min_svs, int allele, std::string output);
 void overlap_snps(std::string svs_file, std::string snp_file, int max_dist, int min_svs, int allele, std::string output);
-void overlap_snps_gwas(std::string svs_file, int max_dist, int min_svs, std::string output);
+void overlap_snps_gwas(std::string svs_file, std::string random_SV,int max_dist, int min_svs, std::string output);
+void generate_random_regions(std::string genome_file, std::string svs_vcf, int min_svs, std::string output);
 #endif /* SNP_OVERLAP_OVERLAP_SNPS_H_ */

@@ -317,28 +317,78 @@ void parse_pos(std::string buffer, int& pos, std::string& chr) {
 		i++;
 	}
 }
-void overlap_snps_gwas(std::string svs_file, int max_dist, int min_svs, std::string output) {
+
+std::vector<strvcfentry> parse_random(std::string svs_file) {
+	size_t buffer_size = 2000000;
+	char*buffer = new char[buffer_size];
+
+	std::ifstream myfile;
+	myfile.open(svs_file.c_str(), std::ifstream::in);
+	if (!myfile.good()) {
+		std::cout << "SNP Parser: could not open file: " << svs_file.c_str() << std::endl;
+		exit(0);
+	}
+	myfile.getline(buffer, buffer_size);
+	std::vector<strvcfentry> entries;
+	while (!myfile.eof()) {
+		strvcfentry tmp;
+		int count = 0;
+		for (size_t i = 0; i < buffer_size && buffer[i] != '\n' && buffer[i] != '\0'; i++) {
+			if (count == 0 && buffer[i] != '\t') {
+				tmp.start.chr += buffer[i];
+				tmp.stop.chr += buffer[i];
+			}
+			if (count == 1 && buffer[i - 1] == '\t') {
+				tmp.start.pos = atoi(&buffer[i]);
+			}
+			if (count == 2 && buffer[i - 1] == '\t') {
+				tmp.stop.pos = atoi(&buffer[i]);
+			}
+			if (count == 3 && buffer[i - 1] == '\t') {
+				tmp.type = atoi(&buffer[i]);
+			}
+			if (buffer[i] == '\t') {
+				count++;
+			}
+		}
+		entries.push_back(tmp);
+		myfile.getline(buffer, buffer_size);
+	}
+	myfile.close();
+	return entries;
+
+}
+void overlap_snps_gwas(std::string svs_file, std::string random_SV, int max_dist, int min_svs, std::string output) {
 
 	Parameter::Instance()->min_freq = 0.05;   //TODO parameter?
 	std::map<std::string, std::string> genome = parse_vcf(svs_file);
+	std::vector<strvcfentry> entries;
 
-	std::vector<strvcfentry> entries = parse_vcf(svs_file, min_svs);
+	if (strcmp(random_SV.c_str(), "N") == 0) {
+		entries = parse_vcf(svs_file, min_svs);
+	} else {
+		entries = parse_random(random_SV);
+	}
+
 	std::cout << "merging entries: " << entries.size() << std::endl;
 	for (size_t j = 0; j < entries.size(); j++) {
+		//	cout << "Prev\t" << entries[j].start.chr << "\t" << entries[j].start.pos << "\t" << entries[j].stop.pos << "\t" << entries[j].type << endl;
+
 		int start = std::max(0, (int) entries[j].start.pos - max_dist);
 		int stop = std::min((int) genome[entries[j].start.chr].size(), (int) entries[j].stop.pos + max_dist);
 
-		if (entries[j].type == 0 || (entries[j].type == 1 || entries[j].type == 6)) {
+		if (entries[j].type == 0 || (entries[j].type == 1 || entries[j].type == 6)) { //entire region
 			char sv = 'D';   //del
 			if (entries[j].type == 1) {
 				sv = 'P'; //DUP
 			} else if (entries[j].type == 6) {
 				sv = 'C'; //CNV
 			}
+			//	cout<<"cover: "<<entries[j].start.chr<<" "<<start<<" "<<stop-start<<endl;
 			for (int pos = start; pos < stop; pos++) {
 				genome[entries[j].start.chr][pos] = sv;
 			}
-		} else {
+		} else { // over breakpoints
 			char sv = 'V'; //INV
 			if (entries[j].type == 3) {
 				sv = 'T'; //TRA
@@ -504,27 +554,30 @@ void overlap_snps_gwas(std::string svs_file, int max_dist, int min_svs, std::str
 
 void overlap_snpsGWASDB(std::string svs_file, std::string snp_file, int max_dist, int min_svs, int allele, std::string output) {
 
-	Parameter::Instance()->min_freq = 0.05;   //TODO parameter?
+	Parameter::Instance()->min_freq = (double) allele / 100;   //TODO parameter?
+	cout << "Freq: " << Parameter::Instance()->min_freq << endl;
 	std::map<std::string, std::string> genome = parse_vcf(svs_file);
 
 	std::vector<strvcfentry> entries = parse_vcf(svs_file, min_svs);
-	srand(time(NULL));
-	for (size_t i = 0; i < entries.size(); i++) {
-		int chr = rand() % genome.size();
-		int num = 0;
-		for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end(); j++) {
-			if (num == chr) {
-				entries[i].start.chr=(*j).first;
-				entries[i].stop.chr=(*j).first;
-				int len = entries[i].stop.pos - entries[i].start.pos;
-				entries[i].start.pos=rand() % ((*j).second.size() - len);
-				entries[i].stop.pos=entries[i].start.pos+len;
-			//	cout<<(*j).first<<" "<< entries[i].start.pos<<endl;
-				break;
-			}
-			num++;
-		}
-	}
+	/*srand(time(NULL));
+	 for (size_t i = 0; i < entries.size(); i++) {
+	 int chr = rand() % genome.size();
+	 int num = 0;
+	 for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end(); j++) {
+	 if (num == chr) {
+	 cout << "Prev\t" << entries[i].start.chr << "\t" << entries[i].start.pos << "\t" << entries[i].stop.pos << "\t" << entries[i].type << endl;
+	 entries[i].start.chr = (*j).first;
+	 entries[i].stop.chr = (*j).first;
+	 int len = entries[i].stop.pos - entries[i].start.pos;
+	 entries[i].start.pos = rand() % ((*j).second.size() - len);
+	 entries[i].stop.pos = entries[i].start.pos + len;
+	 cout << "New\t" << entries[i].start.chr << "\t" << entries[i].start.pos << "\t" << entries[i].stop.pos << "\t" << entries[i].type << endl;
+	 break;
+	 }
+	 num++;
+	 }
+	 }
+	 exit(0);*/
 
 	std::cout << "merging entries: " << entries.size() << std::endl;
 	for (size_t j = 0; j < entries.size(); j++) {
@@ -595,7 +648,7 @@ void overlap_snpsGWASDB(std::string svs_file, std::string snp_file, int max_dist
 			if (count == 4 && buffer[i - 1] == '\t') {
 				pvalue = atof(&buffer[i]);
 			}
-			if (count == 5 && buffer[i]!='N' &&  buffer[i - 1] == '\t') {
+			if (count == 6 && buffer[i] != 'N' && buffer[i - 1] == '\t') {
 				pop = atoi(&buffer[i]);
 			}
 			if (buffer[i] == '\t') {
@@ -641,5 +694,107 @@ void overlap_snpsGWASDB(std::string svs_file, std::string snp_file, int max_dist
 		myfile.getline(buffer, buffer_size);
 	}
 	myfile.close();
+}
+
+std::map<std::string, std::string> parse_fasta(std::string genome_file) {
+	size_t buffer_size = 2000000;
+	char*buffer = new char[buffer_size];
+	std::ifstream myfile;
+	myfile.open(genome_file.c_str(), std::ifstream::in);
+	if (!myfile.good()) {
+		std::cout << "SNP Parser: could not open file: " << genome_file.c_str() << std::endl;
+		exit(0);
+	}
+
+	std::map<std::string, std::string> genome;
+	myfile.getline(buffer, buffer_size);
+
+	std::string name="";
+	std::string sequence="";
+	while (!myfile.eof()) {
+		if (buffer[0] == '>') {
+			if (!sequence.empty()) {
+				genome[name] = sequence;
+			}
+			name.clear();
+			sequence.clear();
+			//skip >
+			for (size_t i = 1; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n' && buffer[i] != ' '; i++) {
+				name += buffer[i];
+			}
+		} else {
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n' && buffer[i] != ' '; i++) {
+				sequence += buffer[i];
+			}
+		}
+		myfile.getline(buffer, buffer_size);
+	}
+	if (!sequence.empty()) {
+		genome[name] = sequence;
+	}
+	myfile.close();
+	return genome;
+}
+
+void generate_random_regions(std::string genome_file, std::string svs_vcf, int min_svs, std::string output) {
+	std::map<std::string, std::string> genome = parse_fasta(genome_file);
+	cout << "CHR detected: " << genome.size() << endl;
+	Parameter::Instance()->min_freq = 0.05;
+	std::vector<strvcfentry> entries = parse_vcf(svs_vcf, min_svs);
+	cout << "Parsed SVS: " << entries.size() << endl;
+	srand(time(NULL));
+	FILE *file;
+	file = fopen(output.c_str(), "w");
+
+	for (size_t i = 0; i < entries.size(); i++) {
+
+		bool valid_region = false;
+		while (!valid_region) {
+			int chr = rand() % genome.size();
+			//cout<<"CHR: "<<chr;
+			int num = 0;
+			for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end(); j++) {
+				if (num == chr) {
+					entries[i].start.chr = (*j).first;
+					entries[i].stop.chr = (*j).first;
+				//	cout<<" "<<chr<<" "<<entries[i].start.chr <<endl;
+					int len = entries[i].stop.pos - entries[i].start.pos;
+					entries[i].stop.pos = (*j).second.size();
+					entries[i].start.pos = rand() % ((int) (*j).second.size() - len*2);
+					entries[i].stop.pos = entries[i].start.pos + len;
+
+					double n_count = 0;
+					for (size_t pos = entries[i].start.pos; pos < entries[i].stop.pos; pos++) {
+						if (toupper(genome[entries[i].start.chr][pos]) == 'N') {
+							n_count++;
+						}
+					}
+				//	cout<<"Valid: "<<n_count<<endl;
+					valid_region = (bool) (n_count / (double) len < 0.05);
+					break;
+				}
+				num++;
+
+			}
+
+		}
+		for (size_t pos = entries[i].start.pos; pos < entries[i].stop.pos; pos++) {
+			genome[entries[i].start.chr][pos]='N'; //masking region such that its not chosen again.
+		}
+
+		//print new coords:
+		fprintf(file, "%s", entries[i].start.chr.c_str());
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", entries[i].start.pos);
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", entries[i].stop.pos);
+		fprintf(file, "%c", '\t');
+		fprintf(file, "%i", entries[i].type);
+		fprintf(file, "%c", '\n');
+	//	cout<<"Done: "<<i<<endl;
+
+	}
+	fclose(file);
+
 }
 

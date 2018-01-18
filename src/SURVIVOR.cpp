@@ -38,6 +38,8 @@
 #include "snp_overlap/Overlap_snps.h"
 #include "convert/Convert_MUMmer.h"
 #include "simulator/test_cov.h"
+#include "analysis_sv/Simplify_SVs.h"
+#include "analysis_sv/MUMmer_overlap.h"
 
 Parameter* Parameter::m_pInstance = NULL;
 int main(int argc, char *argv[]) {
@@ -65,13 +67,15 @@ int main(int argc, char *argv[]) {
 		case 2:
 			if (argc > 2) {
 				if (strcmp(argv[2], "scan") == 0) {
-					if (argc == 5) {
-						generate_error_profile(atoi(argv[3]), std::string(argv[4]));
+					if (argc == 6) {
+						bool error_mat = bool(atoi(argv[4]) == 1);
+						generate_error_profile(atoi(argv[3]), error_mat, std::string(argv[5]));
 					} else {
 						std::cerr << "Required parameters:" << std::endl;
 						std::cerr << "How to run: samtools view your_file.bam | ./SURVIVOR 2 scan 10000 error.txt" << std::endl;
 						std::cerr << "1: Min read length" << std::endl;
-						std::cerr << "2: output " << std::endl;
+						std::cerr << "2: Comp error mat (1, else not)" << std::endl;
+						std::cerr << "3: output " << std::endl;
 					}
 				} else if (strcmp(argv[2], "simul") == 0) {
 					if (argc == 7) {
@@ -142,7 +146,7 @@ int main(int argc, char *argv[]) {
 		case 7:
 			if (argc == 5) {
 				//filter SV calls delly
-				filter_vcf(std::string(argv[2]), std::string(argv[3]),  std::string(argv[4]));
+				filter_vcf(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
 			} else {
 				std::cerr << "VCF file to filter" << std::endl;
 				std::cerr << "BED file with regions to ignore" << std::endl;
@@ -204,9 +208,9 @@ int main(int argc, char *argv[]) {
 			if (argc == 7) {
 				summary_SV(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
 				std::cout << "You can find an R script in the src/R-scripts/ to create plots given the summary output files." << std::endl;
-			} else if(argc==5){
+			} else if (argc == 5) {
 				summary_SV_stream(atoi(argv[2]), atoi(argv[3]), std::string(argv[4]));
-			}else {
+			} else {
 				std::cerr << "vcf file" << std::endl;
 				std::cerr << "Min SV size (disable: -1)" << std::endl;
 				std::cerr << "Max SV size (disable: -1)" << std::endl;
@@ -366,22 +370,23 @@ int main(int argc, char *argv[]) {
 
 		case 31:
 			if (argc == 8) {
-				overlap_snpsGWASDB(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]),atoi(argv[6]), std::string(argv[7]));
+				overlap_snpsGWASDB(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), std::string(argv[7]));
 				//overlap_snps(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]),atoi(argv[6]), std::string(argv[7]));
 			} else {
 				std::cerr << "input vcf SVs file" << std::endl;
 				std::cerr << "input vcf SNP file" << std::endl;
 				std::cerr << "max distance" << std::endl;
 				std::cerr << "min SV length" << std::endl;
-				std::cerr << "min AF (0-100)"<<std::endl;
+				std::cerr << "min AF (0-100)" << std::endl;
 				std::cerr << "output  file" << std::endl;
 			}
 			break;
 		case 32:
-			if (argc == 6) {
-				overlap_snps_gwas(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
+			if (argc == 7) {
+				overlap_snps_gwas(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
 			} else {
 				std::cerr << "input vcf SVs file" << std::endl;
+				std::cerr << "input random vcf SVs file" << std::endl;
 				std::cerr << "max distance" << std::endl;
 				std::cerr << "min SV length" << std::endl;
 				std::cerr << "output  file" << std::endl;
@@ -408,6 +413,35 @@ int main(int argc, char *argv[]) {
 				std::cerr << "Targeted genome coverage" << std::endl;
 			}
 			//	}
+			break;
+		case 35:
+			if (argc == 5) {
+				simplify_svs(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
+			} else {
+				std::cerr << "input SURVIVOR_ant vcf file" << std::endl;
+				std::cerr << "min SV length" << std::endl;
+				std::cerr << "output table file" << std::endl;
+			}
+			break;
+		case 36:
+			if (argc == 6) {
+				overlapp_mummer(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), std::string(argv[5]));
+			} else {
+				std::cerr << "SVs VCF file" << std::endl;
+				std::cerr << "list of mummer files" << std::endl;
+				std::cerr << "Allowed distance" << std::endl;
+				std::cerr << "output vcf file" << std::endl;
+			}
+			break;
+		case 37:
+			if (argc == 6) {
+				generate_random_regions(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), std::string(argv[5]));
+			} else {
+				std::cerr << "Genome fasta file" << std::endl;
+				std::cerr << "SVs VCF file" << std::endl;
+				std::cerr << "min SVs size" << std::endl;
+				std::cerr << "output bed file" << std::endl;
+			}
 			break;
 		default:
 			break;
