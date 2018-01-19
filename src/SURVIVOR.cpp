@@ -45,7 +45,7 @@ Parameter* Parameter::m_pInstance = NULL;
 int main(int argc, char *argv[]) {
 	if (argc > 1) {
 		switch (atoi(argv[1])) {
-		case 1: // ADD SNPs -> make VCF file with simulated events!
+		case 1:
 			if (argc == 7) {
 				bool coordinates = bool(atoi(argv[5]) == 0);
 				simulate_SV(std::string(argv[2]), std::string(argv[3]), atof(argv[4]), coordinates, std::string(argv[6]));
@@ -396,7 +396,7 @@ int main(int argc, char *argv[]) {
 			if (argc == 5) {
 				convert_mummer_svs(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
 			} else {
-				std::cerr << "input SVs MUMmer file" << std::endl;
+				std::cerr << "input SVs MUMmer file (Show-diff)" << std::endl;
 				std::cerr << "min SV length" << std::endl;
 				std::cerr << "output vcf file" << std::endl;
 			}

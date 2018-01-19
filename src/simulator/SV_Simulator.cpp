@@ -115,8 +115,9 @@ parameter parse_param(std::string filename) {
 }
 
 std::map<std::string, std::string> read_fasta(std::string ref_file, int min_length) {
-	size_t buffer_size = 200000;
-	char*buffer = new char[buffer_size];
+	//size_t buffer_size = 200000;
+	//char*buffer = new char[buffer_size];
+	std::string buffer;
 	std::ifstream myfile;
 
 	myfile.open(ref_file.c_str(), std::ifstream::in);
@@ -125,7 +126,7 @@ std::map<std::string, std::string> read_fasta(std::string ref_file, int min_leng
 		exit(0);
 	}
 
-	myfile.getline(buffer, buffer_size);
+	getline(myfile,buffer);
 	std::map<std::string, std::string> genome;
 	std::string seq;
 	std::string name;
@@ -137,17 +138,17 @@ std::map<std::string, std::string> read_fasta(std::string ref_file, int min_leng
 			name.clear();
 			seq.clear();
 
-			for (size_t i = 1; i < buffer_size && buffer[i] != '\n' && buffer[i] != '\0' && buffer[i] != ' '; i++) {
+			for (size_t i = 1; i < buffer.size() && buffer[i] != '\n' && buffer[i] != '\0' && buffer[i] != ' '; i++) {
 				name += (buffer[i]);
 			}
 		} else {
-			for (size_t i = 0; i < buffer_size && buffer[i] != '\n' && buffer[i] != '\0'; i++) {
+			for (size_t i = 0; i < buffer.size() && buffer[i] != '\n' && buffer[i] != '\0'; i++) {
 				seq += toupper(buffer[i]);
 			}
 		}
-		myfile.getline(buffer, buffer_size);
+		getline(myfile,buffer);
 	}
-	for (size_t i = 0; i < buffer_size && buffer[i] != '\n' && buffer[i] != '\0'; i++) {
+	for (size_t i = 0; i < buffer.size() && buffer[i] != '\n' && buffer[i] != '\0'; i++) {
 		seq += toupper(buffer[i]);
 	}
 	myfile.close();
