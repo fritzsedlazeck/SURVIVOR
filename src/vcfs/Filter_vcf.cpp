@@ -57,7 +57,7 @@ void translate(const char * entry, int min_alternative_pairs, float min_alt_ref_
 }
 
 //check if SV should be kept:
-bool pass_filter(strentry entry, strregion region, std::vector<strregion> ignore_regions) {
+bool pass_filter(strvcfentry region, std::vector<strregion> ignore_regions) {
 	//TODO: compare to bed file to filter out regions!
 	for (size_t i = 0; i < ignore_regions.size(); i++) {
 		if (strcmp(region.start.chr.c_str(), ignore_regions[i].start.chr.c_str()) == 0) {
@@ -116,14 +116,19 @@ std::vector<strregion> parse_bed(std::string filename) {
 	return ignore_regions;
 }
 
-void filter_vcf(std::string vcf_file, std::string genomic_regions, std::string outputvcf) {
+void filter_vcf(std::string vcf_file, std::string genomic_regions,int min_size, int max_size, std::string outputvcf) {
 
-	std::vector<strregion> ignore_regions = parse_bed(genomic_regions);
+	if(max_size!=-1){
+		std::cerr<<"Warning: Max size threshold set, TRA wont be reported as their size cannot be assesst."<<std::endl;
+	}
+	std::vector<strregion> ignore_regions;
+	if(strncmp(genomic_regions.c_str(),"NA",2)!=0){
+		ignore_regions = parse_bed(genomic_regions);
+	}
 	//parse vcf file and write vcf file in one go:
 
 	std::vector<std::string> names;
-	size_t buffer_size = 2000000;
-	char*buffer = new char[buffer_size];
+	std::string buffer;
 	std::ifstream myfile;
 
 	myfile.open(vcf_file.c_str(), std::ifstream::in);
@@ -134,54 +139,36 @@ void filter_vcf(std::string vcf_file, std::string genomic_regions, std::string o
 	FILE *file;
 	file = fopen(outputvcf.c_str(), "w");
 
-	myfile.getline(buffer, buffer_size);
+	getline(myfile,buffer);
 	int deleted = 0;
 	while (!myfile.eof()) {
 		if (buffer[0] == '#') { //write header info:
-			fprintf(file, "%s", buffer);
+			fprintf(file, "%s", buffer.c_str());
 			fprintf(file, "%c", '\n');
 		} else {
-			int count = 0;
-			strregion region;
-			strentry entry;
-			entry.not_covered = 0;
-			entry.not_valid = 0;
-			entry.valid = 0;
-			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n' && count < 9; i++) {
-				if (count == 0 && buffer[i] != '\t') {
-					region.start.chr += buffer[i];
-				}
-				if (count == 1 && buffer[i - 1] == '\t') {
-					region.start.pos = atoi(&buffer[i]);
-				}
-				if (count == 7 && strncmp(&buffer[i], "CHR2=", 5) == 0) {
-					region.stop = parse_stop(&buffer[i]);
-				}
-				if (count == 7 && strncmp(&buffer[i], "SVLEN=", 5) == 0) {
-					region.stop = parse_stop(&buffer[i]);
-				}
-				if (buffer[i] == '\t') {
-					count++;
-				}
+			strvcfentry sv= parse_vcf_entry(buffer);
+
+
+			int size=-1;
+			if(sv.type==4){
+				size=sv.sv_len;
+			}
+			if(sv.type!=3 && sv.type!=5 && sv.type!=-1){
+				size=sv.stop.pos-sv.start.pos;
+			}else if(max_size==-1){
+				size=6666; // Think about this!
 			}
 
-			if (pass_filter(entry, region, ignore_regions)) {
-				std::string tmp = std::string(buffer);
-
-				std::size_t found = tmp.find("\tLowQual\t");
-				if (found != std::string::npos) {
-					tmp.replace(tmp.find("\tLowQual\t"), 9, "\tPASS\t");
-				}
-
-				fprintf(file, "%s", tmp.c_str());
+			if ((ignore_regions.empty() || pass_filter(sv, ignore_regions) ) &&  (size>min_size && (size< max_size || max_size==-1)) ) {
+				fprintf(file, "%s", buffer.c_str());
 				fprintf(file, "%c", '\n');
 			} else {
 				deleted++;
 			}
 		}
-		myfile.getline(buffer, buffer_size);
+		getline(myfile,buffer);
 	}
-	std::cout << "WE deleted: " << deleted << std::endl;
+	std::cout << "SVs ignored: " << deleted << std::endl;
 	myfile.close();
 	fclose(file);
 }

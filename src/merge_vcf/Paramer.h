@@ -16,17 +16,20 @@
 #include <ctime>
 
 
+
 class Parameter {
 private:
 	Parameter() {
 		min_freq=-1;
 	}
 	~Parameter() {
+		version ="1.0.2";
 
 	}
 	static Parameter* m_pInstance;
 
 public:
+	std::string version;
 	int max_dist;
 	int max_caller;
 	bool use_type;

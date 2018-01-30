@@ -297,7 +297,182 @@ std::string get_most_effect(std::string alt, int ref) {
 	return most_alt;
 }
 
+strvcfentry parse_vcf_entry(std::string buffer) {
+	strvcfentry tmp;
+	tmp.type = -1;
+	tmp.stop.pos = -1;
+	tmp.start.pos=-1;
+
+	if (buffer[0] != '#') {
+		int count = 0;
+		tmp.sup_lumpy = 0;
+		tmp.stop.pos = -1;
+		tmp.type = -1;
+		bool set_strand = false;
+		std::string ref;
+		std::string alt;
+		tmp.genotype = "./.";
+		tmp.strands.first = true;
+		tmp.strands.second = true;
+		tmp.num_reads.first = 0;
+		tmp.num_reads.second = 0;
+		tmp.sv_len = -1;
+		float freq = 0;
+		//std::cout<<buffer<<std::endl;
+		for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+			if (count == 0 && buffer[i] != '\t') {
+				tmp.start.chr += buffer[i];
+			}
+			if (count == 1 && buffer[i - 1] == '\t') {
+				tmp.start.pos = atoi(&buffer[i]);
+				//std::cout<<tmp.start.pos<<std::endl;
+			}
+			if (count == 3 && buffer[i] != '\t') {
+				ref += buffer[i];
+			}
+			if (count == 4 && buffer[i] != '\t') {
+				alt += buffer[i];
+			}
+			if (count == 4 && buffer[i - 1] == '\t') {
+				tmp.strands = parse_strands_lumpy(&buffer[i]);
+			}
+			if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
+				tmp.stop = parse_stop(&buffer[i]);
+				//std::cout<<"Stop:"<<tmp.stop.pos<<std::endl;
+			}
+			if (count == 7 && strncmp(&buffer[i], "SVTYPE=", 7) == 0) {
+				tmp.type = get_type(std::string(&buffer[i + 7]));
+			}
+			if (count == 7 && strncmp(&buffer[i], ";SU=", 4) == 0) { //for lumpy!
+				tmp.num_reads.second = atoi(&buffer[i + 4]);
+			}
+			if (count == 7 && strncmp(&buffer[i], ";RE=", 4) == 0) { //for sniffles!
+				tmp.num_reads.second = atoi(&buffer[i + 4]);
+			}
+
+			if (count == 7 && strncmp(&buffer[i], "EAS_AF=", 7) == 0) { //EAS_AF
+				freq = atof(&buffer[i + 7]);
+			}
+			if (count == 7 && strncmp(&buffer[i], ";CT=", 4) == 0) {
+				//parse strand delly:
+				set_strand = true;
+				tmp.strands.first = (bool) (buffer[i + 4] != '5');
+				tmp.strands.second = (bool) (buffer[i + 7] != '5');
+			}
+
+			if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i], "HOMLEN=", 7) == 0 || strncmp(&buffer[i], "AVGLEN=", 7) == 0)) {
+				tmp.sv_len = abs((int) atof(&buffer[i + 7]));
+				//		std::cout<<"LEN: "<<tmp.sv_len<<std::endl;
+			}
+
+			if (count == 7 && (strncmp(&buffer[i], "SVLEN=", 6) == 0)) {
+				tmp.sv_len = abs((int) atof(&buffer[i + 6]));
+				//	std::cout<<"LEN: "<<tmp.sv_len<<std::endl;
+			}
+			if (count == 7 && strncmp(&buffer[i], ";STRANDS=", 9) == 0) {
+				set_strand = true;
+				tmp.strands.first = (bool) (buffer[i + 9] == '+');
+				tmp.strands.second = (bool) (buffer[i + 10] == '+');
+			}
+
+			if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
+				size_t j = i;
+				tmp.genotype = "";
+				while (buffer[j] != '\0' && buffer[j] != ':') {
+					if (buffer[j] != '\t') {
+						tmp.genotype += buffer[j];
+					}
+					j++;
+				}
+				//	std::cout<<"GO: "<<tmp.genotype<<std::endl;
+			}
+			if (count == 8 && strncmp(&buffer[i], "PR:SR", 5) == 0) {
+				//manta
+				tmp.num_reads = parse_manta(&buffer[i]);
+			}
+			if (count == 8 && strncmp(&buffer[i], "DR:DV:RR:RV", 11) == 0) {
+				//delly
+				tmp.num_reads = parse_delly(&buffer[i]);
+			}
+
+			if (count == 4 && buffer[i - 1] == '<') {
+				tmp.type = get_type(std::string(&buffer[i]));
+			}
+			if (tmp.stop.pos == -1 && (count == 4 && (buffer[i - 1] == '[' || buffer[i - 1] == ']'))) {
+				tmp.stop = parse_pos(&buffer[i - 1]);
+			}
+
+			if (count < 9) {
+				tmp.header += buffer[i];
+			}
+			if (buffer[i] == '\t') {
+				count++;
+			}
+		}
+		if (!set_strand) {
+			if (tmp.type == 0 || tmp.type == 4) {
+				tmp.strands.first = true;
+				tmp.strands.second = false;
+			} else if (tmp.type == 1) {
+				tmp.strands.first = false;
+				tmp.strands.second = true;
+			} else { //should not happen??
+				tmp.strands.first = true;
+				tmp.strands.second = true;
+			}
+		}
+
+		if (tmp.stop.pos == -1 && tmp.sv_len != -1) {
+			tmp.stop.pos = tmp.start.pos + tmp.sv_len;
+		}
+		if (tmp.stop.pos == -1) {
+			std::size_t found = alt.find(",");
+			if (found != std::string::npos) {
+				alt = get_most_effect(alt, (int) ref.size());
+			}
+			tmp.stop.chr = tmp.start.chr;
+			tmp.sv_len = (int) ref.size() - (int) alt.size();
+			tmp.stop.pos = tmp.start.pos + abs(tmp.sv_len);
+			if (tmp.sv_len > 0) {
+				tmp.type = 0; //deletion
+			} else if (tmp.sv_len < 0) {
+				tmp.type = 4; //insertions
+				tmp.sv_len = abs(tmp.sv_len);
+				//	std::cout<<"INS: "<<tmp.sv_len <<std::endl;
+			}
+		}
+		if (tmp.stop.chr.empty()) {
+			tmp.stop.chr = tmp.start.chr;
+		}
+		if (tmp.sv_len == -1) {
+			tmp.sv_len = abs(tmp.start.pos - tmp.stop.pos);
+		}
+		if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0)) { // || tmp.type==4
+			std::size_t found = tmp.stop.chr.find("chr");
+			if (found != std::string::npos) {
+				tmp.stop.chr.erase(tmp.stop.chr.begin() + found, tmp.stop.chr.begin() + found + 3);
+			}
+			found = tmp.start.chr.find("chr");
+			if (found != std::string::npos) {
+				tmp.start.chr.erase(tmp.start.chr.begin() + found, tmp.start.chr.begin() + found + 3);
+			}
+
+			if (tmp.type == 5) { //BND
+				if (strcmp(tmp.stop.chr.c_str(), tmp.start.chr.c_str()) == 0) {
+					tmp.type = 2;
+				} else {
+					tmp.type = 3;
+				}
+
+			}
+		}
+	}
+	return tmp;
+
+}
+
 //for each file parse the entries
+
 std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 	size_t buffer_size = 200000000;
 	char*buffer = new char[buffer_size];
@@ -315,6 +490,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 	int num = 0;
 	while (!myfile.eof()) {
 		if (buffer[0] != '#') {
+
 			//	std::cout<<num<<"\t"<<buffer<<std::endl;
 			num++;
 			int count = 0;
@@ -485,7 +661,7 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 					}
 
 				}
-				if (freq > Parameter::Instance()->min_freq ) {
+				if (freq > Parameter::Instance()->min_freq) {
 					calls.push_back(tmp);
 				}
 

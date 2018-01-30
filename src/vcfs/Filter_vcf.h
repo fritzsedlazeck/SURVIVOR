@@ -16,7 +16,7 @@
 #include "../structs.h"
 #include "Merge_VCF.h"
 
-void filter_vcf(std::string vcf_file,std::string genomic_regions,std::string outputvcf);
+void filter_vcf(std::string vcf_file,std::string genomic_regions,int min_size, int max_size,std::string outputvcf);
 
 void filter_vcf_sniffles(std::string vcf_file,int min_lenght, std::string outputvcf);
 void summarize_paper_gaib(std::string venn_file);

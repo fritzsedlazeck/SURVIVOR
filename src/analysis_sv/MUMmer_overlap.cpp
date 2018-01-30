@@ -148,12 +148,14 @@ void overlapp_mummer(std::string vcf_SVs_file, std::string mummer_files, int max
 				if (count == 7 && buffer[i + 1] == '\t') {
 					if (entries[line].calls.size() > 1) {
 						fprintf(file, "%s", ";DeNovo_mummer=");
+						bool draw_comma=false;
 						for (std::map<std::string, std::string>::iterator j = entries[line].calls.begin(); j != entries[line].calls.end(); j++) {
 							if (strcmp((*j).first.c_str(), vcf_SVs_file.c_str()) != 0) {
-								if (j != entries[line].calls.begin()) {
+								if (draw_comma) {
 									fprintf(file, "%c", ',');
 								}
 								fprintf(file, "%s", (*j).first.c_str());
+								draw_comma=true;
 							}
 						}
 					}

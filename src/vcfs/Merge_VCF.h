@@ -20,6 +20,7 @@
 
 #include "../structs.h"
 std::vector<strvcfentry> parse_vcf(std::string filename,int min_svs);
+strvcfentry parse_vcf_entry(std::string buffer);
 strcoordinate parse_stop(const char * buffer);
 void merge_vcf(std::string filenames, int max_dist, int min_observed, std::string outputfile);
 int overlap(strvcfentry tmp, std::vector<strvcfentry> & final_vcf,int max_dist);
