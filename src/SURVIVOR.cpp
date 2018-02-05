@@ -127,14 +127,15 @@ void official_interface(int argc, char *argv[]) {
 			}
 			exit(0);
 		} else if (strcmp(argv[1], "filter") == 0) {
-			if (argc == 7) {
+			if (argc == 8) {
 				//filter SV calls delly
-				filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
+				filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]),atoi (argv[6]), std::string(argv[7]));
 			} else {
 				std::cerr << "VCF file to filter" << std::endl;
 				std::cerr << "BED file with regions to ignore (NA to disable)" << std::endl;
 				std::cerr << "Min SV size (-1 to disable)" << std::endl;
 				std::cerr << "Max SV size (-1 to disable)" << std::endl;
+				std::cerr << "Min number of reads support: RE flag (-1 to disable)" << std::endl;
 				std::cerr << "Output vcf file" << std::endl;
 			}
 			exit(0);
@@ -337,14 +338,15 @@ int main(int argc, char *argv[]) {
 			}
 			break;
 		case 7:
-			if (argc == 7) {
+			if (argc == 8) {
 				//filter SV calls delly
-				filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
+				filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]),std::string(argv[7]));
 			} else {
 				std::cerr << "VCF file to filter" << std::endl;
 				std::cerr << "BED file with regions to ignore (NA to disable)" << std::endl;
 				std::cerr << "Min SV size (-1 to disable)" << std::endl;
 				std::cerr << "Max SV size (-1 to disable)" << std::endl;
+				std::cerr << "Min num of reads (-1 to disable)" << std::endl;
 				std::cerr << "Output vcf file" << std::endl;
 			}
 			break;
