@@ -35,7 +35,7 @@ void comp_entries_mummer(std::vector<strvcfentry> & entries, std::string filenam
 	if (found != std::string::npos) {
 		id_denovo = filename.substr(found + 6);
 	} else {
-		cout << "not found" << endl;
+		//cout << "not found" << endl;
 		id_denovo = filename;
 	}
 

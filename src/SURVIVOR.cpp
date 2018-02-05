@@ -219,7 +219,7 @@ void official_interface(int argc, char *argv[]) {
 	std::cerr << "\tmerge\tCompare or merge VCF files to generate a consensus or multi sample vcf files." << std::endl;
 	std::cerr << "\tfilter\tFilter a vcf file based on size and/or regions to ignore" << std::endl;
 	std::cerr << "\tstats\tReport multipe stats over a VCF file" << std::endl;
-	std::cerr << "\tcompareMUMMer\tAnnotates a VCF file with the breakpoints found with MUMMer (Show-diff)."<< std::endl;
+	std::cerr << "\tcompMUMMer\tAnnotates a VCF file with the breakpoints found with MUMMer (Show-diff)."<< std::endl;
 	std::cerr << std::endl;
 
 
