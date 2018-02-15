@@ -129,7 +129,7 @@ void official_interface(int argc, char *argv[]) {
 		} else if (strcmp(argv[1], "filter") == 0) {
 			if (argc == 8) {
 				//filter SV calls delly
-				filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]),atoi (argv[6]), std::string(argv[7]));
+				filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), std::string(argv[7]));
 			} else {
 				std::cerr << "VCF file to filter" << std::endl;
 				std::cerr << "BED file with regions to ignore (NA to disable)" << std::endl;
@@ -203,9 +203,6 @@ void official_interface(int argc, char *argv[]) {
 	std::cerr << "Usage: SURVIVOR <command> [options]" << std::endl;
 	std::cerr << std::endl;
 
-
-
-
 	std::cerr << "Commands:" << std::endl;
 	std::cerr << "-- Simulation/ Evaluation" << std::endl;
 	std::cerr << "\tsimSV\tSimulates SVs and SNPs on a reference genome." << std::endl;
@@ -214,16 +211,12 @@ void official_interface(int argc, char *argv[]) {
 	std::cerr << "\teval\tEvaluates a VCF file after SV calling over simulated data." << std::endl;
 	std::cerr << std::endl;
 
-
-
 	std::cerr << "-- Comparison/filtering" << std::endl;
 	std::cerr << "\tmerge\tCompare or merge VCF files to generate a consensus or multi sample vcf files." << std::endl;
 	std::cerr << "\tfilter\tFilter a vcf file based on size and/or regions to ignore" << std::endl;
 	std::cerr << "\tstats\tReport multipe stats over a VCF file" << std::endl;
-	std::cerr << "\tcompMUMMer\tAnnotates a VCF file with the breakpoints found with MUMMer (Show-diff)."<< std::endl;
+	std::cerr << "\tcompMUMMer\tAnnotates a VCF file with the breakpoints found with MUMMer (Show-diff)." << std::endl;
 	std::cerr << std::endl;
-
-
 
 	std::cerr << "-- Conversion" << std::endl;
 	std::cerr << "\tbincov\tBins coverage vector to a bed file to filter SVs in low MQ regions" << std::endl;
@@ -340,7 +333,7 @@ int main(int argc, char *argv[]) {
 		case 7:
 			if (argc == 8) {
 				//filter SV calls delly
-				filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]),std::string(argv[7]));
+				filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), std::string(argv[7]));
 			} else {
 				std::cerr << "VCF file to filter" << std::endl;
 				std::cerr << "BED file with regions to ignore (NA to disable)" << std::endl;
@@ -638,6 +631,14 @@ int main(int argc, char *argv[]) {
 				std::cerr << "SVs VCF file" << std::endl;
 				std::cerr << "min SVs size" << std::endl;
 				std::cerr << "output bed file" << std::endl;
+			}
+			break;
+		case 38:
+			if (argc == 4) {
+				trans_vcf(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "SVs VCF file" << std::endl;
+				std::cerr << "SVs VCF file" << std::endl;
 			}
 			break;
 		default:
