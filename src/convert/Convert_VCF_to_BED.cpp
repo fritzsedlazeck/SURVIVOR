@@ -392,15 +392,12 @@ void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::stri
 	file = fopen(output.c_str(), "w");
 
 	for (size_t i = 0; i < entries.size(); i++) {
-		int size = -1;
 
+		int size = (min_size) + 1;
 		if (entries[i].type == 4) {
 			size = entries[i].sv_len;
-		}
-		if (entries[i].type != 3 && entries[i].type != 5 && entries[i].type != -1) {
+		} else if (entries[i].type != 3 && entries[i].type != 5 && entries[i].type != -1) {
 			size = entries[i].stop.pos - entries[i].start.pos;
-		} else if (max_size == -1) {
-			size = 6666; // Think about this!
 		}
 
 		if (size > min_size && (size < max_size || max_size == -1)) {
