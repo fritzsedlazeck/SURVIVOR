@@ -473,7 +473,7 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 
 //for each file parse the entries
 
-std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
+std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 	size_t buffer_size = 200000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
@@ -489,7 +489,21 @@ std::vector<strvcfentry> parse_vcf(std::string filename, int min_svs) {
 
 	int num = 0;
 	while (!myfile.eof()) {
-		if (buffer[0] != '#') {
+		if(buffer[0]=='#' && buffer[1]=='C'){
+			int count=0;
+			std::string id="";
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				if(count==9 && buffer[i]!='\t'){
+					id+=buffer[i];
+				}
+				if(buffer[i]=='\t'){
+					count++;
+				}
+			}
+			if(!id.empty()){
+				filename=id;
+			}
+		}else if (buffer[0] != '#') {
 
 			//	std::cout<<num<<"\t"<<buffer<<std::endl;
 			num++;
