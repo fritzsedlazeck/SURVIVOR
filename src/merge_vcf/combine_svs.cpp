@@ -19,18 +19,21 @@ std::string get_support_vec(std::vector<Support_Node *> caller_info) {
 	std::string ss;
 	ss.resize(Parameter::Instance()->max_caller,'0');
 	for(size_t i=0;i<caller_info.size();i++){
-		ss[caller_info[i]->id]='1';
+	//std::cout<<"GO:"<<caller_info[i]->genotype<<std::endl;
+		if (strncmp(caller_info[i]->genotype.c_str(),"0/0",3)!=0) {
+			ss[caller_info[i]->id]='1';
+		}
 	}
-
-
 	return ss;
 }
 int get_support(std::vector<Support_Node *> caller_info) {
-	return caller_info.size();
+	//return caller_info.size();
 
 	int support = 0;
 	for (size_t i = 0; i < caller_info.size(); i++) {
-		if (!caller_info[i]->starts.empty()) {
+	//	std::cout<<"GO:"<<caller_info[i]->genotype<<std::endl;
+		if (strncmp(caller_info[i]->genotype.c_str(),"0/0",3)!=0) {
+		//if (!caller_info[i]->starts.empty()) {
 			support++;
 		}
 	}
@@ -274,7 +277,6 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 			breakpoint_str start = convert_position(entries[j].start);
 			breakpoint_str stop = convert_position(entries[j].stop);
 			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, root);
-
 		}
 		entries.clear();
 	}
