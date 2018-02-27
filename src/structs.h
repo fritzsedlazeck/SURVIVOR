@@ -33,6 +33,7 @@ struct strvcfentry{
 	std::string genotype;
 	int sv_len;
 	std::string sv_id;
+	double af;
 	//int num_reads;
 };
 

@@ -297,6 +297,36 @@ std::string get_most_effect(std::string alt, int ref) {
 	return most_alt;
 }
 
+bool genotype(char * buffer) {
+	//cout << "buffer: " << buffer[0] << buffer[1] << buffer[2] << endl;
+
+	if ((buffer[0] == '0' && buffer[2] == '1') || (buffer[0] == '1' && buffer[2] == '1')) {
+		return true;
+	}
+	if (strncmp(buffer, "./.:0:0,0:--:NaN:NaN", 20) != 0) {
+		return true;
+	}
+	//0/0 ./.
+	return false;
+}
+
+double parse_genotypes_vcf(std::string buffer){
+
+	double count=0;
+	double support=0;
+	for(size_t i=0;i<buffer.size();i++){
+		if(buffer[i-1]=='\t'){
+			if(genotype(&buffer[i])){
+				support++;
+			}
+		}
+		if(buffer[i]=='\t'){
+			count++;
+		}
+	}
+	return support/count;
+}
+
 strvcfentry parse_vcf_entry(std::string buffer) {
 	strvcfentry tmp;
 	tmp.type = -1;
@@ -317,6 +347,7 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 		tmp.num_reads.first = 0;
 		tmp.num_reads.second = 0;
 		tmp.sv_len = -1;
+		tmp.af=-1;
 		float freq = 0;
 		//std::cout<<buffer<<std::endl;
 		for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
@@ -374,8 +405,12 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 				tmp.strands.first = (bool) (buffer[i + 9] == '+');
 				tmp.strands.second = (bool) (buffer[i + 10] == '+');
 			}
+			if(count==9 && buffer[i-1]=='\t'){
+				tmp.af=parse_genotypes_vcf(buffer.substr(i-1));
+			}
 
 			if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
+
 				size_t j = i;
 				tmp.genotype = "";
 				while (buffer[j] != '\0' && buffer[j] != ':') {

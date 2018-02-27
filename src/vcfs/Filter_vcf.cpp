@@ -116,7 +116,7 @@ std::vector<strregion> parse_bed(std::string filename) {
 	return ignore_regions;
 }
 
-void filter_vcf(std::string vcf_file, std::string genomic_regions,int min_size, int max_size,int min_reads, std::string outputvcf) {
+void filter_vcf(std::string vcf_file, std::string genomic_regions,int min_size, int max_size,double min_AF,int min_reads, std::string outputvcf) {
 
 	if(max_size!=-1){
 		std::cerr<<"Warning: Max size threshold set, TRA wont be reported as their size cannot be assesst."<<std::endl;
@@ -157,7 +157,8 @@ void filter_vcf(std::string vcf_file, std::string genomic_regions,int min_size, 
 			//if((size>min_size && (size< max_size || max_size==-1))){
 			//	std::cout<<"size_pass: "<<size<<" "<<min_size<<" "<<max_size<<std::endl;
 			//}
-			if ((ignore_regions.empty() || pass_filter(sv, ignore_regions) ) && ( (size>min_size && (size< max_size || max_size==-1)) && (sv.num_reads.second >min_reads)) ) {
+
+			if (((sv.af ==-1 || (sv.af>min_AF) ) && (ignore_regions.empty() || pass_filter(sv, ignore_regions) )) && ( (size>min_size && (size< max_size || max_size==-1)) && (sv.num_reads.second >min_reads)) ) {
 				fprintf(file, "%s", buffer.c_str());
 				fprintf(file, "%c", '\n');
 			} else {
