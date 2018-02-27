@@ -17,11 +17,11 @@ breakpoint_str convert_position(strcoordinate pos) {
 std::string get_support_vec(std::vector<Support_Node *> caller_info) {
 
 	std::string ss;
-	ss.resize(Parameter::Instance()->max_caller,'0');
-	for(size_t i=0;i<caller_info.size();i++){
-	//std::cout<<"GO:"<<caller_info[i]->genotype<<std::endl;
-		if (strncmp(caller_info[i]->genotype.c_str(),"0/0",3)!=0) {
-			ss[caller_info[i]->id]='1';
+	ss.resize(Parameter::Instance()->max_caller, '0');
+	for (size_t i = 0; i < caller_info.size(); i++) {
+		//std::cout<<"GO:"<<caller_info[i]->genotype<<std::endl;
+		if (strncmp(caller_info[i]->genotype.c_str(), "0/0", 3) != 0) {
+			ss[caller_info[i]->id] = '1';
 		}
 	}
 	return ss;
@@ -31,9 +31,9 @@ int get_support(std::vector<Support_Node *> caller_info) {
 
 	int support = 0;
 	for (size_t i = 0; i < caller_info.size(); i++) {
-	//	std::cout<<"GO:"<<caller_info[i]->genotype<<std::endl;
-		if (strncmp(caller_info[i]->genotype.c_str(),"0/0",3)!=0) {
-		//if (!caller_info[i]->starts.empty()) {
+		//	std::cout<<"GO:"<<caller_info[i]->genotype<<std::endl;
+		if (strncmp(caller_info[i]->genotype.c_str(), "0/0", 3) != 0) {
+			//if (!caller_info[i]->starts.empty()) {
 			support++;
 		}
 	}
@@ -49,12 +49,21 @@ const std::string currentDateTime() {
 	strftime(buf, sizeof(buf), "%Y%m%d", &tstruct);
 	return buf;
 }
-void print_header(FILE *& file, std::vector<std::string> names) {
+void print_header(FILE *& file, std::vector<std::string> names,std::map<std::string, int> chrs) {
 	fprintf(file, "%s", "##fileformat=VCFv4.1\n");
+	fprintf(file, "%s", "##source=SURVIVOR\n");
 	std::string time = currentDateTime();
 	fprintf(file, "%s", "##fileDate=");
 	fprintf(file, "%s", time.c_str());
 	fprintf(file, "%s", "\n"); //TODO change!
+	for(std::map<std::string, int>::iterator i =chrs.begin();i!=chrs.end();i++){
+	//	std::cout<<"Header: "<<(*i).first<<" "<<(*i).second<<std::endl;
+		fprintf(file, "%s", "##contig=<ID=");
+		fprintf(file, "%s",(*i).first.c_str());
+		fprintf(file, "%s", ",length=");
+		fprintf(file, "%i",(*i).second);
+		fprintf(file, "%s", ">\n");
+	}
 	fprintf(file, "%s", "##ALT=<ID=DEL,Description=\"Deletion\">\n");
 	fprintf(file, "%s", "##ALT=<ID=DUP,Description=\"Duplication\">\n");
 	fprintf(file, "%s", "##ALT=<ID=INV,Description=\"Inversion\">\n");
@@ -173,8 +182,8 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	//std::cout<<"Check: "<<Parameter::Instance()->max_caller <<" vs "<<entry->caller_info.size()<<std::endl;
 	for (size_t i = 0; i < Parameter::Instance()->max_caller; i++) {
 		convert << "\t";
-		if (pos<entry->caller_info.size() && i == entry->caller_info[pos]->id) {
-		//	std::cout<<"hit: "<<i<<std::endl;
+		if (pos < entry->caller_info.size() && i == entry->caller_info[pos]->id) {
+			//	std::cout<<"hit: "<<i<<std::endl;
 			convert << entry->caller_info[pos]->genotype;
 			convert << ":";
 			convert << entry->caller_info[pos]->len;
@@ -212,7 +221,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 				convert << entry->caller_info[pos]->stops[j];
 			}
 			pos++;
-		}else{
+		} else {
 			convert << "./.:0:0,0:--:NaN:NaN";
 		}
 
@@ -256,6 +265,49 @@ bool numeric_string_compare(const std::string& s1, const std::string& s2) {
 	return std::lexicographical_compare(it1, s1.end(), it2, s2.end());
 }
 
+std::string parse_name(char * buffer) {
+	size_t i = 0;
+	std::string name = "";
+	while (buffer[i] != ',') {
+		name += buffer[i];
+		i++;
+	}
+	return name;
+}
+void parse_vcf_header(std::map<std::string, int> &chrs, std::string filename) {
+
+	std::string buffer;
+	std::ifstream myfile;
+	myfile.open(filename.c_str(), std::ifstream::in);
+	if (!myfile.good()) {
+		std::cout << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
+		exit(0);
+	}
+	getline(myfile, buffer);
+	while (!myfile.eof() && buffer[0] == '#') {
+		if (strncmp(&buffer[0],"##contig=",9)==0) {
+			int count = 0;
+			std::string name = "";
+			for (size_t i = 12; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				//##contig=<ID=AB325691,length=20000>
+				if (buffer[i] == '=' && count == 0) {
+					//parse name
+					name = parse_name(&buffer[i + 1]);
+					if(chrs.find(name)!=chrs.end()){
+						break;
+					}
+					count++;
+				}else if (buffer[i] == '=' && count == 1) {
+					//parse pos:
+					chrs[name] = atoi(&buffer[i + 1]);
+					break;
+				}
+			}
+		}
+		getline(myfile, buffer);
+	}
+}
+
 void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, int strand_save, int dynamic_size, int min_svs, std::string output) {
 	std::vector<std::string> names = parse_filename(files);
 
@@ -269,8 +321,9 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 
 	IntervallTree bst;
 	TNode *root = NULL;
-
+	std::map<std::string, int> chrs;
 	for (size_t id = 0; id < names.size(); id++) {
+		parse_vcf_header(chrs, names[id]);
 		std::vector<strvcfentry> entries = parse_vcf(names[id], min_svs);
 		std::cout << "merging entries: " << entries.size() << std::endl;
 		for (size_t j = 0; j < entries.size(); j++) {
@@ -286,7 +339,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 
 	FILE * file;
 	file = fopen(output.c_str(), "w");
-	print_header(file, names);
+	print_header(file, names,chrs);
 
 	//std::vector<int> hist;
 	//std::vector<std::vector<std::vector<int> > > svs_summary; //first: support, second: type, third: size

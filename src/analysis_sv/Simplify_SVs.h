@@ -26,7 +26,8 @@ struct sv_simple_str {
 	std::vector< std::string > accessions;
 	pair<bool,bool> strands;
 };
-void simplify_svs(std::string file, int min_size, std::string output);
+
+void simplify_svs(std::string file, std::string pop_file, int min_size, std::string output);
 
 
 #endif /* ANALYSIS_SV_SIMPLIFY_SVS_H_ */

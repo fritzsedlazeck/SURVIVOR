@@ -605,10 +605,11 @@ int main(int argc, char *argv[]) {
 			//	}
 			break;
 		case 35:
-			if (argc == 5) {
-				simplify_svs(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
+			if (argc == 6) {
+				simplify_svs(std::string(argv[2]),std::string(argv[3]),atoi(argv[4]), std::string(argv[5]));
 			} else {
 				std::cerr << "input SURVIVOR_ant vcf file" << std::endl;
+				std::cerr << "input population file" << std::endl;
 				std::cerr << "min SV length" << std::endl;
 				std::cerr << "output table file" << std::endl;
 			}
