@@ -7,12 +7,12 @@
 
 #include "Simplify_SVs.h"
 
-std::vector<std::string> parse_support(char * vec, vector<std::string> names) {
-	std::vector<std::string> accessions;
+std::map<std::string, bool> parse_support(char * vec, vector<std::string> names) {
+	std::map<std::string, bool> accessions;
 	size_t i = 0;
 	while (vec[i] != ';') {
 		if (vec[i] == '1') {
-			accessions.push_back(names[i]);
+			accessions[names[i]] = true;
 		}
 		i++;
 	}
@@ -112,30 +112,32 @@ void print_gene_sv(std::string gene_name, sv_simple_str entry, FILE *&file2, int
 		fprintf(file2, "%c", '-');
 	}
 	fprintf(file2, "%c", '\t');
-	for (size_t t = 0; t < entry.accessions.size(); t++) {
-		fprintf(file2, "%s", entry.accessions[t].c_str());
-		if (t + 1 < entry.accessions.size()) {
+	int count = 0;
+	for (std::map<std::string, bool>::iterator t = entry.accessions.begin(); t != entry.accessions.end(); t++) {
+		fprintf(file2, "%s", (*t).first.c_str());
+		if (count + 1 < entry.accessions.size()) {
 			fprintf(file2, "%c", ',');
 		}
+		count++;
 	}
 	fprintf(file2, "%c", '\t');
-	fprintf(file2, "%i", (int) entry.accessions.size() );
+	fprintf(file2, "%i", (int) entry.accessions.size());
 	fprintf(file2, "%c", '\t');
 	fprintf(file2, "%f", (double) entry.accessions.size() / (double) pop_size);
 	//compute AF!
 	for (std::map<std::string, std::vector<std::string> >::iterator j = populations.begin(); j != populations.end(); j++) {
 		int count = 0;
-		for (size_t z = 0; z < entry.accessions.size(); z++) {
-			for (size_t t = 0; t < (*j).second.size(); t++) {
-				if (strcmp(entry.accessions[z].c_str(), (*j).second[t].c_str()) == 0) {
-					count++;
-				}
+
+		for (size_t t = 0; t < (*j).second.size(); t++) {
+			if (entry.accessions.find((*j).second[t]) != entry.accessions.end()) {
+				count++;
 			}
 		}
+
 		fprintf(file2, "%c", '\t');
 		fprintf(file2, "%i", count);
 		fprintf(file2, "%c", '\t');
-		fprintf(file2, "%f", (double) count /(double) (*j).second.size());
+		fprintf(file2, "%f", (double) count / (double) (*j).second.size());
 
 	}
 	fprintf(file2, "%c", '\n');
@@ -218,7 +220,7 @@ void simplify_svs(std::string filename, std::string pop_file, int min_size, std:
 	fprintf(file2, "%s", "\n");
 
 	while (!myfile.eof()) {
-		if (buffer[0] == '#' && buffer[1] == 'C') {
+		if (buffer[0] == '#' && buffer[1] == 'C') { //parse header to get names.
 			int count = 0;
 			std::string name = "";
 			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {

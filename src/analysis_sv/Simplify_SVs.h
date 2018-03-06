@@ -23,7 +23,7 @@ struct sv_simple_str {
 	strcoordinate start;
 	strcoordinate stop;
 	std::string svtype;
-	std::vector< std::string > accessions;
+	std::map< std::string,bool > accessions;
 	pair<bool,bool> strands;
 };
 

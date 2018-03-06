@@ -69,21 +69,21 @@ void official_interface(int argc, char *argv[]) {
 			exit(0);
 		} else if (strcmp(argv[1], "scanreads") == 0) {
 
-			if (argc == 6) {
-				bool error_mat = bool(atoi(argv[4]) == 1);
-				generate_error_profile(atoi(argv[3]), error_mat, std::string(argv[5]));
+			if (argc == 4) {
+			//	bool error_mat = bool(atoi(argv[3]) == 1);
+				generate_error_profile(atoi(argv[2]), false, std::string(argv[3]));
 			} else {
 				std::cerr << "Required parameters:" << std::endl;
-				std::cerr << "How to run: samtools view your_file.bam | ./SURVIVOR 2 scan 10000 error.txt" << std::endl;
+				std::cerr << "How to run: samtools view your_file.bam | ./SURVIVOR scanreads 1000 error.txt" << std::endl;
 				std::cerr << "1: Min read length" << std::endl;
-				std::cerr << "2: Comp error mat (1, else not)" << std::endl;
-				std::cerr << "3: output " << std::endl;
+			//	std::cerr << "2: Comp error mat (1, else not)" << std::endl;
+				std::cerr << "2: output " << std::endl;
 			}
 			exit(0);
 		} else if (strcmp(argv[1], "simreads") == 0) {
 
 			if (argc == 7) {
-				simulate_reads(std::string(argv[3]), std::string(argv[4]), atoi(argv[5]), std::string(argv[6]));
+				simulate_reads(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), std::string(argv[5]));
 			} else {
 				std::cerr << "No parameters provided:" << std::endl;
 				std::cerr << "1: Reference fasta file" << std::endl;
@@ -201,7 +201,6 @@ void official_interface(int argc, char *argv[]) {
 				select_greedy(std::string(argv[2]),  std::string(argv[3]));
 			} else {
 				std::cerr << "SVs VCF file" << std::endl;
-				std::cerr << "min size" << std::endl;
 				std::cerr << "Output: ranked file" << std::endl;
 			}
 			exit(0);
