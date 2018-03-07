@@ -82,7 +82,7 @@ void official_interface(int argc, char *argv[]) {
 			exit(0);
 		} else if (strcmp(argv[1], "simreads") == 0) {
 
-			if (argc == 7) {
+			if (argc == 6) {
 				simulate_reads(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), std::string(argv[5]));
 			} else {
 				std::cerr << "No parameters provided:" << std::endl;

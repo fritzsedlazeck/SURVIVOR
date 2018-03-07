@@ -351,29 +351,28 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 
 					switch (dist) {
 					case 0:
-						out+="_0bp";
+						out += "_0bp";
 						break;
 					case 1:
-						out+="_50bp";
+						out += "_50bp";
 						break;
 					case 2:
-						out+="_100bp";
+						out += "_100bp";
 						break;
 					case 3:
-						out+="_1000bp";
+						out += "_1000bp";
 						break;
 					case 4:
-						out+="_10000bp";
+						out += "_10000bp";
 						break;
 					default:
 						break;
 					}
 
 					FILE * file = fopen(out.c_str(), "a");
-					fprintf(file,"%s",line.c_str());
-					fprintf(file,"%c",'\n');
+					fprintf(file, "%s", line.c_str());
+					fprintf(file, "%c", '\n');
 					fclose(file);
-
 
 					//std::string chr = entries[i].start.chr;
 					if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(type) != SV_chrs[chr].end()) {
@@ -520,7 +519,7 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 
 void summary_venn(std::string filename, std::string output) {
 	std::vector<std::vector<int> > mat;
-	std::vector<std::string> names;
+	cout<<"file: "<<filename<<endl;
 
 	size_t buffer_size = 200000000;
 	char*buffer = new char[buffer_size];
@@ -534,64 +533,41 @@ void summary_venn(std::string filename, std::string output) {
 
 	myfile.getline(buffer, buffer_size);
 
-	int num = 0;
 	while (!myfile.eof()) {
-		if (num == 0) {
-			std::string name;
-			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-				if (buffer[i] == '\t') {
-					names.push_back(name);
-					name.clear();
-				} else {
-					name += buffer[i];
-				}
+		size_t count = 0;
+		std::vector<int> ids;
+		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+			if (buffer[i] == '1') {
+				ids.push_back(count); //-1 since we have the ID in the first column.
 			}
-			if (!name.empty()) {
-				//names.push_back(name); // last column is length
+			if (buffer[i] == ' ') {
+				count++;
 			}
-
-			std::vector<int> tmp;
-			tmp.assign(names.size(), 0); //last column is the length!
-			mat.assign(names.size(), tmp);
-			num++;
-		} else {
-			size_t count = 0;
-			std::vector<int> ids;
-			for (size_t i = 0; i < buffer_size && count <= names.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-				if (buffer[i - 1] == '\t' && buffer[i] == '1') {
-					ids.push_back(count - 1); //-1 since we have the ID in the first column.
-					//	std::cout<<count<<std::endl;
-				}
-				if (buffer[i] == '\t') {
-					count++;
-				}
-			}
-
-			for (size_t i = 0; i < ids.size(); i++) {
-				for (size_t j = 0; j < ids.size(); j++) {
-					if (ids[i] <= ids[j]) {
-						//if (i != j || ids.size() == 1) {
-						mat[ids[i]][ids[j]]++;
-						//}
-					}
-				}
-			}
-			num++;
 		}
+		if(mat.empty()){
+			vector<int> tmp;
+			tmp.resize(count,0);
+			mat.resize(count,tmp);
+		}
+		//cout<<"ids: "<<ids.size()<<endl;
+		for (size_t i = 0; i < ids.size(); i++) {
+			for (size_t j = 0; j < ids.size(); j++) {
+				//if (ids[i] <= ids[j]) {
+					mat[ids[i]][ids[j]]++;
+				//}
+			}
+		}
+
 		myfile.getline(buffer, buffer_size);
 	}
 	myfile.close();
-	FILE * file = fopen(output.c_str(), "w");
-//fprintf(file, "%s", "Caller");
-	for (size_t i = 0; i < names.size(); i++) {
-		fprintf(file, "%c", '\t');
-		fprintf(file, "%s", names[i].c_str());
-	}
-	fprintf(file, "%c", '\n');
+	cout<<"fin parsing: "<<mat.size() <<endl;
 
+
+
+
+	FILE * file = fopen(output.c_str(), "w");
 	for (size_t i = 0; i < mat.size(); i++) {
-		//	fprintf(file, "%i", (int) i);
-		//	fprintf(file, "%c", '\t');
 		for (size_t j = 0; j < mat.size(); j++) {
 			fprintf(file, "%i", mat[i][j]);
 			fprintf(file, "%c", '\t');
