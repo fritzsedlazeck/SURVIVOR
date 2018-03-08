@@ -8,7 +8,7 @@
 #include "Summarize_SV.h"
 
 void adjust(std::vector<int> & vec, int dist) {
-	while ((int) vec.size() < dist + 1) {
+	while ((int) vec.size() < dist+1) {
 		vec.push_back(0);
 	}
 }
@@ -143,7 +143,7 @@ void summary_SV(std::string vcf_file, int min_size, int max_size, int min_reads,
 	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()), std::max((int) len_Inv.size(), (int) len_unk.size()));
 	file = fopen(output.c_str(), "w");
 	fprintf(file, "%s", "Len\tDel\tDup\tInv\tINS\tTRA\tUNK\n");
-	for (int i = 0; i < maxim + 1; i++) {
+	for (int i = 0; i < maxim; i++) {
 		switch (i) {
 		case 0:
 			fprintf(file, "%s", "0-50bp");
@@ -396,15 +396,17 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 	cout << (DEL + DUP + INS + INV + TRA) << "\t" << DEL << "\t" << DUP << "\t" << INS << "\t" << INV << "\t" << TRA << endl;
 	FILE * file;
 	std::string out = output;
-	out += "support";
-	file = fopen(out.c_str(), "w");
-	for (size_t i = 0; i < support.size(); i++) {
-		fprintf(file, "%i", (int) (i));
-		fprintf(file, "%c", '\t');
-		fprintf(file, "%i", support[i]);
-		fprintf(file, "%c", '\n');
+	if (!support.empty()) {
+		out += "support";
+		file = fopen(out.c_str(), "w");
+		for (size_t i = 0; i < support.size(); i++) {
+			fprintf(file, "%i", (int) (i));
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", support[i]);
+			fprintf(file, "%c", '\n');
+		}
+		fclose(file);
 	}
-	fclose(file);
 	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()), std::max((int) len_Inv.size(), (int) len_unk.size()));
 	file = fopen(output.c_str(), "w");
 	fprintf(file, "%s", "Len\tDel\tDup\tInv\tINS\tTRA\tUNK\n");
@@ -519,7 +521,7 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 
 void summary_venn(std::string filename, std::string output) {
 	std::vector<std::vector<int> > mat;
-	cout<<"file: "<<filename<<endl;
+	cout << "file: " << filename << endl;
 
 	size_t buffer_size = 200000000;
 	char*buffer = new char[buffer_size];
@@ -544,16 +546,16 @@ void summary_venn(std::string filename, std::string output) {
 				count++;
 			}
 		}
-		if(mat.empty()){
+		if (mat.empty()) {
 			vector<int> tmp;
-			tmp.resize(count,0);
-			mat.resize(count,tmp);
+			tmp.resize(count, 0);
+			mat.resize(count, tmp);
 		}
 		//cout<<"ids: "<<ids.size()<<endl;
 		for (size_t i = 0; i < ids.size(); i++) {
 			for (size_t j = 0; j < ids.size(); j++) {
 				//if (ids[i] <= ids[j]) {
-					mat[ids[i]][ids[j]]++;
+				mat[ids[i]][ids[j]]++;
 				//}
 			}
 		}
@@ -561,10 +563,7 @@ void summary_venn(std::string filename, std::string output) {
 		myfile.getline(buffer, buffer_size);
 	}
 	myfile.close();
-	cout<<"fin parsing: "<<mat.size() <<endl;
-
-
-
+	cout << "fin parsing: " << mat.size() << endl;
 
 	FILE * file = fopen(output.c_str(), "w");
 	for (size_t i = 0; i < mat.size(); i++) {
