@@ -16,7 +16,7 @@
 
 void print_header(std::string name, std::string output);
 void print_entries(std::string output, std::vector<strvcfentry>& entries);
-void process_Lumpy( std::string lumpy_bede, int min_number_supporting,float max_eval, std::string output);
+void process_Lumpy( std::string lumpy_bede, std::string output);
 void trans_vcf(std::string in_vcf, std::string out_vcf);
 
 #endif /* PROCESS_LUMPY_H_ */

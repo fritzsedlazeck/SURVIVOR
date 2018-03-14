@@ -34,6 +34,7 @@ struct strvcfentry{
 	int sv_len;
 	std::string sv_id;
 	double af;
+	std::string prev_support_vec;
 	//int num_reads;
 };
 

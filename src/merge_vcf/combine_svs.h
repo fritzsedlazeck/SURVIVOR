@@ -37,6 +37,7 @@ public:
 		strand.first=false;
 		strand.second=false;
 		genotype="./.";
+		pre_supp_vec="";
 	}
 	~Support_Node(){
 
@@ -50,6 +51,7 @@ public:
 	std::pair<int,int> num_support;
 	std::pair<bool,bool> strand;
 	std::string genotype;
+	std::string pre_supp_vec;
 };
 
 class SVS_Node {

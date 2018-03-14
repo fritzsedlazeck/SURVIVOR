@@ -70,13 +70,13 @@ void official_interface(int argc, char *argv[]) {
 		} else if (strcmp(argv[1], "scanreads") == 0) {
 
 			if (argc == 4) {
-			//	bool error_mat = bool(atoi(argv[3]) == 1);
+				//	bool error_mat = bool(atoi(argv[3]) == 1);
 				generate_error_profile(atoi(argv[2]), false, std::string(argv[3]));
 			} else {
 				std::cerr << "Required parameters:" << std::endl;
 				std::cerr << "How to run: samtools view your_file.bam | ./SURVIVOR scanreads 1000 error.txt" << std::endl;
 				std::cerr << "1: Min read length" << std::endl;
-			//	std::cerr << "2: Comp error mat (1, else not)" << std::endl;
+				//	std::cerr << "2: Comp error mat (1, else not)" << std::endl;
 				std::cerr << "2: output " << std::endl;
 			}
 			exit(0);
@@ -130,7 +130,7 @@ void official_interface(int argc, char *argv[]) {
 		} else if (strcmp(argv[1], "filter") == 0) {
 			if (argc == 9) {
 				//filter SV calls delly
-				filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]),atof(argv[6]), atoi(argv[7]), std::string(argv[8]));
+				filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), atof(argv[6]), atoi(argv[7]), std::string(argv[8]));
 			} else {
 				std::cerr << "VCF file to filter" << std::endl;
 				std::cerr << "BED file with regions to ignore (NA to disable)" << std::endl;
@@ -196,12 +196,20 @@ void official_interface(int argc, char *argv[]) {
 				std::cerr << "Output: annotated vcf file" << std::endl;
 			}
 			exit(0);
-		}else if (strcmp(argv[1], "select_sample") == 0) {
+		} else if (strcmp(argv[1], "select_sample") == 0) {
 			if (argc == 4) {
-				select_greedy(std::string(argv[2]),  std::string(argv[3]));
+				select_greedy(std::string(argv[2]), std::string(argv[3]));
 			} else {
 				std::cerr << "SVs VCF file" << std::endl;
 				std::cerr << "Output: ranked file" << std::endl;
+			}
+			exit(0);
+		} else if (strcmp(argv[1], "bedpetovcf") == 0) {
+			if (argc == 4) {
+				process_Lumpy(std::string(argv[2]), std::string(argv[3]));
+			} else {
+				std::cerr << "Bedpe file" << std::endl;
+				std::cerr << "Output: vcf file" << std::endl;
 			}
 			exit(0);
 		}
@@ -233,6 +241,7 @@ void official_interface(int argc, char *argv[]) {
 	std::cerr << "\tvcftobed\tConverts a VCF file to a bed file" << std::endl;
 	std::cerr << "\tbedtovcf\tConverts a bed file to a VCF file " << std::endl;
 	std::cerr << "\tsmaptovcf\tConverts the smap file to a VCF file (beta version)" << std::endl;
+	std::cerr << "\tbedpetovcf\tConverts a bedpe file ot a VCF file (beta version)" <<std::endl;
 
 	exit(0);
 }
@@ -342,16 +351,16 @@ int main(int argc, char *argv[]) {
 			break;
 		case 7:
 			/*if (argc == 8) {
-				//filter SV calls delly
-			//	filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), std::string(argv[7]));
-			} else {
-				std::cerr << "VCF file to filter" << std::endl;
-				std::cerr << "BED file with regions to ignore (NA to disable)" << std::endl;
-				std::cerr << "Min SV size (-1 to disable)" << std::endl;
-				std::cerr << "Max SV size (-1 to disable)" << std::endl;
-				std::cerr << "Min num of reads (-1 to disable)" << std::endl;
-				std::cerr << "Output vcf file" << std::endl;
-			}*/
+			 //filter SV calls delly
+			 //	filter_vcf(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), std::string(argv[7]));
+			 } else {
+			 std::cerr << "VCF file to filter" << std::endl;
+			 std::cerr << "BED file with regions to ignore (NA to disable)" << std::endl;
+			 std::cerr << "Min SV size (-1 to disable)" << std::endl;
+			 std::cerr << "Max SV size (-1 to disable)" << std::endl;
+			 std::cerr << "Min num of reads (-1 to disable)" << std::endl;
+			 std::cerr << "Output vcf file" << std::endl;
+			 }*/
 			break;
 		case 8:
 			if (argc == 6) {
@@ -616,7 +625,7 @@ int main(int argc, char *argv[]) {
 			break;
 		case 35:
 			if (argc == 6) {
-				simplify_svs(std::string(argv[2]),std::string(argv[3]),atoi(argv[4]), std::string(argv[5]));
+				simplify_svs(std::string(argv[2]), std::string(argv[3]), atoi(argv[4]), std::string(argv[5]));
 			} else {
 				std::cerr << "input SURVIVOR_ant vcf file" << std::endl;
 				std::cerr << "input population file" << std::endl;

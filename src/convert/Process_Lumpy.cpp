@@ -136,58 +136,106 @@ strvcfentry create_entry(strregion region, double eval, int support, short type,
 	tmp.calls["lumpy"] = s.str();
 	return tmp;
 }
-void parse_lumpy(std::string lumpy_bede, std::vector<strvcfentry> & entries, int min_number_supporting, double max_eval) {
-	size_t buffer_size = 2000000;
-	char*buffer = new char[buffer_size];
+
+std::string print_entry(strregion region, std::string type, double score, std::string strand, std::string info, int &id) {
+
+	std::ostringstream convert;   // stream used for the conversion
+	convert << region.start.chr;
+	convert << "\t";
+	convert << region.start.pos;      // insert the textual representation of 'Number' in the characters in the stream
+	convert << "\t";
+	convert << type;
+	convert << "00";
+	convert << id;
+	convert << "\tN\t<";
+	convert << type;
+
+	convert << ">\t.\tPASS\tIMPRECISE;SVTYPE=";
+
+	convert << type;
+	convert << ";CHR2=";
+	convert << region.stop.chr;
+	convert << ";END=";
+	convert << region.stop.pos;
+	convert << ";SVSCORE=";
+	convert << score;
+	convert << ";SVLEN=";
+	convert << region.stop.pos - region.start.pos;
+	convert << ";STRANDS=";
+	convert << strand;
+	convert << ";";
+	convert << info;
+
+	convert << "\tGT\t";
+	convert << "./.";
+
+	id++;
+	return convert.str();
+}
+void parse_lumpy(std::string lumpy_bede, std::string output) {      //, int min_number_supporting, double max_eval) {
+
+	std::string buffer;
 	std::ifstream myfile;
+
+
 	myfile.open(lumpy_bede.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "Lumpy Parser: could not open file: " << lumpy_bede.c_str() << std::endl;
+		std::cout << "Bedpe Parser: could not open file: " << lumpy_bede.c_str() << std::endl;
 		exit(0);
 	}
-	int call_id = entries.size();
-	myfile.getline(buffer, buffer_size);
+
+	FILE * file = fopen(output.c_str(), "a");
+	int id = 0;
+	getline(myfile,buffer);
 	while (!myfile.eof()) {
 		int count = 0;
-		short type = -1;
-		double eval = 99;
-
+		std::string type;
+		double score = 99;
+		std::string strand;
+		std::string info;
 		strregion region;
-		int support = 0;
-		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-			if (count == 7 && buffer[i - 1] == '\t') {
-				eval = atof(&buffer[i]);
+		for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+			if (count == 0 && buffer[i] != '\t') {
+				region.start.chr += buffer[i];
+			}
+			if (count == 1 && buffer[i - 1] == '\t') {
+				region.start.pos = atoi(&buffer[i]);
 			}
 
-			if (count > 9 && strncmp(&buffer[i], "TYPE:", 5) == 0) {
+			if (count == 3 && buffer[i] != '\t') {
+				region.stop.chr += buffer[i];
+			}
+			if (count == 4 && buffer[i - 1] == '\t') {
+				region.stop.pos = atoi(&buffer[i]);
+			}
+
+			if (count == 6 && buffer[i] != '\t') {
 				//get type;
-				type = get_type(&buffer[i + 5]);
+				type += buffer[i];
 			}
 
-			if (count > 10 && strncmp(&buffer[i], "STRANDS", 7) == 0) {
-				//get support val;
-				support = get_support(&buffer[i + 7]);
+			if (count == 7 && buffer[i - 1] == '\t') {
+				score = atof(&buffer[i]);
 			}
 
-			if (count > 10 && strncmp(&buffer[i], "MAX:", 4) == 0) {
-				//get positions;
-				region = get_coords(&buffer[i + 4]);
+			if (count == 8 && buffer[i - 1] == '\t') {
+				strand += (buffer[i]);
+			}
+
+			if (count == 9 && buffer[i - 1] == '\t') {
+				strand += (buffer[i]);
+			}
+			if (count == 10 && buffer[i] != '\t') {
+				info += buffer[i];
 			}
 
 			if (buffer[i] == '\t') {
 				count++;
 			}
 		}
-
-		//filter the parsed SV:
-		if (support > min_number_supporting && eval < max_eval) {
-			//std::cout<<eval<<" "<<type<<" "<<region.start.pos<<" "<<region.stop.pos<<std::endl;
-			//detect overlap with delly:
-			//if no overlap construct vcf entry for Lumpy:
-			entries.push_back(create_entry(region, eval, support, type, call_id));
-			call_id++;
-		}
-		myfile.getline(buffer, buffer_size);
+		fprintf(file, "%s", print_entry(region, type, score, strand, info, id).c_str());
+		fprintf(file, "%c", '\n');
+		getline(myfile,buffer);
 	}
 
 	myfile.close();
@@ -214,16 +262,17 @@ void print_header(std::string name, std::string output) {
 	fprintf(file, "%s", "##INFO=<ID=SVLEN,Number=1,Type=Integer,Description=\"Length of the SV\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of structural variant\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Type of approach used to detect SV\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVSCORE,Number=1,Type=Integer,Description=\"Score of SV\">\n");
 
 	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=GL,Number=G,Type=Float,Description=\"Log10-scaled genotype likelihoods for RR,RA,AA genotypes\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=GQ,Number=1,Type=Integer,Description=\"Genotype Quality\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=FT,Number=1,Type=String,Description=\"Per-sample genotype filter\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=RC,Number=1,Type=Integer,Description=\"Normalized high-quality read count for the SV\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=DR,Number=1,Type=Integer,Description=\"# high-quality reference pairs\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=DV,Number=1,Type=Integer,Description=\"# high-quality variant pairs\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=RR,Number=1,Type=Integer,Description=\"# high-quality reference junction reads\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=RV,Number=1,Type=Integer,Description=\"# high-quality variant junction reads\">\n");
+	/*fprintf(file, "%s", "##FORMAT=<ID=GL,Number=G,Type=Float,Description=\"Log10-scaled genotype likelihoods for RR,RA,AA genotypes\">\n");
+	 fprintf(file, "%s", "##FORMAT=<ID=GQ,Number=1,Type=Integer,Description=\"Genotype Quality\">\n");
+	 fprintf(file, "%s", "##FORMAT=<ID=FT,Number=1,Type=String,Description=\"Per-sample genotype filter\">\n");
+	 fprintf(file, "%s", "##FORMAT=<ID=RC,Number=1,Type=Integer,Description=\"Normalized high-quality read count for the SV\">\n");
+	 fprintf(file, "%s", "##FORMAT=<ID=DR,Number=1,Type=Integer,Description=\"# high-quality reference pairs\">\n");
+	 fprintf(file, "%s", "##FORMAT=<ID=DV,Number=1,Type=Integer,Description=\"# high-quality variant pairs\">\n");
+	 fprintf(file, "%s", "##FORMAT=<ID=RR,Number=1,Type=Integer,Description=\"# high-quality reference junction reads\">\n");
+	 fprintf(file, "%s", "##FORMAT=<ID=RV,Number=1,Type=Integer,Description=\"# high-quality variant junction reads\">\n");*/
 	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t");
 	fprintf(file, "%s", name.c_str());
 	fprintf(file, "%c", '\n');
@@ -245,13 +294,10 @@ void print_entries(std::string output, std::vector<strvcfentry>& entries) {
 	fclose(file);
 }
 
-void process_Lumpy(std::string lumpy_bede, int min_number_supporting, float max_eval, std::string output) {
-	std::vector<strvcfentry> entries;			//= parse_vcf(delly_vcf); //get delly calls
-
-	parse_lumpy(lumpy_bede, entries, min_number_supporting, pow(10, max_eval));
-
+void process_Lumpy(std::string lumpy_bede, std::string output) {			//int min_number_supporting, float max_eval,
+	//= parse_vcf(delly_vcf); //get delly calls
 	print_header(lumpy_bede, output);
-	print_entries(output, entries);
+	parse_lumpy(lumpy_bede, output);			//, min_number_supporting, pow(10, max_eval));
 
 }
 
@@ -261,7 +307,7 @@ std::string parse_line(std::string buffer) {
 	std::stringstream ss;
 	strvcfentry entry = parse_vcf_entry(buffer);
 	for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-		if (count == 4 &&entry.type==3) {//tra
+		if (count == 4 && entry.type == 3) {			//tra
 			if (buffer[i - 1] == '\t') {
 				if (!entry.strands.first && entry.strands.second) {
 					ss << "]";
@@ -280,14 +326,14 @@ std::string parse_line(std::string buffer) {
 			}
 		} else if (count == 7) {
 			if (buffer[i - 1] == '\t') {
-				if(entry.type==3) {
+				if (entry.type == 3) {
 					ss << "SVLEN=100000;SVTYPE=BND;SVMETHOD=SURVIVORv2;CIPOS=-500,500;CIEND=-500,500;STRANDS=";
-				}else{
+				} else {
 					ss << "SVLEN=";
-					ss<< entry.sv_len;
-					ss<<";SVTYPE=";
-					ss<<trans_type(entry.type);
-					ss<<";SVMETHOD=SURVIVORv2;CIPOS=-500,500;CIEND=-500,500;STRANDS=";
+					ss << entry.sv_len;
+					ss << ";SVTYPE=";
+					ss << trans_type(entry.type);
+					ss << ";SVMETHOD=SURVIVORv2;CIPOS=-500,500;CIEND=-500,500;STRANDS=";
 				}
 				if (entry.strands.first) {
 					ss << "+";
@@ -331,7 +377,7 @@ void trans_vcf(std::string in_vcf, std::string out_vcf) {
 			fprintf(file, "%s", buffer);
 			fprintf(file, "%c", '\n');
 		} else {
-			fprintf(file, "%s",parse_line(std::string(buffer)).c_str());
+			fprintf(file, "%s", parse_line(std::string(buffer)).c_str());
 			fprintf(file, "%c", '\n');
 		}
 		myfile.getline(buffer, buffer_size);

@@ -310,21 +310,21 @@ bool genotype(char * buffer) {
 	return false;
 }
 
-double parse_genotypes_vcf(std::string buffer){
+double parse_genotypes_vcf(std::string buffer) {
 
-	double count=0;
-	double support=0;
-	for(size_t i=0;i<buffer.size();i++){
-		if(buffer[i-1]=='\t'){
-			if(genotype(&buffer[i])){
+	double count = 0;
+	double support = 0;
+	for (size_t i = 0; i < buffer.size(); i++) {
+		if (buffer[i - 1] == '\t') {
+			if (genotype(&buffer[i])) {
 				support++;
 			}
 		}
-		if(buffer[i]=='\t'){
+		if (buffer[i] == '\t') {
 			count++;
 		}
 	}
-	return support/count;
+	return support / count;
 }
 
 strvcfentry parse_vcf_entry(std::string buffer) {
@@ -347,7 +347,7 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 		tmp.num_reads.first = 0;
 		tmp.num_reads.second = 0;
 		tmp.sv_len = -1;
-		tmp.af=-1;
+		tmp.af = -1;
 		float freq = 0;
 		//std::cout<<buffer<<std::endl;
 		for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
@@ -405,8 +405,8 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 				tmp.strands.first = (bool) (buffer[i + 9] == '+');
 				tmp.strands.second = (bool) (buffer[i + 10] == '+');
 			}
-			if(count==9 && buffer[i-1]=='\t'){
-				tmp.af=parse_genotypes_vcf(buffer.substr(i-1));
+			if (count == 9 && buffer[i - 1] == '\t') {
+				tmp.af = parse_genotypes_vcf(buffer.substr(i - 1));
 			}
 
 			if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
@@ -484,13 +484,13 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 		}
 		if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0)) { // || tmp.type==4
 			/*std::size_t found = tmp.stop.chr.find("chr");
-			if (found != std::string::npos) {
-				tmp.stop.chr.erase(tmp.stop.chr.begin() + found, tmp.stop.chr.begin() + found + 3);
-			}
-			found = tmp.start.chr.find("chr");
-			if (found != std::string::npos) {
-				tmp.start.chr.erase(tmp.start.chr.begin() + found, tmp.start.chr.begin() + found + 3);
-			}*/
+			 if (found != std::string::npos) {
+			 tmp.stop.chr.erase(tmp.stop.chr.begin() + found, tmp.stop.chr.begin() + found + 3);
+			 }
+			 found = tmp.start.chr.find("chr");
+			 if (found != std::string::npos) {
+			 tmp.start.chr.erase(tmp.start.chr.begin() + found, tmp.start.chr.begin() + found + 3);
+			 }*/
 
 			if (tmp.type == 5) { //BND
 				if (strcmp(tmp.stop.chr.c_str(), tmp.start.chr.c_str()) == 0) {
@@ -505,6 +505,15 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 	return tmp;
 
 }
+std::string parse_supp_vec(char * buffer) {
+	size_t i = 0;
+	std::string supp = "";
+	while (buffer[i] != ';' && buffer[i] != '\t') {
+		supp += buffer[i];
+		i++;
+	}
+	return supp;
+}
 
 //for each file parse the entries
 
@@ -515,7 +524,6 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 	std::string buffer;
 	std::ifstream myfile;
 
-
 	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
 		std::cout << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
@@ -523,25 +531,25 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 	}
 
 	std::vector<strvcfentry> calls;
-	getline(myfile,buffer);
+	getline(myfile, buffer);
 
 	int num = 0;
 	while (!myfile.eof()) {
-		if(buffer[0]=='#' && buffer[1]=='C'){
-			int count=0;
-			std::string id="";
+		if (buffer[0] == '#' && buffer[1] == 'C') {
+			int count = 0;
+			std::string id = "";
 			for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-				if(count==9 && buffer[i]!='\t'){
-					id+=buffer[i];
+				if (count == 9 && buffer[i] != '\t') {
+					id += buffer[i];
 				}
-				if(buffer[i]=='\t'){
+				if (buffer[i] == '\t') {
 					count++;
 				}
 			}
-			if(!id.empty()){
-				filename=id;
+			if (!id.empty()) {
+				filename = id;
 			}
-		}else if (buffer[0] != '#') {
+		} else if (buffer[0] != '#') {
 
 			//	std::cout<<num<<"\t"<<buffer<<std::endl;
 			num++;
@@ -614,6 +622,21 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				if (count == 7 && (strncmp(&buffer[i], "SVLEN=", 6) == 0)) {
 					tmp.sv_len = abs((int) atof(&buffer[i + 6]));
 					//	std::cout<<"LEN: "<<tmp.sv_len<<std::endl;
+				}
+				if (count == 7 && (strncmp(&buffer[i], "SUPP=",5) == 0)) {
+					std::stringstream ss;
+					ss<<atoi(&buffer[i + 5]);
+					tmp.prev_support_vec =ss.str();
+					tmp.prev_support_vec +=",";
+
+				}
+				if (count == 7 && (strncmp(&buffer[i], "SUPP_VEC=", 9) == 0)) {
+					tmp.prev_support_vec = parse_supp_vec(&buffer[i + 9]);
+				}
+				if (count == 7 && strncmp(&buffer[i], "INSLEN=", 7) == 0) {
+					if (atof(&buffer[i + 7]) > 0) {
+						tmp.sv_len = abs((int) atof(&buffer[i + 7]));
+					}
 				}
 				if (count == 7 && strncmp(&buffer[i], ";STRANDS=", 9) == 0) {
 					set_strand = true;
@@ -699,15 +722,15 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				tmp.sv_len = abs(tmp.start.pos - tmp.stop.pos);
 			}
 			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (tmp.sv_len >= min_svs))) { // || tmp.type==4
-			/*	std::size_t found = tmp.stop.chr.find("chr");
-				if (found != std::string::npos) {
-					tmp.stop.chr.erase(tmp.stop.chr.begin() + found, tmp.stop.chr.begin() + found + 3);
-				}
-				found = tmp.start.chr.find("chr");
-				if (found != std::string::npos) {
-					tmp.start.chr.erase(tmp.start.chr.begin() + found, tmp.start.chr.begin() + found + 3);
-				}
-*/
+				/*	std::size_t found = tmp.stop.chr.find("chr");
+				 if (found != std::string::npos) {
+				 tmp.stop.chr.erase(tmp.stop.chr.begin() + found, tmp.stop.chr.begin() + found + 3);
+				 }
+				 found = tmp.start.chr.find("chr");
+				 if (found != std::string::npos) {
+				 tmp.start.chr.erase(tmp.start.chr.begin() + found, tmp.start.chr.begin() + found + 3);
+				 }
+				 */
 				if (tmp.type == 5) { //BND
 					if (strcmp(tmp.stop.chr.c_str(), tmp.start.chr.c_str()) == 0) {
 						tmp.type = 2;
@@ -725,7 +748,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 		} else {
 
 		}
-		getline(myfile,buffer);
+		getline(myfile, buffer);
 	}
 	myfile.close();
 //std::cout << calls.size() << std::endl;
@@ -919,7 +942,7 @@ void merge_vcf(std::string filenames, int max_dist, int min_observed, std::strin
 		for (size_t j = 0; j < entries.size(); j++) {
 			breakpoint_str start = convert_position(entries[j].start);
 			breakpoint_str stop = convert_position(entries[j].stop);
-			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, root);
+			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, root);
 		}
 		entries.clear();
 	}

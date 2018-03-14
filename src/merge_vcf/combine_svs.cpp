@@ -19,7 +19,6 @@ std::string get_support_vec(std::vector<Support_Node *> caller_info) {
 	std::string ss;
 	ss.resize(Parameter::Instance()->max_caller, '0');
 	for (size_t i = 0; i < caller_info.size(); i++) {
-		//std::cout<<"GO:"<<caller_info[i]->genotype<<std::endl;
 		if (strncmp(caller_info[i]->genotype.c_str(), "0/0", 3) != 0) {
 			ss[caller_info[i]->id] = '1';
 		}
@@ -83,6 +82,7 @@ void print_header(FILE *& file, std::vector<std::string> names,std::map<std::str
 	fprintf(file, "%s", "##FORMAT=<ID=ST,Number=1,Type=String,Description=\"Strand of SVs\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=TY,Number=1,Type=String,Description=\"Types\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=CO,Number=1,Type=String,Description=\"Coordinates\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=PSV,Number=1,Type=String,Description=\"Previous support vector\">\n");
 
 	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT");
 	for (size_t i = 0; i < names.size(); i++) {
@@ -156,7 +156,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << "SUPP=";
 	convert << get_support(entry->caller_info);
 	convert << ";SUPP_VEC=";
-	convert << get_support_vec(entry->caller_info);
+	convert << get_support_vec(entry->caller_info); //todo make aware of prev_supp/ supp vec
 	convert << ";AVGLEN=";
 	if (entry->type != 3) {
 		convert << get_avglen(entry->caller_info);
@@ -177,7 +177,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << ";STRANDS=";
 	convert << print_strands(entry->caller_info[index]->strand);
 	//}
-	convert << "\tGT:LN:DR:ST:TY:CO";
+	convert << "\tGT:PSV:LN:DR:ST:TY:CO";
 	int pos = 0;
 	//std::cout<<"Check: "<<Parameter::Instance()->max_caller <<" vs "<<entry->caller_info.size()<<std::endl;
 	for (size_t i = 0; i < Parameter::Instance()->max_caller; i++) {
@@ -185,6 +185,12 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 		if (pos < entry->caller_info.size() && i == entry->caller_info[pos]->id) {
 			//	std::cout<<"hit: "<<i<<std::endl;
 			convert << entry->caller_info[pos]->genotype;
+			convert << ":";
+			if(!entry->caller_info[pos]->pre_supp_vec.empty()){
+				convert << entry->caller_info[pos]->pre_supp_vec;
+			}else{
+				convert << "NA";
+			}
 			convert << ":";
 			convert << entry->caller_info[pos]->len;
 			convert << ":";
@@ -329,7 +335,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 		for (size_t j = 0; j < entries.size(); j++) {
 			breakpoint_str start = convert_position(entries[j].start);
 			breakpoint_str stop = convert_position(entries[j].stop);
-			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, root);
+			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len,entries[j].prev_support_vec, root);
 		}
 		entries.clear();
 	}

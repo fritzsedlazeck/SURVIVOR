@@ -43,7 +43,7 @@ public:
 		height = 0;
 	}
 
-	TNode(breakpoint_str start, breakpoint_str stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, std::pair<bool, bool> strands, int sv_len) {
+	TNode(breakpoint_str start, breakpoint_str stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, std::pair<bool, bool> strands, int sv_len,std::string prev_support_vec) {
 		this->data = new SVS_Node();
 		this->data->first = start;
 		this->data->second = stop;
@@ -65,6 +65,7 @@ public:
 		tmp->types.push_back(type);
 		tmp->genotype = genotype;
 		tmp->strand = strands;
+		tmp->pre_supp_vec=prev_support_vec;
 		data->caller_info.push_back(tmp);
 		height = 0;
 	}
@@ -83,7 +84,7 @@ public:
 		this->height = val;
 	}
 
-	void add(breakpoint_str start, breakpoint_str stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, int svlen, std::pair<bool, bool> strands) {
+	void add(breakpoint_str start, breakpoint_str stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, int svlen, std::pair<bool, bool> strands, std::string pre_supp_vec) {
 		int index = -1;
 		for (size_t i = 0; i < this->data->caller_info.size(); i++) {
 			if (this->data->caller_info[i]->id == caller_id) {
@@ -105,6 +106,8 @@ public:
 		this->data->caller_info[index]->num_support.second = std::max(num_reads.second, this->data->caller_info[index]->num_support.second);
 		this->data->caller_info[index]->genotype = genotype;
 		this->data->caller_info[index]->strand = strands;
+		this->data->caller_info[index]->pre_supp_vec=pre_supp_vec;
+
 		if (this->data->caller_info[index]->len == 0) { //first time
 			this->data->caller_info[index]->len = svlen; //stop.position-start.position; // take the length of the svs as identifier.
 		} else {
