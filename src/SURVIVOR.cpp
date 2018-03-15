@@ -41,6 +41,7 @@
 #include "analysis_sv/Simplify_SVs.h"
 #include "analysis_sv/MUMmer_overlap.h"
 #include "analysis_sv/Select_samples.h"
+#include "convert/Convert_hapcut2.h"
 
 Parameter* Parameter::m_pInstance = NULL;
 
@@ -212,6 +213,15 @@ void official_interface(int argc, char *argv[]) {
 				std::cerr << "Output: vcf file" << std::endl;
 			}
 			exit(0);
+		} else if (strcmp(argv[1], "hapcuttovcf") == 0) {
+			if (argc == 5) {
+				process_hapcut(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
+			} else {
+				std::cerr << "original SNP file" << std::endl;
+				std::cerr << "Hapcut2 final file" << std::endl;
+				std::cerr << "Output: vcf file" << std::endl;
+			}
+			exit(0);
 		}
 
 	}
@@ -241,7 +251,8 @@ void official_interface(int argc, char *argv[]) {
 	std::cerr << "\tvcftobed\tConverts a VCF file to a bed file" << std::endl;
 	std::cerr << "\tbedtovcf\tConverts a bed file to a VCF file " << std::endl;
 	std::cerr << "\tsmaptovcf\tConverts the smap file to a VCF file (beta version)" << std::endl;
-	std::cerr << "\tbedpetovcf\tConverts a bedpe file ot a VCF file (beta version)" <<std::endl;
+	std::cerr << "\tbedpetovcf\tConverts a bedpe file ot a VCF file (beta version)" << std::endl;
+	std::cerr << "\thapcuttovcf\tConverts the Hapcut2 final file to a VCF file using the original SNP file provided to Hapcut2" <<std::endl;
 
 	exit(0);
 }
