@@ -11,6 +11,7 @@ CPP_SRCS += \
 ../src/convert/Convert_MUMmer.cpp \
 ../src/convert/Convert_Pindel.cpp \
 ../src/convert/Convert_VCF_to_BED.cpp \
+../src/convert/Convert_hapcut2.cpp \
 ../src/convert/Process_Coverage.cpp \
 ../src/convert/Process_Lumpy.cpp 
 
@@ -22,6 +23,7 @@ OBJS += \
 ./src/convert/Convert_MUMmer.o \
 ./src/convert/Convert_Pindel.o \
 ./src/convert/Convert_VCF_to_BED.o \
+./src/convert/Convert_hapcut2.o \
 ./src/convert/Process_Coverage.o \
 ./src/convert/Process_Lumpy.o 
 
@@ -33,6 +35,7 @@ CPP_DEPS += \
 ./src/convert/Convert_MUMmer.d \
 ./src/convert/Convert_Pindel.d \
 ./src/convert/Convert_VCF_to_BED.d \
+./src/convert/Convert_hapcut2.d \
 ./src/convert/Process_Coverage.d \
 ./src/convert/Process_Lumpy.d 
 
