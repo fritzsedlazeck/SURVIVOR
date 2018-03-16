@@ -42,6 +42,7 @@
 #include "analysis_sv/MUMmer_overlap.h"
 #include "analysis_sv/Select_samples.h"
 #include "convert/Convert_hapcut2.h"
+#include "convert/Update_bam_pacbio.h"
 
 Parameter* Parameter::m_pInstance = NULL;
 
@@ -223,6 +224,17 @@ void official_interface(int argc, char *argv[]) {
 			}
 			exit(0);
 		}
+		/*else if (strcmp(argv[1], "updateBamfile") == 0) {
+			if (argc == 5) {
+				process_sam_forpacbio(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
+			} else {
+				std::cerr << "original SNP file" << std::endl;
+				std::cerr << "Hapcut2 final file" << std::endl;
+				std::cerr << "Output: vcf file" << std::endl;
+			}
+			exit(0);
+
+		}*/
 
 	}
 	std::cerr << "Program: SURVIVOR (Tools for Structural Variations in the VCF format)" << std::endl;
@@ -252,7 +264,7 @@ void official_interface(int argc, char *argv[]) {
 	std::cerr << "\tbedtovcf\tConverts a bed file to a VCF file " << std::endl;
 	std::cerr << "\tsmaptovcf\tConverts the smap file to a VCF file (beta version)" << std::endl;
 	std::cerr << "\tbedpetovcf\tConverts a bedpe file ot a VCF file (beta version)" << std::endl;
-	std::cerr << "\thapcuttovcf\tConverts the Hapcut2 final file to a VCF file using the original SNP file provided to Hapcut2" <<std::endl;
+	std::cerr << "\thapcuttovcf\tConverts the Hapcut2 final file to a VCF file using the original SNP file provided to Hapcut2" << std::endl;
 
 	exit(0);
 }
