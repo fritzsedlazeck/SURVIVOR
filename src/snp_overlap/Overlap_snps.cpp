@@ -578,7 +578,7 @@ void overlap_snpsGWASDB(std::string svs_file, std::string snp_file, int max_dist
 	 }
 	 }
 	 exit(0);*/
-
+	//inti comp vector:
 	std::cout << "merging entries: " << entries.size() << std::endl;
 	for (size_t j = 0; j < entries.size(); j++) {
 		int start = std::max(0, (int) entries[j].start.pos - max_dist);
@@ -648,7 +648,7 @@ void overlap_snpsGWASDB(std::string svs_file, std::string snp_file, int max_dist
 			if (count == 4 && buffer[i - 1] == '\t') {
 				pvalue = atof(&buffer[i]);
 			}
-			if (count == 6 && buffer[i] != 'N' && buffer[i - 1] == '\t') {
+			if (count == 7 && buffer[i] != 'N' && buffer[i - 1] == '\t') { //6=europe 7==eas
 				pop = atoi(&buffer[i]);
 			}
 			if (buffer[i] == '\t') {

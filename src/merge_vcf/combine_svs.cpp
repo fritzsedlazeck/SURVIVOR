@@ -48,19 +48,19 @@ const std::string currentDateTime() {
 	strftime(buf, sizeof(buf), "%Y%m%d", &tstruct);
 	return buf;
 }
-void print_header(FILE *& file, std::vector<std::string> names,std::map<std::string, int> chrs) {
+void print_header(FILE *& file, std::vector<std::string> names, std::map<std::string, int> chrs) {
 	fprintf(file, "%s", "##fileformat=VCFv4.1\n");
 	fprintf(file, "%s", "##source=SURVIVOR\n");
 	std::string time = currentDateTime();
 	fprintf(file, "%s", "##fileDate=");
 	fprintf(file, "%s", time.c_str());
 	fprintf(file, "%s", "\n"); //TODO change!
-	for(std::map<std::string, int>::iterator i =chrs.begin();i!=chrs.end();i++){
-	//	std::cout<<"Header: "<<(*i).first<<" "<<(*i).second<<std::endl;
+	for (std::map<std::string, int>::iterator i = chrs.begin(); i != chrs.end(); i++) {
+		//	std::cout<<"Header: "<<(*i).first<<" "<<(*i).second<<std::endl;
 		fprintf(file, "%s", "##contig=<ID=");
-		fprintf(file, "%s",(*i).first.c_str());
+		fprintf(file, "%s", (*i).first.c_str());
 		fprintf(file, "%s", ",length=");
-		fprintf(file, "%i",(*i).second);
+		fprintf(file, "%i", (*i).second);
 		fprintf(file, "%s", ">\n");
 	}
 	fprintf(file, "%s", "##ALT=<ID=DEL,Description=\"Deletion\">\n");
@@ -68,6 +68,8 @@ void print_header(FILE *& file, std::vector<std::string> names,std::map<std::str
 	fprintf(file, "%s", "##ALT=<ID=INV,Description=\"Inversion\">\n");
 	fprintf(file, "%s", "##ALT=<ID=TRA,Description=\"Translocation\">\n");
 	fprintf(file, "%s", "##ALT=<ID=INS,Description=\"Insertion\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CIEND,Number=1,Type=String,Description=\"PE confidence interval around END\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CIPOS,Number=1,Type=String,Description=\"PE confidence interval around POS\">\n");
 	fprintf(file, "%s", "##INFO=<ID=CHR2,Number=1,Type=String,Description=\"Chromosome for END coordinate in case of a translocation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of the structural variant\">\n");
 	fprintf(file, "%s", "##INFO=<ID=MAPQ,Number=1,Type=Integer,Description=\"Median mapping quality of paired-ends\">\n");
@@ -107,7 +109,7 @@ double get_avglen(std::vector<Support_Node *> caller_info) {
 	}
 	return size / num;
 }
-int get_index_medpos(std::vector<Support_Node *> caller_info) {
+int get_index_medpos(std::vector<Support_Node *> caller_info, std::pair<int, int> &cpos, std::pair<int, int> &cend) {
 	std::vector<int> positions;
 
 	for (size_t i = 0; i < caller_info.size(); i++) {
@@ -124,7 +126,23 @@ int get_index_medpos(std::vector<Support_Node *> caller_info) {
 		}
 
 	}
-	return positions[positions.size() / 2];
+	int index = positions[positions.size() / 2];
+	for (size_t i = 0; i < caller_info.size(); i++) {
+
+		for (size_t j = 0; j < caller_info[i]->starts.size(); j++) {
+			if (i == 0 && j == 0) {
+				cpos.first = caller_info[i]->starts[j] - caller_info[index]->starts[0];
+				cpos.second = caller_info[i]->starts[j] - caller_info[index]->starts[0];
+				cend.first = caller_info[i]->stops[j] - caller_info[index]->stops[0];
+				cend.second = caller_info[i]->stops[j] - caller_info[index]->stops[0];
+			}
+			cpos.first = std::min(caller_info[i]->starts[j] - caller_info[index]->starts[0], cpos.first);
+			cpos.second = std::max(caller_info[i]->starts[j] - caller_info[index]->starts[0], cpos.second);
+			cend.first = std::min(caller_info[i]->stops[j] - caller_info[index]->stops[0], cpos.first);
+			cend.second = std::max(caller_info[i]->stops[j] - caller_info[index]->stops[0], cpos.first);
+		}
+	}
+	return index;
 }
 
 std::string print_strands(std::pair<bool, bool> strands) {
@@ -144,7 +162,9 @@ std::string print_strands(std::pair<bool, bool> strands) {
 
 void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	std::ostringstream convert;   // stream used for the conversion
-	int index = get_index_medpos(entry->caller_info);
+	std::pair<int, int> cipos;
+	std::pair<int, int> ciend;
+	int index = get_index_medpos(entry->caller_info, cipos, ciend);
 
 	convert << entry->first.chr;   //caller_info[index]->starts[0].chr;
 	convert << "\t";
@@ -177,6 +197,17 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << entry->second.chr;   //caller_info[index]->stops[0].chr;
 	convert << ";END=";
 	convert << entry->caller_info[index]->stops[0];   //entry->second.position;
+
+	convert << ";CIPOS=";
+
+	convert << cipos.first;
+	convert << ",";
+	convert << cipos.second;
+	convert << ";CIEND=";
+	convert << ciend.first;
+	convert << ",";
+	convert << ciend.second;
+
 	//if (Parameter::Instance()->use_strand) {
 	convert << ";STRANDS=";
 	convert << print_strands(entry->caller_info[index]->strand);
@@ -190,9 +221,9 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 			//	std::cout<<"hit: "<<i<<std::endl;
 			convert << entry->caller_info[pos]->genotype;
 			convert << ":";
-			if(!entry->caller_info[pos]->pre_supp_vec.empty()){
+			if (!entry->caller_info[pos]->pre_supp_vec.empty()) {
 				convert << entry->caller_info[pos]->pre_supp_vec;
-			}else{
+			} else {
 				convert << "NA";
 			}
 			convert << ":";
@@ -295,7 +326,7 @@ void parse_vcf_header(std::map<std::string, int> &chrs, std::string filename) {
 	}
 	getline(myfile, buffer);
 	while (!myfile.eof() && buffer[0] == '#') {
-		if (strncmp(&buffer[0],"##contig=",9)==0) {
+		if (strncmp(&buffer[0], "##contig=", 9) == 0) {
 			int count = 0;
 			std::string name = "";
 			for (size_t i = 12; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
@@ -303,11 +334,11 @@ void parse_vcf_header(std::map<std::string, int> &chrs, std::string filename) {
 				if (buffer[i] == '=' && count == 0) {
 					//parse name
 					name = parse_name(&buffer[i + 1]);
-					if(chrs.find(name)!=chrs.end()){
+					if (chrs.find(name) != chrs.end()) {
 						break;
 					}
 					count++;
-				}else if (buffer[i] == '=' && count == 1) {
+				} else if (buffer[i] == '=' && count == 1) {
 					//parse pos:
 					chrs[name] = atoi(&buffer[i + 1]);
 					break;
@@ -339,7 +370,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 		for (size_t j = 0; j < entries.size(); j++) {
 			breakpoint_str start = convert_position(entries[j].start);
 			breakpoint_str stop = convert_position(entries[j].stop);
-			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len,entries[j].prev_support_vec, root);
+			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, root);
 		}
 		entries.clear();
 	}
@@ -349,7 +380,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 
 	FILE * file;
 	file = fopen(output.c_str(), "w");
-	print_header(file, names,chrs);
+	print_header(file, names, chrs);
 
 	//std::vector<int> hist;
 	//std::vector<std::vector<std::vector<int> > > svs_summary; //first: support, second: type, third: size

@@ -269,6 +269,8 @@ void official_interface(int argc, char *argv[]) {
 	exit(0);
 }
 
+//todo output: pb 0 -> 1
+
 int main(int argc, char *argv[]) {
 
 	official_interface(argc, argv);
