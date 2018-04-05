@@ -21,9 +21,10 @@ class Parameter {
 private:
 	Parameter() {
 		min_freq=-1;
+		version ="1.0.3";
 	}
 	~Parameter() {
-		version ="1.0.2";
+
 
 	}
 	static Parameter* m_pInstance;

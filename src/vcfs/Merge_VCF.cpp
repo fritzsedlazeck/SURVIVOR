@@ -604,7 +604,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					tmp.num_reads.second = atoi(&buffer[i + 4]);
 				}
 
-				if (count == 7 && strncmp(&buffer[i], "EAS_AF=", 7) == 0) { //EAS_AF
+				if (count == 7 && strncmp(&buffer[i], "EUR_AF=", 7) == 0) { //EAS_AF
 					freq = atof(&buffer[i + 7]);
 				}
 				if (count == 7 && strncmp(&buffer[i], ";CT=", 4) == 0) {
@@ -718,7 +718,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 			if (tmp.stop.chr.empty()) {
 				tmp.stop.chr = tmp.start.chr;
 			}
-			if (tmp.sv_len == -1) {
+			if (tmp.sv_len <1) {
 				tmp.sv_len = abs(tmp.start.pos - tmp.stop.pos);
 			}
 			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (tmp.sv_len >= min_svs))) { // || tmp.type==4

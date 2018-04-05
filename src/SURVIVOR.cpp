@@ -223,18 +223,27 @@ void official_interface(int argc, char *argv[]) {
 				std::cerr << "Output: vcf file" << std::endl;
 			}
 			exit(0);
-		}
-		/*else if (strcmp(argv[1], "updateBamfile") == 0) {
+		} else if (strcmp(argv[1], "convertAssemblytics") == 0) {
 			if (argc == 5) {
-				process_sam_forpacbio(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
+				process_Assemblytics(std::string(argv[2]), atoi(argv[3]), std::string(argv[4]));
 			} else {
-				std::cerr << "original SNP file" << std::endl;
-				std::cerr << "Hapcut2 final file" << std::endl;
-				std::cerr << "Output: vcf file" << std::endl;
+				std::cerr << "Bed file from Assemblytics" << std::endl;
+				std::cerr << "Min size to keep" << std::endl;
+				std::cerr << "Output vcf file" << std::endl;
 			}
 			exit(0);
+		}
+		/*else if (strcmp(argv[1], "updateBamfile") == 0) {
+		 if (argc == 5) {
+		 process_sam_forpacbio(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
+		 } else {
+		 std::cerr << "original SNP file" << std::endl;
+		 std::cerr << "Hapcut2 final file" << std::endl;
+		 std::cerr << "Output: vcf file" << std::endl;
+		 }
+		 exit(0);
 
-		}*/
+		 }*/
 
 	}
 	std::cerr << "Program: SURVIVOR (Tools for Structural Variations in the VCF format)" << std::endl;
