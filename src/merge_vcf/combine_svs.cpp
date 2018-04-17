@@ -66,7 +66,7 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 	fprintf(file, "%s", "##ALT=<ID=DEL,Description=\"Deletion\">\n");
 	fprintf(file, "%s", "##ALT=<ID=DUP,Description=\"Duplication\">\n");
 	fprintf(file, "%s", "##ALT=<ID=INV,Description=\"Inversion\">\n");
-	fprintf(file, "%s", "##ALT=<ID=TRA,Description=\"Translocation\">\n");
+	fprintf(file, "%s", "##ALT=<ID=BND,Description=\"Translocation\">\n");
 	fprintf(file, "%s", "##ALT=<ID=INS,Description=\"Insertion\">\n");
 	fprintf(file, "%s", "##INFO=<ID=CIEND,Number=1,Type=String,Description=\"PE confidence interval around END\">\n");
 	fprintf(file, "%s", "##INFO=<ID=CIPOS,Number=1,Type=String,Description=\"PE confidence interval around POS\">\n");
@@ -160,6 +160,133 @@ std::string print_strands(std::pair<bool, bool> strands) {
 	return strand;
 }
 
+void print_entry_overlap_BND(FILE *& file, SVS_Node * entry, int id) {
+	if (entry->type != 3) {
+		print_entry_overlap(file, entry, id);
+	} else {
+		std::ostringstream convert;   // stream used for the conversion
+		std::pair<int, int> cipos;
+		std::pair<int, int> ciend;
+		int index = get_index_medpos(entry->caller_info, cipos, ciend);
+
+		convert << entry->first.chr;   //caller_info[index]->starts[0].chr;
+		convert << "\t";
+		convert << entry->caller_info[index]->starts[0];  //entry->first.position;
+		convert << "\t";
+		convert << trans_type(entry->caller_info[index]->types[0]);
+		convert << "00";
+		convert << id;
+		convert << "SUR\tN\t";
+		if (!entry->strand.first) { //&&
+			convert << "]";
+			convert << entry->second.chr;
+			convert << ":";
+			convert << entry->second.position;
+			convert << "]N";
+		} else {
+			convert << "N[";
+			convert << entry->second.chr;
+			convert << ":";
+			convert << entry->second.position;
+			convert << "[";
+		}
+
+		convert << ">\t.\t";
+		convert << "PASS\t";
+		convert << "SUPP=";
+		convert << get_support(entry->caller_info);
+		convert << ";SUPP_VEC=";
+		convert << get_support_vec(entry->caller_info); //todo make aware of prev_supp/ supp vec
+		convert << ";AVGLEN=";
+		if (entry->type != 3) {
+			convert << get_avglen(entry->caller_info);
+		} else {
+			convert << "100000";   // TODO think about it.
+		}
+		/*convert << ";med_start=";
+		 convert << get_start_medpos(entry->caller_info);
+		 convert << ";med_stop=";
+		 convert << get_stop_medpos(entry->caller_info);*/
+		convert << ";SVTYPE=BND";
+		convert << ";SVMETHOD=SURVIVORv2;CHR2=";
+		convert << entry->second.chr;   //caller_info[index]->stops[0].chr;
+		convert << ";END=";
+		convert << entry->caller_info[index]->stops[0];   //entry->second.position;
+
+		convert << ";CIPOS=";
+
+		convert << cipos.first;
+		convert << ",";
+		convert << cipos.second;
+		convert << ";CIEND=";
+		convert << ciend.first;
+		convert << ",";
+		convert << ciend.second;
+
+		//if (Parameter::Instance()->use_strand) {
+		convert << ";STRANDS=";
+		convert << print_strands(entry->caller_info[index]->strand);
+		//}
+		convert << "\tGT:PSV:LN:DR:ST:TY:CO";
+		int pos = 0;
+		//std::cout<<"Check: "<<Parameter::Instance()->max_caller <<" vs "<<entry->caller_info.size()<<std::endl;
+		for (size_t i = 0; i < Parameter::Instance()->max_caller; i++) {
+			convert << "\t";
+			if (pos < entry->caller_info.size() && i == entry->caller_info[pos]->id) {
+				//	std::cout<<"hit: "<<i<<std::endl;
+				convert << entry->caller_info[pos]->genotype;
+				convert << ":";
+				if (!entry->caller_info[pos]->pre_supp_vec.empty()) {
+					convert << entry->caller_info[pos]->pre_supp_vec;
+				} else {
+					convert << "NA";
+				}
+				convert << ":";
+				convert << entry->caller_info[pos]->len;
+				convert << ":";
+				convert << entry->caller_info[pos]->num_support.first;   //ref
+				convert << ",";
+				convert << entry->caller_info[pos]->num_support.second;   //alt
+				convert << ":";
+				convert << print_strands(entry->caller_info[pos]->strand);
+				convert << ":";
+
+				if (entry->caller_info[pos]->types.empty()) {
+					convert << "NaN";
+				}
+				for (size_t j = 0; j < entry->caller_info[pos]->types.size(); j++) {
+					if (j > 0) {
+						convert << ",";
+					}
+					convert << trans_type(entry->caller_info[pos]->types[j]);
+				}
+				convert << ":";
+				if (entry->caller_info[pos]->starts.empty()) {
+					convert << "NaN";
+				}
+				for (size_t j = 0; j < entry->caller_info[pos]->starts.size(); j++) {
+					if (j > 0) {
+						convert << ",";
+					}
+					convert << entry->first.chr;
+					convert << "_";
+					convert << entry->caller_info[pos]->starts[j];
+					convert << "-";
+					convert << entry->second.chr;
+					convert << "_";
+					convert << entry->caller_info[pos]->stops[j];
+				}
+				pos++;
+			} else {
+				convert << "./.:NaN:0:0,0:--:NaN:NaN";
+			}
+
+		}
+		fprintf(file, "%s", convert.str().c_str());
+		fprintf(file, "%c", '\n');
+
+	}
+}
 void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	std::ostringstream convert;   // stream used for the conversion
 	std::pair<int, int> cipos;
@@ -435,7 +562,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 			 }*/
 
 			if (support >= min_support && len > min_svs) {
-				print_entry_overlap(file, (*i), id);
+				print_entry_overlap_BND(file, (*i), id);
 			}
 			//		while (support >= (int)hist.size()) {
 			//			hist.push_back(0);
