@@ -32,23 +32,33 @@ to see the individual parameters for each option.
 
 choose the ID from these options:
 ```
-Possible options
-1: Simulate SV on genome
-2: Simulate PacBio/ONT reads
-3: Evaluate SV calling
-4: Convert Bionano smap to vcf file
-5: Consensus call from multipe SV calls (vcf files)
-6: Extract genes influenced by SVs
-7: Filter and convert SV calls from Delly
-8: Converts vcf to bedpe
-9: Filter and convert SV calls from BED files
-10: Convert SV calls from PBHoney (tails)
-11: Convert SV calls from Assemblytics
-12: Summarize MQ 0 coverage to bed file
-13: Summarize SVs events in VCF file
-```
+Program: SURVIVOR (Tools for Structural Variations in the VCF format)
+Version: 1.0.3
 
-__Please note:__ SURVIVOR assumes that the sequences in the fasta file for the reference does not exceed 200,000bp per line.
+Usage: SURVIVOR <command> [options]
+
+Commands:
+-- Simulation/ Evaluation
+	simSV	Simulates SVs and SNPs on a reference genome.
+	scanreads	Obtain error profiles form mapped reads for simulation.
+	simreads	Simulates long reads (Pacio or ONT).
+	eval	Evaluates a VCF file after SV calling over simulated data.
+
+-- Comparison/filtering
+	merge	Compare or merge VCF files to generate a consensus or multi sample vcf files.
+	filter	Filter a vcf file based on size and/or regions to ignore
+	stats	Report multipe stats over a VCF file
+	compMUMMer	Annotates a VCF file with the breakpoints found with MUMMer (Show-diff).
+
+-- Conversion
+	bincov	Bins coverage vector to a bed file to filter SVs in low MQ regions
+	vcftobed	Converts a VCF file to a bed file
+	bedtovcf	Converts a bed file to a VCF file
+	smaptovcf	Converts the smap file to a VCF file (beta version)
+	bedpetovcf	Converts a bedpe file ot a VCF file (beta version)
+	hapcuttovcf	Converts the Hapcut2 final file to a VCF file using the original SNP file provided to Hapcut2
+	convertAssemblytics	Converts Assemblytics to a VCF file```
+```
 **************************************
 ## CONTACT:
 
