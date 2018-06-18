@@ -138,8 +138,8 @@ int get_index_medpos(std::vector<Support_Node *> caller_info, std::pair<int, int
 			}
 			cpos.first = std::min(caller_info[i]->starts[j] - caller_info[index]->starts[0], cpos.first);
 			cpos.second = std::max(caller_info[i]->starts[j] - caller_info[index]->starts[0], cpos.second);
-			cend.first = std::min(caller_info[i]->stops[j] - caller_info[index]->stops[0], cpos.first);
-			cend.second = std::max(caller_info[i]->stops[j] - caller_info[index]->stops[0], cpos.first);
+			cend.first = std::min(caller_info[i]->stops[j] - caller_info[index]->stops[0], cend.first);
+			cend.second = std::max(caller_info[i]->stops[j] - caller_info[index]->stops[0], cend.second);
 		}
 	}
 	return index;

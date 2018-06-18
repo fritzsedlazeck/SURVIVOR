@@ -119,7 +119,7 @@ void official_interface(int argc, char *argv[]) {
 				//	combine_calls_new(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
 				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), atoi(argv[8]), std::string(argv[9]));
 			} else {
-				std::cerr << "Tab file with names" << std::endl;
+				std::cerr << "File with VCF names and paths" << std::endl;
 				std::cerr << "max distance between breakpoints " << std::endl;
 				std::cerr << "Minimum number of supporting caller" << std::endl;
 				std::cerr << "Take the type into account (1==yes, else no)" << std::endl;
