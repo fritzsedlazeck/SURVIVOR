@@ -233,6 +233,16 @@ void official_interface(int argc, char *argv[]) {
 			}
 			exit(0);
 		}
+		/*else if (strcmp(argv[1], "scrub") == 0) {
+			if (argc == 5) {
+			//	scrup_svs(std::string(argv[2]), string(argv[3]), std::string(argv[4]));
+			} else {
+				std::cerr << "VCF file SV" << std::endl;
+				std::cerr << "VCF file SNP" << std::endl;
+				std::cerr << "Output SV vcf file" << std::endl;
+			}
+			exit(0);
+		}*/
 		/*else if (strcmp(argv[1], "updateBamfile") == 0) {
 		 if (argc == 5) {
 		 process_sam_forpacbio(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
@@ -274,7 +284,7 @@ void official_interface(int argc, char *argv[]) {
 	std::cerr << "\tsmaptovcf\tConverts the smap file to a VCF file (beta version)" << std::endl;
 	std::cerr << "\tbedpetovcf\tConverts a bedpe file ot a VCF file (beta version)" << std::endl;
 	std::cerr << "\thapcuttovcf\tConverts the Hapcut2 final file to a VCF file using the original SNP file provided to Hapcut2" << std::endl;
-	std::cerr << "\tconvertAssemblytics\tConverts Assemblytics to a VCF file" <<std::endl;
+	std::cerr << "\tconvertAssemblytics\tConverts Assemblytics to a VCF file" << std::endl;
 
 	exit(0);
 }

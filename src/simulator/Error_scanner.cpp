@@ -16,6 +16,7 @@ void add_event(int pos, size_t & i, vector<differences_str> & events) {
 	ev.position = pos;
 	ev.type = 0; //mismatch
 	events.insert(events.begin() + i, ev);
+//	cout<<"Add event: "<<pos<<endl;
 }
 
 int get_index(char nuc) {
@@ -222,6 +223,7 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 	 */
 	//set ref length requ. later on:pos
 	//cout<<" comp len: "<<this->ref_len<<" "<<pos<<" "<<this->getPosition()<<endl;
+	//cout<<"ADD MD"<<endl;
 	pos = 0;
 	bool match = false;
 	bool gap = false;
@@ -229,7 +231,7 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 	size_t pos_events = 0;
 	//comp_aln = clock();
 	size_t i = 0;
-	while (md[i] != '\t') {
+	while (md[i] != '\t' && md[i]!='\0' && md[i]!='\n') {
 		if (md[i] == '^') { //deletion!
 			gap = true;
 		}
@@ -244,6 +246,7 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 					ref_pos++;
 				}
 				//store in sorted order:
+				//cout<<"ADD: "<<pos<<" "<<pos_events<<endl;
 				add_event(pos, pos_events, events);
 				//		error_mat[get_index(md[i])][read_seq[pos]];//check that out!
 				pos++; //just the pos on ref!
@@ -251,12 +254,14 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 			match = false;
 		} else if (!match) {
 			match = true;
+			//if(atoi(&md[i])>100){
+			//	cout<<"Warning MD! "<<atoi(&md[i])<<" "<<md[i]<<md[i+1]<<md[i+2]<<endl;
+			//}
 			pos += atoi(&md[i]);
 			gap = false;
 		}
 		i++;
 	}
-
 	/*std::cout << "SECOND:" << std::endl;
 	 for (size_t i = 0; i < events.size(); i++) {
 	 if (abs(events[i].type) > 200) {
@@ -276,6 +281,7 @@ size_t get_length(std::vector<CigarOp> CigarData) {
 			len += CigarData[i].Length;
 		}
 	}
+	//cout<<" EST Length "<<len<<endl;
 	return len;
 }
 std::vector<CigarOp> parse_cigar(char * buffer) {
@@ -296,6 +302,13 @@ std::vector<CigarOp> parse_cigar(char * buffer) {
 		}
 		i++;
 	}
+	/*cout<<"Cigar:";
+	for(size_t i =0;i<cigar.size();i++){
+		if(cigar[i].Length>50){
+			cout<<cigar[i].Length<<" ";
+		}
+	}
+	cout<<endl;*/
 	return cigar;
 }
 
@@ -306,17 +319,19 @@ void store_diffs(vector<differences_str> diffs, std::vector<read_position> & err
 	tmp.ins = 0;
 	tmp.match = 0;
 	tmp.mismatch = 0;
-//	cout<<diffs.size() - 1<<endl;
+
 	size_t size = diffs[diffs.size() - 1].position;
 	//cout<<"size: "<<size<< " "<< error_profile.size()<<endl;
-	while (size > error_profile.size()) { //check if the length is ok.
-		error_profile.push_back(tmp);
-	}
+	error_profile.resize(size,tmp);
+	//while (size > error_profile.size()) { //check if the length is ok.
+	//	error_profile.push_back(tmp);
+	//}
+//	cout<<"Start sort insert"<<endl;
 
 	int pos = 0;
 	for (size_t i = 0; i + 1 < diffs.size(); i++) { //last position in that array is basically a flag!
 		int diff = diffs[i].position - pos;
-		//	cout << "Diff:" << diff << " " << pos << " " << error_profile.size() << endl;
+	//	cout << "Diff:" << diff << " " << pos << " " << error_profile.size() << endl;
 		for (int j = 0; j < diff - 1; j++) {
 			error_profile[pos].match++;
 			error_profile[pos].total++;
@@ -362,6 +377,8 @@ void generate_error_profile(int min_length, bool comp_error_mat, std::string out
 		getline(cin, line);
 		if (!cin.fail()) {
 			if (line[0] != '@') {
+			//	std::cout<<"Parse line :"<< line<<std::endl;
+
 				int count = 0;
 				std::string seq;
 				std::vector<CigarOp> cigar_data;
@@ -383,13 +400,14 @@ void generate_error_profile(int min_length, bool comp_error_mat, std::string out
 					}
 					if (count > 11) {
 						if (strncmp(&line[i], "MD:Z:", 5) == 0) {
-							//cout << "MD!" << endl;
 							num++;
 							vector<differences_str> diffs = summarizeAlignment(cigar_data, &line[i + 5]);
 							store_diffs(diffs, error_profile);
 							if (comp_error_mat) {
 								computeAlignment(cigar_data, &line[i + 5], seq, error_mat,dir);
 							}
+							//cout << "MD!" << endl;
+							break;
 							if ((int) num % 10000 == 0) {
 								cout << "Scanned: " << num << endl;
 							}

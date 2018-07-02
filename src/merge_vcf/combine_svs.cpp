@@ -487,6 +487,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	Parameter::Instance()->dynamic_size = false;   //(dynamic_size==1);
 	Parameter::Instance()->min_support = min_support;
 
+//	std::cout<<"Min: "<<	Parameter::Instance()->min_support<<std::endl;
 	IntervallTree bst;
 	TNode *root = NULL;
 	std::map<std::string, int> chrs;
@@ -523,7 +524,9 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 		keys.push_back((*i).first);
 	}
 
+//	std::cout<<"Min: "<<	Parameter::Instance()->min_support<<std::endl;
 	std::sort(keys.begin(), keys.end(), numeric_string_compare);
+
 	for (size_t i = 0; i < keys.size(); i++) {
 		std::vector<SVS_Node *> points = union_set[keys[i]];
 		for (std::vector<SVS_Node *>::reverse_iterator i = points.rbegin(); i != points.rend(); i++) {
@@ -560,8 +563,9 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 			 svs_summary[support][type][4]++;
 			 }
 			 }*/
-
+		//	std::cout<<"Min3: "<<	Parameter::Instance()->min_support<<" "<<support<<std::endl;
 			if (support >= min_support && len > min_svs) {
+
 				print_entry_overlap_BND(file, (*i), id);
 			}
 			//		while (support >= (int)hist.size()) {
