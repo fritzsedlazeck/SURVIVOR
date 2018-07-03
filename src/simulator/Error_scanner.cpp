@@ -270,6 +270,7 @@ vector<differences_str> summarizeAlignment(std::vector<CigarOp> cigar_data, char
 	 }
 	 cout << endl;
 	 */
+//	cout<<"EV: "<<events.size()<<endl;
 	return events;
 }
 
@@ -319,13 +320,17 @@ void store_diffs(vector<differences_str> diffs, std::vector<read_position> & err
 	tmp.ins = 0;
 	tmp.match = 0;
 	tmp.mismatch = 0;
+	tmp.total=0;
 
-	size_t size = diffs[diffs.size() - 1].position;
-	//cout<<"size: "<<size<< " "<< error_profile.size()<<endl;
-	error_profile.resize(size,tmp);
-	//while (size > error_profile.size()) { //check if the length is ok.
-	//	error_profile.push_back(tmp);
-	//}
+	size_t size = 1;
+	if(diffs.size()>0){
+		size=diffs[diffs.size() - 1].position;
+	}
+//	cout<<"size: "<<size<< " "<< error_profile.size()<<endl;
+	//error_profile.resize(size,tmp);
+	while (size > error_profile.size()) { //check if the length is ok.
+		error_profile.push_back(tmp);
+	}
 //	cout<<"Start sort insert"<<endl;
 
 	int pos = 0;
