@@ -9,7 +9,7 @@
 
 //read in all the vcf filenames:
 std::vector<std::string> parse_filename(std::string filename) {
-	std::vector<std::string> names;
+	std::vector < std::string > names;
 	size_t buffer_size = 2000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
@@ -225,6 +225,34 @@ std::pair<int, int> parse_delly(char * buffer) {
 			//std::cout<<"first: "<< atoi(&buffer[i])<<std::endl;
 		}
 		if ((count == 10 || count == 11) && buffer[i - 1] == ':') {
+			res.second += atoi(&buffer[i]);
+			//	std::cout<<"second: "<< atoi(&buffer[i])<<std::endl;
+		}
+		if (buffer[i] == ':') {
+			count++;
+		}
+		i++;
+	}
+	return res;
+}
+
+std::pair<int, int> parse_sniffles(char * buffer) {
+	//GT:DR:DV        0/1:8:4
+	std::pair<int, int> res;
+	res.first = 0;
+	res.second = 0;
+	size_t i = 0;
+	while (buffer[i] != '\t') {
+		i++;
+	}
+	//std::cout<<buffer<<std::endl;
+	int count = 0;
+	while (buffer[i] != '\n' && buffer[i] != '\0') {
+		if ((count == 1  ) && buffer[i - 1] == ':') {
+			res.first += atoi(&buffer[i]);
+			//std::cout<<"first: "<< atoi(&buffer[i])<<std::endl;
+		}
+		if ((count == 2) && buffer[i - 1] == ':') {
 			res.second += atoi(&buffer[i]);
 			//	std::cout<<"second: "<< atoi(&buffer[i])<<std::endl;
 		}
@@ -623,11 +651,11 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					tmp.sv_len = abs((int) atof(&buffer[i + 6]));
 					//	std::cout<<"LEN: "<<tmp.sv_len<<std::endl;
 				}
-				if (count == 7 && (strncmp(&buffer[i], "SUPP=",5) == 0)) {
+				if (count == 7 && (strncmp(&buffer[i], "SUPP=", 5) == 0)) {
 					std::stringstream ss;
-					ss<<atoi(&buffer[i + 5]);
-					tmp.prev_support_vec =ss.str();
-					tmp.prev_support_vec +=",";
+					ss << atoi(&buffer[i + 5]);
+					tmp.prev_support_vec = ss.str();
+					tmp.prev_support_vec += ",";
 
 				}
 				if (count == 7 && (strncmp(&buffer[i], "SUPP_VEC=", 9) == 0)) {
@@ -647,15 +675,15 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
 					size_t j = i;
 					tmp.genotype = "./.";
-					while (buffer[j] != '\0' && (tmp.genotype[0]=='.')) {
-						if (buffer[j-1] == '\t') {
+					while (buffer[j] != '\0' && (tmp.genotype[0] == '.')) {
+						if (buffer[j - 1] == '\t') {
 							tmp.genotype[0] = buffer[j];
-							tmp.genotype[1] = buffer[j+1];
-							tmp.genotype[2] = buffer[j+2];
+							tmp.genotype[1] = buffer[j + 1];
+							tmp.genotype[2] = buffer[j + 2];
 						}
 						j++;
 					}
-				//	std::cout<<"GO: "<<tmp.genotype<<std::endl;
+					//	std::cout<<"GO: "<<tmp.genotype<<std::endl;
 				}
 				if (count == 8 && strncmp(&buffer[i], "PR:SR", 5) == 0) {
 					//manta
@@ -664,6 +692,10 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				if (count == 8 && strncmp(&buffer[i], "DR:DV:RR:RV", 11) == 0) {
 					//delly
 					tmp.num_reads = parse_delly(&buffer[i]);
+				}
+				if (count == 8 && strncmp(&buffer[i], "DR:DV", 5) == 0) {
+					//manta
+					tmp.num_reads = parse_sniffles(&buffer[i]);
 				}
 
 				if (count == 4 && buffer[i - 1] == '<') {
@@ -720,7 +752,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 			if (tmp.stop.chr.empty()) {
 				tmp.stop.chr = tmp.start.chr;
 			}
-			if (tmp.sv_len <1) {
+			if (tmp.sv_len < 1) {
 				tmp.sv_len = abs(tmp.start.pos - tmp.stop.pos);
 			}
 			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (tmp.sv_len >= min_svs))) { // || tmp.type==4
@@ -926,7 +958,7 @@ void merge_vcf(std::string filenames, int max_dist, int min_observed, std::strin
 	Parameter::Instance()->max_dist = max_dist;
 	Parameter::Instance()->use_type = true;
 
-	std::vector<std::string> names = parse_filename(filenames);
+	std::vector < std::string > names = parse_filename(filenames);
 	std::cout << "found in file: " << names.size() << std::endl;
 	std::vector<strvcfentry> final_vcf;
 
