@@ -51,7 +51,7 @@ std::string get_names(const char * buffer) {
 	return name;	//.substr(start,stop-start);
 }
 std::vector<std::string> parse_names(std::string vcf_file) {
-	std::vector<std::string> names;
+	std::vector < std::string > names;
 	size_t buffer_size = 2000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
@@ -305,10 +305,42 @@ short get_type_bed(std::string type) {
 
 }
 
+void print_header(FILE *& file) {
+	fprintf(file, "%s", "##fileformat=VCFv4.1\n");
+	fprintf(file, "%s", "##source=SURVIVOR\n");
+	fprintf(file, "%s", "##ALT=<ID=DEL,Description=\"Deletion\">\n");
+	fprintf(file, "%s", "##ALT=<ID=DUP,Description=\"Duplication\">\n");
+	fprintf(file, "%s", "##ALT=<ID=INV,Description=\"Inversion\">\n");
+	fprintf(file, "%s", "##ALT=<ID=BND,Description=\"Translocation\">\n");
+	fprintf(file, "%s", "##ALT=<ID=INS,Description=\"Insertion\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CIEND,Number=1,Type=String,Description=\"PE confidence interval around END\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CIPOS,Number=1,Type=String,Description=\"PE confidence interval around POS\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CHR2,Number=1,Type=String,Description=\"Chromosome for END coordinate in case of a translocation\">\n");
+	fprintf(file, "%s", "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of the structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=MAPQ,Number=1,Type=Integer,Description=\"Median mapping quality of paired-ends\">\n");
+	fprintf(file, "%s", "##INFO=<ID=RE,Number=1,Type=Integer,Description=\"read support\">\n");
+	fprintf(file, "%s", "##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description=\"Imprecise structural variation\">\n");
+	fprintf(file, "%s", "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variation\">\n");
+	fprintf(file, "%s", "##INFO=<ID=AVGLEN,Number=1,Type=Float,Description=\"Length of the SV\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Vector of samples supporting the SV.\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of the SV.\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SUPP_VEC,Number=1,Type=String,Description=\"Number of samples supporting the variant.\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SUPP,Number=1,Type=String,Description=\"Previous support vector\">\n");
+	fprintf(file, "%s", "##INFO=<ID=STRANDS,Number=1,Type=String,Description=\"Indicating the direction of the reads with respect to the type and breakpoint.\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=LN,Number=1,Type=Integer,Description=\"predicted length\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=DR,Number=1,Type=Integer,Description=\"# supporting reference,variant reads in that order\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=ST,Number=1,Type=String,Description=\"Strand of SVs\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=TY,Number=1,Type=String,Description=\"Types\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=CO,Number=1,Type=String,Description=\"Coordinates\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=PSV,Number=1,Type=String,Description=\"Previous support vector\">\n");
+
+	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT");
+}
+
 std::string print_entry_bed(strvcfentry & region) {
 
 //	III     5104    DEL00000002     N       <DEL>   .       LowQual IMPRECISE;CIEND=-305,305;CIPOS=-305,305;SVTYPE=DEL;SVMETHOD=EMBL.DELLYv0.5.9;CHR2=III;END=15991;SVLEN=10887;CT=3to5;PE=2;MAPQ=60        GT:GL:GQ:FT:RC:DR:DV:RR:RV      1/1:-12,-0.602059,0:6:LowQual:816:0:2:0:0
-
 	std::ostringstream convert;   // stream used for the conversion
 	convert << region.start.chr;
 	convert << "\t";
@@ -328,11 +360,9 @@ std::string print_entry_bed(strvcfentry & region) {
 	convert << region.stop.pos - region.start.pos;
 	convert << ";PE=";
 	convert << 1;
-	convert << "\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t";
+	convert << "\tGT\t";
 	std::stringstream s;
-	s << "1/1:0,0,0:0:PASS:0:0:";
-	s << 1;
-	s << ":0:0";
+	s << "./.";
 	//std::cout<<convert.str()<<std::endl;
 	return convert.str();
 }
@@ -349,6 +379,8 @@ void process_bed_file(std::string bedfile, std::string type, std::string output)
 	}
 	FILE *file;
 	file = fopen(output.c_str(), "w");
+
+	print_header(file);
 
 	myfile.getline(buffer, buffer_size);
 	while (!myfile.eof()) {

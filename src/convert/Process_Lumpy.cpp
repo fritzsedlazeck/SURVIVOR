@@ -163,7 +163,7 @@ std::string print_entry(strregion region, std::string type, double score, std::s
 	convert << region.stop.pos - region.start.pos;
 	convert << ";STRANDS=";
 	convert << strand;
-	convert << ";";
+	convert << ";OTHER=";
 	convert << info;
 
 	convert << "\tGT\t";
@@ -261,6 +261,7 @@ void print_header(std::string name, std::string output) {
 	fprintf(file, "%s", "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVLEN,Number=1,Type=Integer,Description=\"Length of the SV\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=OTHER,Number=1,Type=String,Description=\"Type of structural variant\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Type of approach used to detect SV\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVSCORE,Number=1,Type=Integer,Description=\"Score of SV\">\n");
 

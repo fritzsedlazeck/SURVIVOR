@@ -14,6 +14,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include "../merge_vcf/combine_svs.h"
 #include "../vcfs/Merge_VCF.h"
 #include "../simulator/Eval_vcf.h"
 #include "../vcfs/Annotate_vcf.h"
