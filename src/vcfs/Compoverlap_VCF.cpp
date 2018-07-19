@@ -37,7 +37,7 @@ void print_header(std::string vcf_file, FILE *& out) {
 	std::ifstream myfile;
 	myfile.open(vcf_file.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "BED Parser: could not open file: " << vcf_file.c_str() << std::endl;
+		std::cout << "VCF Parser: could not open file: " << vcf_file.c_str() << std::endl;
 		exit(0);
 	}
 	myfile.getline(buffer, buffer_size);

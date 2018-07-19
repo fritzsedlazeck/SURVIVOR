@@ -77,10 +77,10 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 	fprintf(file, "%s", "##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description=\"Imprecise structural variation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=AVGLEN,Number=1,Type=Float,Description=\"Length of the SV\">\n");
-	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Vector of samples supporting the SV.\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Method for generating this merged VCF file.\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of the SV.\">\n");
-	fprintf(file, "%s", "##INFO=<ID=SUPP_VEC,Number=1,Type=String,Description=\"Number of samples supporting the variant.\">\n");
-	fprintf(file, "%s", "##INFO=<ID=SUPP,Number=1,Type=String,Description=\"Previous support vector\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SUPP_VEC,Number=1,Type=String,Description=\"Vector of supporting samples.\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SUPP,Number=1,Type=String,Description=\"Number of samples supporting the variant\">\n");
 	fprintf(file, "%s", "##INFO=<ID=STRANDS,Number=1,Type=String,Description=\"Indicating the direction of the reads with respect to the type and breakpoint.\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=LN,Number=1,Type=Integer,Description=\"predicted length\">\n");
