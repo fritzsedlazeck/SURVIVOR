@@ -372,8 +372,8 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 		tmp.genotype = "./.";
 		tmp.strands.first = true;
 		tmp.strands.second = true;
-		tmp.num_reads.first = 0;
-		tmp.num_reads.second = 0;
+		tmp.num_reads.first = -1;
+		tmp.num_reads.second = -1;
 		tmp.sv_len = -1;
 		tmp.af = -1;
 		float freq = 0;
@@ -647,9 +647,8 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					//		std::cout<<"LEN: "<<tmp.sv_len<<std::endl;
 				}
 
-				if (count == 7 && (strncmp(&buffer[i], "SVLEN=", 6) == 0)) {
+				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i], "SVLEN=", 6) == 0)) {
 					tmp.sv_len = abs((int) atof(&buffer[i + 6]));
-					//	std::cout<<"LEN: "<<tmp.sv_len<<std::endl;
 				}
 				if (count == 7 && (strncmp(&buffer[i], "SUPP=", 5) == 0)) {
 					std::stringstream ss;

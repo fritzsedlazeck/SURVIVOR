@@ -191,7 +191,7 @@ void print_entry_overlap_BND(FILE *& file, SVS_Node * entry, int id) {
 			convert << "[";
 		}
 
-		convert << ">\t.\t";
+		convert << "\t.\t";
 		convert << "PASS\t";
 		convert << "SUPP=";
 		convert << get_support(entry->caller_info);

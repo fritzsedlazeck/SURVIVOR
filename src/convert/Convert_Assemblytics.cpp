@@ -87,7 +87,7 @@ std::string print_entry(strvcfentry & region) {
 	convert << trans_type(region.type);
 	convert << ">\t.\tLowQual\tIMPRECISE;SVTYPE=";
 	convert << trans_type(region.type);
-	convert << ";SVMETHOD=PINDELv0.2.5a8;CHR2=";
+	convert << ";SVMETHOD=Assemblytics;CHR2=";
 	convert << region.stop.chr;
 	convert << ";END=";
 	convert << region.stop.pos;
@@ -95,12 +95,7 @@ std::string print_entry(strvcfentry & region) {
 	convert << region.stop.pos - region.start.pos;
 	convert << ";PE=";
 	convert << 1;
-	convert << "\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t";
-	std::stringstream s;
-	s << "1/1:0,0,0:0:PASS:0:0:";
-	s << 1;
-	s << ":0:0";
-	//std::cout<<convert.str()<<std::endl;
+	convert << "\tGT\t1/1";
 	return convert.str();
 }
 

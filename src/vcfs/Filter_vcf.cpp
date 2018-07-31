@@ -158,7 +158,7 @@ void filter_vcf(std::string vcf_file, std::string genomic_regions,int min_size, 
 			//	std::cout<<"size_pass: "<<size<<" "<<min_size<<" "<<max_size<<std::endl;
 			//}
 
-			if (((sv.af ==-1 || (sv.af>min_AF) ) && (ignore_regions.empty() || pass_filter(sv, ignore_regions) )) && ( (size>min_size && (size< max_size || max_size==-1)) && (sv.num_reads.second >min_reads)) ) {
+			if (((sv.af ==-1 || (sv.af>min_AF) ) && (ignore_regions.empty() || pass_filter(sv, ignore_regions) )) && ( (size>min_size && (size< max_size || max_size==-1)) && (sv.num_reads.second == -1 || sv.num_reads.second >min_reads)) ) {
 				fprintf(file, "%s", buffer.c_str());
 				fprintf(file, "%c", '\n');
 			} else {
