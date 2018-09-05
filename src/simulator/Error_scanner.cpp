@@ -429,6 +429,10 @@ void generate_error_profile(int min_length, bool comp_error_mat, std::string out
 			break;
 		}
 	}
+	if(num==0){
+		cerr<<"Exiting likely due to missing MD string!"<<endl;
+		exit(0);
+	}
 
 	FILE *file;
 	file = fopen(output.c_str(), "w");
