@@ -1,9 +1,9 @@
 //============================================================================
-// Name        : Arnes_little_helper.cpp
+// Name        : SURVIVOR.cpp
 // Author      : Fritz Sedlazeck
 // Version     :
-// Copyright   : artistic license
-// Description : Hello World in C++, Ansi-style
+// Copyright   : MIT license
+// Description : SURVIVOR toolkit
 //============================================================================
 
 #include <iostream>
@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+
 
 #include "simulator/SV_Simulator.h"
 #include "simulator/Pac_Simulator.h"
@@ -47,6 +49,7 @@
 Parameter* Parameter::m_pInstance = NULL;
 
 void official_interface(int argc, char *argv[]) {
+
 	if (argc > 1) {
 		if (strcmp(argv[1], "simSV") == 0) {
 			if (argc == 7) {
@@ -57,7 +60,6 @@ void official_interface(int argc, char *argv[]) {
 				generate_parameter_file(std::string(argv[2]));
 				std::cout << "Parameter file generated" << std::endl;
 			} else {
-
 				std::cerr << "No parameters provided:" << std::endl;
 				std::cerr << "To generate a example parameter file call the option again and specify the file name:" << std::endl;
 				std::cerr << std::endl;
@@ -230,6 +232,15 @@ void official_interface(int argc, char *argv[]) {
 				std::cerr << "Bed file from Assemblytics" << std::endl;
 				std::cerr << "Min size to keep" << std::endl;
 				std::cerr << "Output vcf file" << std::endl;
+			}
+			exit(0);
+
+		}else if (strcmp(argv[1],"genComp")==0){
+			if(argc==4){
+				summary_venn(std::string(argv[2]), std::string(argv[3]));
+			}else{
+				std::cerr << "Merged Vcf file" << std::endl;
+				std::cerr << "Output: pariwise overlap matrix" << std::endl;
 			}
 			exit(0);
 		}

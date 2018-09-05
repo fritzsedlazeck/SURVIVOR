@@ -254,11 +254,11 @@ bool is_overlapping(position curr, std::vector<struct_var> svs) {
 position choose_pos(std::map<std::string, std::string> genome, int min, int max, std::vector<struct_var>& svs) {
 	position pos = get_pos(genome, min, max);
 	int num = 0;
-	while (is_overlapping(pos, svs) && num < 100) {
+	while (is_overlapping(pos, svs) && num < 30) {
 		pos = get_pos(genome, min, max);
 		num++;
 	}
-	if (num == 100) {
+	if (num == 30) {
 		std::cerr << "Terminate program as it could not find a non overlapping region" << std::endl;
 		exit(0);
 	}
@@ -949,6 +949,10 @@ void simulate_SV(std::string ref_file, std::string parameter_file, float snp_fre
 	parameter par = parse_param(parameter_file);
 	int min_chr_len = std::max(std::max(par.dup_max, par.indel_max), std::max(par.inv_max, par.translocations_max));
 	std::map<std::string, std::string> genome = read_fasta(ref_file, min_chr_len);
+	if(par.translocations_num>0 && genome.size()<2){
+		std::cerr<<"We cannot simulate translocations without a second chromosome"<<std::endl;
+		exit(0);
+	}
 	//check_genome(genome, "First:");
 	std::cout << "generate SV" << std::endl;
 	std::vector<struct_var> svs;

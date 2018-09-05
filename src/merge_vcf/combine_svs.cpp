@@ -131,6 +131,8 @@ int get_index_medpos(std::vector<Support_Node *> caller_info, std::pair<int, int
 
 		for (size_t j = 0; j < caller_info[i]->starts.size(); j++) {
 			if (i == 0 && j == 0) {
+
+				//TODO think about it! some of these come out as negative.
 				cpos.first = caller_info[i]->starts[j] - caller_info[index]->starts[0];
 				cpos.second = caller_info[i]->starts[j] - caller_info[index]->starts[0];
 				cend.first = caller_info[i]->stops[j] - caller_info[index]->stops[0];
@@ -214,7 +216,6 @@ void print_entry_overlap_BND(FILE *& file, SVS_Node * entry, int id) {
 		convert << entry->caller_info[index]->stops[0];   //entry->second.position;
 
 		convert << ";CIPOS=";
-
 		convert << cipos.first;
 		convert << ",";
 		convert << cipos.second;

@@ -8,7 +8,7 @@
 #include "Summarize_SV.h"
 
 void adjust(std::vector<int> & vec, int dist) {
-	while ((int) vec.size() < dist+1) {
+	while ((int) vec.size() < dist + 1) {
 		vec.push_back(0);
 	}
 }
@@ -519,9 +519,20 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 	fclose(file);
 }
 
+std::vector<int> parse_supp_vec(std::string buffer) {
+	std::vector<int> ids;
+	for (size_t i = 0; i < buffer.size()&& buffer[i]!=';'; i++) {
+		if (buffer[i] == '1') {
+		//	cout<<i<<endl;
+			ids.push_back(i);
+		}
+	}
+	return ids;
+}
+
 void summary_venn(std::string filename, std::string output) {
 	std::vector<std::vector<int> > mat;
-	cout << "file: " << filename << endl;
+//	cout << "file: " << filename << endl;
 
 	size_t buffer_size = 200000000;
 	char*buffer = new char[buffer_size];
@@ -535,35 +546,56 @@ void summary_venn(std::string filename, std::string output) {
 
 	myfile.getline(buffer, buffer_size);
 
+	std::vector<std::string> names;
 	while (!myfile.eof()) {
-		size_t count = 0;
-		std::vector<int> ids;
-		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-			if (buffer[i] == '1') {
-				ids.push_back(count); //-1 since we have the ID in the first column.
+		if (buffer[0] == '#' && buffer[1] == 'C') {
+			size_t count = 0;
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				if(count>8 && buffer[i-1]=='\t'){
+					std::string name="";
+					for(size_t j=i;j<buffer_size && buffer[j]!='\t';j++){
+						name+=buffer[j];
+					}
+					//cout<<name<<endl;
+					names.push_back(name);
+				}
+				if(buffer[i]=='\t'){
+					count++;
+				}
 			}
-			if (buffer[i] == ' ') {
-				count++;
+			//cout<<"names: "<<names.size()<<endl;
+		} else if (buffer[0] != '#') {
+			size_t count = 0;
+			std::vector<int> ids;
+
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				if (count == 7 && strncmp(&buffer[i], "SUPP_VEC=", 9) == 0) {
+					ids = parse_supp_vec(&buffer[i + 9]);
+				}
+
+				if (buffer[i] == '\t') {
+					count++;
+				}
 			}
-		}
-		if (mat.empty()) {
-			vector<int> tmp;
-			tmp.resize(count, 0);
-			mat.resize(count, tmp);
-		}
-		//cout<<"ids: "<<ids.size()<<endl;
-		for (size_t i = 0; i < ids.size(); i++) {
-			for (size_t j = 0; j < ids.size(); j++) {
-				//if (ids[i] <= ids[j]) {
-				mat[ids[i]][ids[j]]++;
-				//}
+			if (mat.empty()) {
+				vector<int> tmp;
+				tmp.resize(names.size(), 0);
+				mat.resize(names.size(), tmp);
+			}
+		//	cout<<"ids: "<<ids.size() <<" "<< mat.size() <<" "<< mat[0].size()<<endl;
+			for (size_t i = 0; i < ids.size(); i++) {
+				for (size_t j = 0; j < ids.size(); j++) {
+					//if (ids[i] <= ids[j]) {
+					mat[ids[i]][ids[j]]++;
+					//}
+				}
 			}
 		}
 
 		myfile.getline(buffer, buffer_size);
 	}
 	myfile.close();
-	cout << "fin parsing: " << mat.size() << endl;
+	//cout << "fin parsing: " << mat.size() << endl;
 
 	FILE * file = fopen(output.c_str(), "w");
 	for (size_t i = 0; i < mat.size(); i++) {
