@@ -422,9 +422,7 @@ void generate_error_profile(int min_length, bool comp_error_mat, std::string out
 						count++;
 					}
 				}
-
 			}
-
 		} else {
 			break;
 		}
