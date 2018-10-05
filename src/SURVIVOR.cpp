@@ -245,7 +245,7 @@ void official_interface(int argc, char *argv[]) {
 			exit(0);
 		} else if (strcmp(argv[1], "parent_phasing") == 0) {
 			if (argc == 5) {
-				parental_phasing(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
+			//	parental_phasing(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
 			} else {
 				std::cerr << "Merged parental Vcf file" << std::endl;
 				std::cerr << "Hapcut2 final file" << std::endl;

@@ -8,7 +8,7 @@
 #include "Convert_Assemblytics.h"
 
 
-void print_header(std::string name, FILE *&file) {
+void print_header_ass(std::string name, FILE *&file) {
 
 
 	fprintf(file, "%s", "##fileformat=VCFv4.1\n");
@@ -138,7 +138,7 @@ void process_Assemblytics(std::string assemblytics,int minlen, std::string outpu
 	parse_assemblytics(assemblytics,minlen, entries);
 	FILE *file;
 	file = fopen(output.c_str(), "w");
-	print_header(assemblytics,file);
+	print_header_ass(assemblytics,file);
 	for (size_t i = 0; i < entries.size(); i++) {
 		fprintf(file, "%s", print_entry(entries[i]).c_str());
 		fprintf(file, "%c", '\n');
