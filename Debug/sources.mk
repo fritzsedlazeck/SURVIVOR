@@ -27,6 +27,8 @@ src \
 src/analysis_sv \
 src/convert \
 src/merge_vcf \
+src/phasing \
+src/scrup_vcf \
 src/simulator \
 src/snp_overlap \
 src/vcfs \

@@ -11,6 +11,8 @@ RM := rm -rf
 -include src/vcfs/subdir.mk
 -include src/snp_overlap/subdir.mk
 -include src/simulator/subdir.mk
+-include src/scrup_vcf/subdir.mk
+-include src/phasing/subdir.mk
 -include src/merge_vcf/subdir.mk
 -include src/convert/subdir.mk
 -include src/analysis_sv/subdir.mk
@@ -60,6 +62,5 @@ clean:
 	-@echo ' '
 
 .PHONY: all clean dependents
-.SECONDARY:
 
 -include ../makefile.targets
