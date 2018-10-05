@@ -12,8 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-
 #include "simulator/SV_Simulator.h"
 #include "simulator/Pac_Simulator.h"
 #include "simulator/Eval_vcf.h"
@@ -45,6 +43,7 @@
 #include "analysis_sv/Select_samples.h"
 #include "convert/Convert_hapcut2.h"
 #include "convert/Update_bam_pacbio.h"
+#include "phasing/Phasing_vcf.h"
 
 Parameter* Parameter::m_pInstance = NULL;
 
@@ -114,6 +113,7 @@ void official_interface(int argc, char *argv[]) {
 				std::cerr << "*.smap file" << std::endl;
 				std::cerr << "output file" << std::endl;
 			}
+
 			exit(0);
 		} else if (strcmp(argv[1], "merge") == 0) {
 			if (argc == 10) {
@@ -235,25 +235,35 @@ void official_interface(int argc, char *argv[]) {
 			}
 			exit(0);
 
-		}else if (strcmp(argv[1],"genComp")==0){
-			if(argc==4){
+		} else if (strcmp(argv[1], "genComp") == 0) {
+			if (argc == 4) {
 				summary_venn(std::string(argv[2]), std::string(argv[3]));
-			}else{
+			} else {
 				std::cerr << "Merged Vcf file" << std::endl;
 				std::cerr << "Output: pariwise overlap matrix" << std::endl;
 			}
 			exit(0);
-		}
-		/*else if (strcmp(argv[1], "scrub") == 0) {
+		} else if (strcmp(argv[1], "parent_phasing") == 0) {
 			if (argc == 5) {
-			//	scrup_svs(std::string(argv[2]), string(argv[3]), std::string(argv[4]));
+				parental_phasing(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
 			} else {
-				std::cerr << "VCF file SV" << std::endl;
-				std::cerr << "VCF file SNP" << std::endl;
-				std::cerr << "Output SV vcf file" << std::endl;
+				std::cerr << "Merged parental Vcf file" << std::endl;
+				std::cerr << "Hapcut2 final file" << std::endl;
+				std::cerr << "Output matrix" << std::endl;
 			}
 			exit(0);
-		}*/
+		}
+
+		/*else if (strcmp(argv[1], "scrub") == 0) {
+		 if (argc == 5) {
+		 //	scrup_svs(std::string(argv[2]), string(argv[3]), std::string(argv[4]));
+		 } else {
+		 std::cerr << "VCF file SV" << std::endl;
+		 std::cerr << "VCF file SNP" << std::endl;
+		 std::cerr << "Output SV vcf file" << std::endl;
+		 }
+		 exit(0);
+		 }*/
 		/*else if (strcmp(argv[1], "updateBamfile") == 0) {
 		 if (argc == 5) {
 		 process_sam_forpacbio(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
@@ -283,7 +293,7 @@ void official_interface(int argc, char *argv[]) {
 
 	std::cerr << "-- Comparison/filtering" << std::endl;
 	std::cerr << "\tmerge\tCompare or merge VCF files to generate a consensus or multi sample VCF files." << std::endl;
-	std::cerr << "\tgenComp\tGenerates a pairwise comparison matrix based on any multi sample VCF file"<<std::endl;
+	std::cerr << "\tgenComp\tGenerates a pairwise comparison matrix based on any multi sample VCF file" << std::endl;
 	std::cerr << "\tfilter\tFilter a vcf file based on size and/or regions to ignore" << std::endl;
 	std::cerr << "\tstats\tReport multipe stats over a VCF file" << std::endl;
 	std::cerr << "\tcompMUMMer\tAnnotates a VCF file with the breakpoints found with MUMMer (Show-diff)." << std::endl;

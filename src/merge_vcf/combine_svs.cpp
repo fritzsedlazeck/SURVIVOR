@@ -165,7 +165,7 @@ std::string print_strands(std::pair<bool, bool> strands) {
 void print_entry_overlap_BND(FILE *& file, SVS_Node * entry, int id) {
 	if (entry->type != 3) {
 		print_entry_overlap(file, entry, id);
-	} else {
+	} else {// Just for TRA!
 		std::ostringstream convert;   // stream used for the conversion
 		std::pair<int, int> cipos;
 		std::pair<int, int> ciend;
@@ -310,10 +310,12 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << ";SUPP_VEC=";
 	convert << get_support_vec(entry->caller_info); //todo make aware of prev_supp/ supp vec
 	convert << ";AVGLEN=";
-	if (entry->type != 3) {
+	if(entry->type == 0){
+		convert << get_avglen(entry->caller_info)*-1;
+	}else if (entry->type != 3) {
 		convert << get_avglen(entry->caller_info);
 	} else {
-		convert << "100000";   // TODO think about it.
+		convert << "0";   // TODO think about it.
 	}
 	/*convert << ";med_start=";
 	 convert << get_start_medpos(entry->caller_info);

@@ -2,7 +2,7 @@
 #include "scrup_vcf.h"
 
 
-void scrup_svs(std::string svs_vcf, string snp_vcf, std::string output){
+//void scrup_svs(std::string svs_vcf, string snp_vcf, std::string output){
 
 	//parse SVs in tree structure.
 
@@ -15,4 +15,4 @@ void scrup_svs(std::string svs_vcf, string snp_vcf, std::string output){
 
 	//output vcf file.
 
-}
+//}

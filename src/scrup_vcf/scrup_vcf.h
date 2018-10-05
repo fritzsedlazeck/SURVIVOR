@@ -18,9 +18,9 @@
 #include <iosfwd>
 #include <algorithm>
 #include "../simulator/Eval_vcf.h"
-#include "Paramer.h"
+//#include "Paramer.h"
 
-void scrup_svs(std::string svs_vcf, string snp_vcf, std::string output);
+//void scrup_svs(std::string svs_vcf, string snp_vcf, std::string output);
 
 
 
