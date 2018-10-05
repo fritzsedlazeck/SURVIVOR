@@ -220,7 +220,7 @@ void official_interface(int argc, char *argv[]) {
 			if (argc == 5) {
 				process_hapcut(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
 			} else {
-				std::cerr << "original SNP file" << std::endl;
+				std::cerr << "Original SNP file" << std::endl;
 				std::cerr << "Hapcut2 final file" << std::endl;
 				std::cerr << "Output: vcf file" << std::endl;
 			}
