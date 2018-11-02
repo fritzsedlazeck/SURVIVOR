@@ -92,44 +92,44 @@ long IntervallTree::overlap(breakpoint_str start, breakpoint_str stop, short typ
 
 // Inserting a node SURVIVOR!
 
-void IntervallTree::careful_screening(breakpoint_str &start, breakpoint_str& stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, std::pair<bool, bool> strands, int sv_len,std::string prev_supp_vec, TNode *p) { //maybe I just need the pointer not a ref.
+void IntervallTree::careful_screening(breakpoint_str &start, breakpoint_str& stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, std::pair<bool, bool> strands, int sv_len,std::string prev_supp_vec,int QV, TNode *p) { //maybe I just need the pointer not a ref.
 	if (p != NULL && !(start.position == -1 && stop.position == -1)) {
-		careful_screening(start, stop, type, num_reads, caller_id, genotype, strands, sv_len,prev_supp_vec, p->left);
+		careful_screening(start, stop, type, num_reads, caller_id, genotype, strands, sv_len,prev_supp_vec,QV, p->left);
 		if (overlap(start, stop, type, strands, p->get_data()) == 0) { //SV type
-			p->add(start, stop, type, num_reads, caller_id, genotype, sv_len, strands,prev_supp_vec);
+			p->add(start, stop, type, num_reads, caller_id, genotype, sv_len, strands,prev_supp_vec,QV);
 			start.position = -1;
 			stop.position = -1;
 			return;
 		}
-		careful_screening(start, stop, type, num_reads, caller_id, genotype, strands, sv_len,prev_supp_vec, p->right);
+		careful_screening(start, stop, type, num_reads, caller_id, genotype, strands, sv_len,prev_supp_vec,QV, p->right);
 	}
 }
 
-void IntervallTree::insert(breakpoint_str &start, breakpoint_str& stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, std::pair<bool, bool> strands, int sv_len,std::string pre_supp_vec, TNode *&p) {
+void IntervallTree::insert(breakpoint_str &start, breakpoint_str& stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, std::pair<bool, bool> strands, int sv_len,std::string pre_supp_vec,int QV, TNode *&p) {
 	if (start.position == -1 && stop.position == -1) {
 		return;
 	}
 	if (p == NULL) {
-		p = new TNode(start, stop, type, num_reads, caller_id, genotype, strands,sv_len,pre_supp_vec);
+		p = new TNode(start, stop, type, num_reads, caller_id, genotype, strands,sv_len,pre_supp_vec,QV);
 		if (p == NULL) {
 			std::cout << "Out of Space\n" << std::endl;
 		}
 	} else {
 		long score = overlap(start, stop, type, strands, p->get_data()); //comparison function
 		if (score == 0) {
-			p->add(start, stop, type, num_reads, caller_id, genotype, sv_len, strands,pre_supp_vec);
+			p->add(start, stop, type, num_reads, caller_id, genotype, sv_len, strands,pre_supp_vec,QV);
 			start.position = -1;
 			stop.position = -1;
 			return;
 		} else if (std::abs(score) < (long) Parameter::Instance()->max_dist) { // if two or more events are too close:
 			//std::cout<<"Screen"<<std::endl;
-			careful_screening(start, stop, type, num_reads, caller_id, genotype, strands, sv_len,pre_supp_vec, p);
+			careful_screening(start, stop, type, num_reads, caller_id, genotype, strands, sv_len,pre_supp_vec,QV, p);
 			if (start.position == -1 && stop.position == -1) {
 				return;
 			}
 		}
 		if (score > 0) {
-			insert(start, stop, type, num_reads, caller_id, genotype, strands, sv_len,pre_supp_vec, p->left);
+			insert(start, stop, type, num_reads, caller_id, genotype, strands, sv_len,pre_supp_vec,QV, p->left);
 			if ((bsheight(p->left) - bsheight(p->right)) == 2) {
 				score = overlap(start, stop, type, strands, p->left->get_data());
 				if (score > 0) {
@@ -139,7 +139,7 @@ void IntervallTree::insert(breakpoint_str &start, breakpoint_str& stop, short ty
 				}
 			}
 		} else if (score < 0) {
-			insert(start, stop, type, num_reads, caller_id, genotype, strands, sv_len,pre_supp_vec, p->right);
+			insert(start, stop, type, num_reads, caller_id, genotype, strands, sv_len,pre_supp_vec,QV, p->right);
 			if ((bsheight(p->right) - bsheight(p->left)) == 2) {
 				score = overlap(start, stop, type, strands, p->right->get_data());
 				if (score < 0) {

@@ -38,12 +38,14 @@ public:
 		strand.second=false;
 		genotype="./.";
 		pre_supp_vec="";
+		quality=-1;
 	}
 	~Support_Node(){
 
 	}
 	int id;
 	int len;
+	int quality;
 	std::vector<short> types;
 	std::vector<short> sv_lengths;
 	std::vector<int> starts;
@@ -79,6 +81,7 @@ public:
 	std::pair<int,int> num_support;
 	std::pair<bool,bool> strand;
 	std::string genotype;
+
 
 };
 

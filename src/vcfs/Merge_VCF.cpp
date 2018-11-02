@@ -9,7 +9,7 @@
 
 //read in all the vcf filenames:
 std::vector<std::string> parse_filename(std::string filename) {
-	std::vector < std::string > names;
+	std::vector<std::string> names;
 	size_t buffer_size = 2000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
@@ -248,7 +248,7 @@ std::pair<int, int> parse_sniffles(char * buffer) {
 	//std::cout<<buffer<<std::endl;
 	int count = 0;
 	while (buffer[i] != '\n' && buffer[i] != '\0') {
-		if ((count == 1  ) && buffer[i - 1] == ':') {
+		if ((count == 1) && buffer[i - 1] == ':') {
 			res.first += atoi(&buffer[i]);
 			//std::cout<<"first: "<< atoi(&buffer[i])<<std::endl;
 		}
@@ -376,7 +376,7 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 		tmp.num_reads.second = -1;
 		tmp.sv_len = -1;
 		tmp.af = -1;
-		float freq = 0;
+//		float freq = 0;
 		//std::cout<<buffer<<std::endl;
 		for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 			if (count == 0 && buffer[i] != '\t') {
@@ -408,10 +408,13 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 			if (count == 7 && strncmp(&buffer[i], ";RE=", 4) == 0) { //for sniffles!
 				tmp.num_reads.second = atoi(&buffer[i + 4]);
 			}
-
-			if (count == 7 && strncmp(&buffer[i], "EAS_AF=", 7) == 0) { //EAS_AF
-				freq = atof(&buffer[i + 7]);
+			if (count == 7 && strncmp(&buffer[i], ";AF=", 4) == 0) {
+				tmp.af = atof(&buffer[i+4]);
 			}
+
+			//if (count == 7 && strncmp(&buffer[i], "EAS_AF=", 7) == 0) { //EAS_AF
+			//		freq = atof(&buffer[i + 7]);
+			//	}
 			if (count == 7 && strncmp(&buffer[i], ";CT=", 4) == 0) {
 				//parse strand delly:
 				set_strand = true;
@@ -433,9 +436,9 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 				tmp.strands.first = (bool) (buffer[i + 9] == '+');
 				tmp.strands.second = (bool) (buffer[i + 10] == '+');
 			}
-			if (count == 9 && buffer[i - 1] == '\t') {
-				tmp.af = parse_genotypes_vcf(buffer.substr(i - 1));
-			}
+	//		if (count == 9 && buffer[i - 1] == '\t') {
+		//		tmp.af = parse_genotypes_vcf(buffer.substr(i - 1));
+	//		}
 
 			if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
 
@@ -618,6 +621,13 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				if (count == 4 && buffer[i - 1] == '\t') {
 					tmp.strands = parse_strands_lumpy(&buffer[i]);
 				}
+				if(count==5 && buffer[i-1]=='\t'){
+					if(buffer[i]=='.'){
+						tmp.quality=-1;//not set;
+					}else{
+						tmp.quality=atoi(&buffer[i]);
+					}
+				}
 				if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
 					tmp.stop = parse_stop(&buffer[i]);
 					//std::cout<<"Stop:"<<tmp.stop.pos<<std::endl;
@@ -632,9 +642,9 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					tmp.num_reads.second = atoi(&buffer[i + 4]);
 				}
 
-				if (count == 7 && strncmp(&buffer[i], "EUR_AF=", 7) == 0) { //EAS_AF
-					freq = atof(&buffer[i + 7]);
-				}
+				//	if (count == 7 && strncmp(&buffer[i], "EUR_AF=", 7) == 0) { //EAS_AF
+				//		freq = atof(&buffer[i + 7]);
+				//	}
 				if (count == 7 && strncmp(&buffer[i], ";CT=", 4) == 0) {
 					//parse strand delly:
 					set_strand = true;
@@ -772,9 +782,9 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					}
 
 				}
-				if (freq > Parameter::Instance()->min_freq) {
+			//	if (freq > Parameter::Instance()->min_freq) {
 					calls.push_back(tmp);
-				}
+			//	}
 
 			}
 			tmp.calls.clear();
@@ -878,7 +888,20 @@ void print_entry(FILE *&file, SVS_Node * entry, int id) {
 	fprintf(file, "%s", trans_type23(entry->type).c_str());
 	fprintf(file, "%c", '>');
 
-	fprintf(file, "%s", "\t.\tPASS\tIMPRECISE;SVMETHOD=SURVIVOR");
+	fprintf(file, "%s", "\t");
+	//quality!
+	int max_qual=-1;
+	for (size_t i = 0; i < entry->caller_info.size(); i++) {
+		if(max_qual<entry->caller_info[i]->quality){
+			max_qual=entry->caller_info[i]->quality;
+		}
+	}
+	if(max_qual==-1){
+		fprintf(file, "%c", '.');
+	}else{
+		fprintf(file, "%i", max_qual);
+	}
+	fprintf(file, "%s","\tPASS\tIMPRECISE;SVMETHOD=SURVIVOR");
 	fprintf(file, "%s", ";CHR2=");
 	fprintf(file, "%s", entry->second.chr.c_str());
 	fprintf(file, "%s", ";END=");
@@ -957,7 +980,7 @@ void merge_vcf(std::string filenames, int max_dist, int min_observed, std::strin
 	Parameter::Instance()->max_dist = max_dist;
 	Parameter::Instance()->use_type = true;
 
-	std::vector < std::string > names = parse_filename(filenames);
+	std::vector<std::string> names = parse_filename(filenames);
 	std::cout << "found in file: " << names.size() << std::endl;
 	std::vector<strvcfentry> final_vcf;
 
@@ -975,7 +998,7 @@ void merge_vcf(std::string filenames, int max_dist, int min_observed, std::strin
 		for (size_t j = 0; j < entries.size(); j++) {
 			breakpoint_str start = convert_position(entries[j].start);
 			breakpoint_str stop = convert_position(entries[j].stop);
-			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, root);
+			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, entries[j].quality,root);
 		}
 		entries.clear();
 	}

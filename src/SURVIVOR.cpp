@@ -244,11 +244,13 @@ void official_interface(int argc, char *argv[]) {
 			}
 			exit(0);
 		} else if (strcmp(argv[1], "parent_phasing") == 0) {
-			if (argc == 5) {
-			//	parental_phasing(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]));
+			if (argc == 7) {
+				parental_phasing(std::string(argv[2]), std::string(argv[3]), std::string(argv[4]),std::string(argv[5]), std::string(argv[6]));
 			} else {
 				std::cerr << "Merged parental Vcf file" << std::endl;
 				std::cerr << "Hapcut2 final file" << std::endl;
+				std::cerr << "GATK sub file" <<std::endl;
+				std::cerr << "SNP vcf propant" <<std::endl;
 				std::cerr << "Output matrix" << std::endl;
 			}
 			exit(0);

@@ -24,9 +24,12 @@ struct snp_str{
 	bool haplotype; //true =1
 	char alt_allele;
 	short parental; //0=na ; 1=father; 2=mother;
+	short gatk;  //0=na ; 1=father; 2=mother;
+	std::string qual;
+	double ratio; //allele ratio;
 };
 
-void parental_phasing(std::string parents_vcf, std::string hapcut_output, std::string output);
+void parental_phasing(std::string parents_vcf, std::string hapcut_output, std::string gatk_output, std::string snp_file, std::string output);
 
 
 #endif /* SRC_PHASING_PHASING_VCF_H_ */

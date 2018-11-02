@@ -87,6 +87,7 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 	fprintf(file, "%s", "##FORMAT=<ID=DR,Number=1,Type=Integer,Description=\"# supporting reference,variant reads in that order\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=ST,Number=1,Type=String,Description=\"Strand of SVs\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=TY,Number=1,Type=String,Description=\"Types\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=QV,Number=1,Type=String,Description=\"Quality values: if not defined a . otherwise the reported value.\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=CO,Number=1,Type=String,Description=\"Coordinates\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=PSV,Number=1,Type=String,Description=\"Previous support vector\">\n");
 
@@ -165,7 +166,7 @@ std::string print_strands(std::pair<bool, bool> strands) {
 void print_entry_overlap_BND(FILE *& file, SVS_Node * entry, int id) {
 	if (entry->type != 3) {
 		print_entry_overlap(file, entry, id);
-	} else {// Just for TRA!
+	} else { // Just for TRA!
 		std::ostringstream convert;   // stream used for the conversion
 		std::pair<int, int> cipos;
 		std::pair<int, int> ciend;
@@ -193,7 +194,19 @@ void print_entry_overlap_BND(FILE *& file, SVS_Node * entry, int id) {
 			convert << "[";
 		}
 
-		convert << "\t.\t";
+		convert << "\t";
+		int max_qual = -1;
+		for (size_t i = 0; i < entry->caller_info.size(); i++) {
+			if (max_qual < entry->caller_info[i]->quality) {
+				max_qual = entry->caller_info[i]->quality;
+			}
+		}
+		if (max_qual == -1) {
+			convert << '.';
+		} else {
+			convert << max_qual;
+		}
+		convert << "\t";
 		convert << "PASS\t";
 		convert << "SUPP=";
 		convert << get_support(entry->caller_info);
@@ -228,7 +241,7 @@ void print_entry_overlap_BND(FILE *& file, SVS_Node * entry, int id) {
 		convert << ";STRANDS=";
 		convert << print_strands(entry->caller_info[index]->strand);
 		//}
-		convert << "\tGT:PSV:LN:DR:ST:TY:CO";
+		convert << "\tGT:PSV:LN:DR:ST:QV:TY:CO";
 		int pos = 0;
 		//std::cout<<"Check: "<<Parameter::Instance()->max_caller <<" vs "<<entry->caller_info.size()<<std::endl;
 		for (size_t i = 0; i < Parameter::Instance()->max_caller; i++) {
@@ -250,6 +263,12 @@ void print_entry_overlap_BND(FILE *& file, SVS_Node * entry, int id) {
 				convert << entry->caller_info[pos]->num_support.second;   //alt
 				convert << ":";
 				convert << print_strands(entry->caller_info[pos]->strand);
+				convert << ":";
+				if (entry->caller_info[pos]->quality != -1) {
+					convert << entry->caller_info[pos]->quality;
+				} else {
+					convert << ".";
+				}
 				convert << ":";
 
 				if (entry->caller_info[pos]->types.empty()) {
@@ -303,16 +322,27 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << id;
 	convert << "SUR\tN\t<";
 	convert << trans_type(entry->caller_info[index]->types[0]);
-	convert << ">\t.\t";
-	convert << "PASS\t";
+	convert << "\t";
+	int max_qual = -1;
+	for (size_t i = 0; i < entry->caller_info.size(); i++) {
+		if (max_qual < entry->caller_info[i]->quality) {
+			max_qual = entry->caller_info[i]->quality;
+		}
+	}
+	if (max_qual == -1) {
+		convert << '.';
+	} else {
+		convert << max_qual;
+	}
+	convert << "\tPASS\t";
 	convert << "SUPP=";
 	convert << get_support(entry->caller_info);
 	convert << ";SUPP_VEC=";
 	convert << get_support_vec(entry->caller_info); //todo make aware of prev_supp/ supp vec
 	convert << ";AVGLEN=";
-	if(entry->type == 0){
-		convert << get_avglen(entry->caller_info)*-1;
-	}else if (entry->type != 3) {
+	if (entry->type == 0) {
+		convert << get_avglen(entry->caller_info) * -1;
+	} else if (entry->type != 3) {
 		convert << get_avglen(entry->caller_info);
 	} else {
 		convert << "0";   // TODO think about it.
@@ -342,7 +372,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << ";STRANDS=";
 	convert << print_strands(entry->caller_info[index]->strand);
 	//}
-	convert << "\tGT:PSV:LN:DR:ST:TY:CO";
+	convert << "\tGT:PSV:LN:DR:ST:QV:TY:CO";
 	int pos = 0;
 	//std::cout<<"Check: "<<Parameter::Instance()->max_caller <<" vs "<<entry->caller_info.size()<<std::endl;
 	for (size_t i = 0; i < Parameter::Instance()->max_caller; i++) {
@@ -364,6 +394,12 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 			convert << entry->caller_info[pos]->num_support.second;   //alt
 			convert << ":";
 			convert << print_strands(entry->caller_info[pos]->strand);
+			convert << ":";
+			if (entry->caller_info[pos]->quality != -1) {
+				convert << entry->caller_info[pos]->quality;
+			} else {
+				convert << ".";
+			}
 			convert << ":";
 
 			if (entry->caller_info[pos]->types.empty()) {
@@ -501,7 +537,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 		for (size_t j = 0; j < entries.size(); j++) {
 			breakpoint_str start = convert_position(entries[j].start);
 			breakpoint_str stop = convert_position(entries[j].stop);
-			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, root);
+			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, entries[j].quality, root);
 		}
 		entries.clear();
 	}
@@ -566,7 +602,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 			 svs_summary[support][type][4]++;
 			 }
 			 }*/
-		//	std::cout<<"Min3: "<<	Parameter::Instance()->min_support<<" "<<support<<std::endl;
+			//	std::cout<<"Min3: "<<	Parameter::Instance()->min_support<<" "<<support<<std::endl;
 			if (support >= min_support && len > min_svs) {
 
 				print_entry_overlap_BND(file, (*i), id);
