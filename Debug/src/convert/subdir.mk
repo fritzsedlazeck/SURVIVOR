@@ -13,7 +13,8 @@ CPP_SRCS += \
 ../src/convert/Convert_VCF_to_BED.cpp \
 ../src/convert/Convert_hapcut2.cpp \
 ../src/convert/Process_Coverage.cpp \
-../src/convert/Process_Lumpy.cpp 
+../src/convert/Process_Lumpy.cpp \
+../src/convert/Update_bam_pacbio.cpp 
 
 OBJS += \
 ./src/convert/ConvertMQ0Bed.o \
@@ -25,7 +26,8 @@ OBJS += \
 ./src/convert/Convert_VCF_to_BED.o \
 ./src/convert/Convert_hapcut2.o \
 ./src/convert/Process_Coverage.o \
-./src/convert/Process_Lumpy.o 
+./src/convert/Process_Lumpy.o \
+./src/convert/Update_bam_pacbio.o 
 
 CPP_DEPS += \
 ./src/convert/ConvertMQ0Bed.d \
@@ -37,7 +39,8 @@ CPP_DEPS += \
 ./src/convert/Convert_VCF_to_BED.d \
 ./src/convert/Convert_hapcut2.d \
 ./src/convert/Process_Coverage.d \
-./src/convert/Process_Lumpy.d 
+./src/convert/Process_Lumpy.d \
+./src/convert/Update_bam_pacbio.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
