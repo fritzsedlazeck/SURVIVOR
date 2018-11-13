@@ -42,7 +42,7 @@ void print_header_ass(std::string name, FILE *&file) {
 
 short get_type_assemblytics(std::string type) {
 	if(strcmp(type.c_str(), "Tandem_expansion") == 0){
-		return 1;
+		return 4;//1;
 	}else if (strcmp(type.c_str(), "Deletion") == 0 || (strcmp(type.c_str(), "Repeat_contraction") == 0 || strcmp(type.c_str(), "Tandem_contraction") == 0)) {
 		return 0;
 	} else if (strcmp(type.c_str(), "Insertion") == 0 || strcmp(type.c_str(), "Repeat_expansion") == 0 ) {
