@@ -43,30 +43,32 @@ public:
 		height = 0;
 	}
 
-	TNode(breakpoint_str start, breakpoint_str stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, std::pair<bool, bool> strands, int sv_len,std::string prev_support_vec,int QV) {
+	TNode(breakpoint_str start, breakpoint_str stop, short type, std::pair<bool, bool> strands, meta_data_str meta_info) {
 		this->data = new SVS_Node();
 		this->data->first = start;
 		this->data->second = stop;
 		this->data->type = type;
 		this->data->strand = strands;
-		this->data->genotype = genotype; //do I need this?
+		this->data->genotype = meta_info.genotype; //do I need this?
 
 		init();
 		Support_Node * tmp = new Support_Node();
-		if (sv_len == -1) {
+		if (meta_info.sv_len == -1) {
 			tmp->len = stop.position - start.position;
 		} else {
-			tmp->len = sv_len;
+			tmp->len = meta_info.sv_len;
 		}
-		tmp->quality=QV;
-		tmp->num_support = num_reads;
-		tmp->id = caller_id;
+		tmp->quality = meta_info.QV;
+		tmp->num_support = meta_info.num_reads;
+		tmp->id = meta_info.caller_id;
 		tmp->starts.push_back(start.position);
 		tmp->stops.push_back(stop.position);
 		tmp->types.push_back(type);
-		tmp->genotype = genotype;
+		tmp->genotype = meta_info.genotype;
 		tmp->strand = strands;
-		tmp->pre_supp_vec=prev_support_vec;
+		tmp->pre_supp_vec = meta_info.pre_supp_vec;
+		tmp->alleles = meta_info.allleles;
+		tmp->vcf_ID=meta_info.vcf_ID;
 		data->caller_info.push_back(tmp);
 		height = 0;
 	}
@@ -85,10 +87,10 @@ public:
 		this->height = val;
 	}
 
-	void add(breakpoint_str start, breakpoint_str stop, short type, std::pair<int, int> num_reads, int caller_id, std::string genotype, int svlen, std::pair<bool, bool> strands, std::string pre_supp_vec,int QV) {
+	void add(breakpoint_str start, breakpoint_str stop, short type, std::pair<bool, bool> strands, meta_data_str meta_info) {
 		int index = -1;
 		for (size_t i = 0; i < this->data->caller_info.size(); i++) {
-			if (this->data->caller_info[i]->id == caller_id) {
+			if (this->data->caller_info[i]->id == meta_info.caller_id) {
 				index = i;
 			}
 		}
@@ -96,24 +98,36 @@ public:
 		if (index == -1) {
 			index = this->data->caller_info.size(); //todo check!
 			Support_Node * tmp = new Support_Node();
-			tmp->id = caller_id;
+			tmp->id = meta_info.caller_id;
 			this->data->caller_info.push_back(tmp);
 		}
 
 		this->data->caller_info[index]->starts.push_back(start.position);
 		this->data->caller_info[index]->stops.push_back(stop.position);
 		this->data->caller_info[index]->types.push_back(type);
-		this->data->caller_info[index]->num_support.first = std::max(num_reads.first, this->data->caller_info[index]->num_support.first);
-		this->data->caller_info[index]->num_support.second = std::max(num_reads.second, this->data->caller_info[index]->num_support.second);
-		this->data->caller_info[index]->genotype = genotype;
+		this->data->caller_info[index]->num_support.first = std::max(meta_info.num_reads.first, this->data->caller_info[index]->num_support.first);
+		this->data->caller_info[index]->num_support.second = std::max(meta_info.num_reads.second, this->data->caller_info[index]->num_support.second);
+		this->data->caller_info[index]->genotype = meta_info.genotype;
 		this->data->caller_info[index]->strand = strands;
-		this->data->caller_info[index]->pre_supp_vec=pre_supp_vec;
-		this->data->caller_info[index]->quality=QV;
+		this->data->caller_info[index]->pre_supp_vec = meta_info.pre_supp_vec;
+		this->data->caller_info[index]->quality = meta_info.QV;
+
+		if(!this->data->caller_info[index]->alleles.first.empty()){
+			this->data->caller_info[index]->alleles.first+=",";
+			this->data->caller_info[index]->alleles.second+=",";
+		}
+		this->data->caller_info[index]->alleles.first+=meta_info.allleles.first;
+		this->data->caller_info[index]->alleles.second+=meta_info.allleles.second;
+
+		if (!this->data->caller_info[index]->vcf_ID.empty()) {
+			this->data->caller_info[index]->vcf_ID += ";";
+		}
+		this->data->caller_info[index]->vcf_ID += meta_info.vcf_ID;
 
 		if (this->data->caller_info[index]->len == 0) { //first time
-			this->data->caller_info[index]->len = svlen; //stop.position-start.position; // take the length of the svs as identifier.
+			this->data->caller_info[index]->len = meta_info.sv_len; //stop.position-start.position; // take the length of the svs as identifier.
 		} else {
-			this->data->caller_info[index]->len = std::max(svlen, this->data->caller_info[index]->len); //stop.position-start.position;
+			this->data->caller_info[index]->len = std::max(meta_info.sv_len, this->data->caller_info[index]->len); //stop.position-start.position;
 		}
 	}
 };

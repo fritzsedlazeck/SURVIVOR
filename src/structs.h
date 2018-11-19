@@ -36,6 +36,7 @@ struct strvcfentry{
 	double af;
 	std::string prev_support_vec;
 	int quality;
+	std::pair<std::string,std::string> alleles;
 	//int num_reads;
 };
 

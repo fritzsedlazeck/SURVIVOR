@@ -26,6 +26,18 @@ struct breakpoint_str {
 	int position;
 };
 
+struct meta_data_str{
+	int caller_id;
+	short type;
+	std::string genotype;
+	int sv_len;
+	std::string pre_supp_vec;
+	int QV;
+	std::pair<int, int> num_reads;
+	std::string vcf_ID;
+	std::pair<std::string, std::string> allleles ; //first=REF; second=ALT
+};
+
 
 class Support_Node{
 public:
@@ -54,6 +66,8 @@ public:
 	std::pair<bool,bool> strand;
 	std::string genotype;
 	std::string pre_supp_vec;
+	std::pair<std::string,std::string> alleles;
+	std::string vcf_ID;
 };
 
 class SVS_Node {

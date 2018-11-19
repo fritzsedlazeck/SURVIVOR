@@ -590,15 +590,18 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 			tmp.stop.pos = -1;
 			tmp.type = -1;
 			bool set_strand = false;
-			std::string ref;
-			std::string alt;
+		//	std::string ref;
+		//	std::string alt;
 			tmp.genotype = "./.";
 			tmp.strands.first = true;
 			tmp.strands.second = true;
 			tmp.num_reads.first = 0;
 			tmp.num_reads.second = 0;
+			tmp.alleles.first="";
+			tmp.alleles.second="";
+			tmp.sv_id="";
 			tmp.sv_len = -1;
-			float freq = 0;
+			//float freq = 0;
 			//std::cout<<buffer<<std::endl;
 			for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 
@@ -613,10 +616,12 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					tmp.sv_id += buffer[i];
 				}
 				if (count == 3 && buffer[i] != '\t') {
-					ref += buffer[i];
+					tmp.alleles.first+=buffer[i];
+				//	ref += buffer[i];
 				}
 				if (count == 4 && buffer[i] != '\t') {
-					alt += buffer[i];
+					tmp.alleles.second+=buffer[i];
+				//	alt += buffer[i];
 				}
 				if (count == 4 && buffer[i - 1] == '\t') {
 					tmp.strands = parse_strands_lumpy(&buffer[i]);
@@ -743,12 +748,12 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				tmp.stop.pos = tmp.start.pos + tmp.sv_len;
 			}
 			if (tmp.stop.pos == -1) {
-				std::size_t found = alt.find(",");
+				std::size_t found = tmp.alleles.second.find(",");
 				if (found != std::string::npos) {
-					alt = get_most_effect(alt, (int) ref.size());
+					tmp.alleles.second = get_most_effect(tmp.alleles.second, (int) tmp.alleles.first.size());
 				}
 				tmp.stop.chr = tmp.start.chr;
-				tmp.sv_len = (int) ref.size() - (int) alt.size();
+				tmp.sv_len = (int) tmp.alleles.first.size() - (int) tmp.alleles.second.size();
 				tmp.stop.pos = tmp.start.pos + abs(tmp.sv_len);
 				if (tmp.sv_len > 0) {
 					tmp.type = 0; //deletion
@@ -973,7 +978,7 @@ void print_merged_vcf(std::string outputfile, std::string header, std::vector<st
 }
 
 //main:
-void merge_vcf(std::string filenames, int max_dist, int min_observed, std::string outputfile) {
+/*void merge_vcf(std::string filenames, int max_dist, int min_observed, std::string outputfile) {
 
 	Parameter::Instance()->use_strand = true;
 
@@ -988,7 +993,7 @@ void merge_vcf(std::string filenames, int max_dist, int min_observed, std::strin
 	 merge_entries(names[i], max_dist, final_vcf);
 	 std::cout << "merged: " << final_vcf.size() << std::endl;
 	 }*/
-
+/*
 	IntervallTree bst;
 	TNode *root = NULL;
 	Parameter::Instance()->max_caller = names.size();
@@ -1013,4 +1018,4 @@ void merge_vcf(std::string filenames, int max_dist, int min_observed, std::strin
 	std::cout << "print:" << std::endl;
 	print_merged_vcf(outputfile, header, points, names, min_observed);
 	//print_merged_vcf(outputfile, header, final_vcf, names);
-}
+}*/

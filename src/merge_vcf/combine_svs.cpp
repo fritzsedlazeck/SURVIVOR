@@ -88,7 +88,10 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 	fprintf(file, "%s", "##FORMAT=<ID=ST,Number=1,Type=String,Description=\"Strand of SVs\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=TY,Number=1,Type=String,Description=\"Types\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=QV,Number=1,Type=String,Description=\"Quality values: if not defined a . otherwise the reported value.\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=CO,Number=1,Type=String,Description=\"Coordinates\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=RAL,Number=1,Type=String,Description=\"Reference allele sequence reported from input.\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=AAL,Number=1,Type=String,Description=\"Alternative allele sequence reported from input.\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=ID,Number=1,Type=String,Description=\"Variant ID from input.\">\n");
+
 	fprintf(file, "%s", "##FORMAT=<ID=PSV,Number=1,Type=String,Description=\"Previous support vector\">\n");
 
 	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT");
@@ -317,11 +320,34 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << "\t";
 	convert << entry->caller_info[index]->starts[0];  //entry->first.position;
 	convert << "\t";
-	convert << trans_type(entry->caller_info[index]->types[0]);
-	convert << "00";
-	convert << id;
-	convert << "SUR\tN\t<";
-	convert << trans_type(entry->caller_info[index]->types[0]);
+	if (entry->caller_info[index]->vcf_ID.empty()) {
+		convert << trans_type(entry->caller_info[index]->types[0]);
+		convert << "00";
+		convert << id;
+		convert << "SUR";
+	} else {
+		convert << entry->caller_info[index]->vcf_ID;
+	}
+
+	convert << "\t";
+	if (entry->caller_info[index]->alleles.first.empty()) {
+
+		convert << "N";
+	} else {
+		convert << entry->caller_info[index]->alleles.first;
+	}
+	convert << "\t";
+
+	if (entry->caller_info[index]->alleles.second.empty()) {
+
+		convert << "<";
+		convert << trans_type(entry->caller_info[index]->types[0]);
+		convert << ">";
+
+	} else {
+		convert << entry->caller_info[index]->alleles.second;
+	}
+
 	convert << "\t";
 	int max_qual = -1;
 	for (size_t i = 0; i < entry->caller_info.size(); i++) {
@@ -372,7 +398,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << ";STRANDS=";
 	convert << print_strands(entry->caller_info[index]->strand);
 	//}
-	convert << "\tGT:PSV:LN:DR:ST:QV:TY:CO";
+	convert << "\tGT:PSV:LN:DR:ST:QV:TY:ID:RAL:AAL:CO";
 	int pos = 0;
 	//std::cout<<"Check: "<<Parameter::Instance()->max_caller <<" vs "<<entry->caller_info.size()<<std::endl;
 	for (size_t i = 0; i < Parameter::Instance()->max_caller; i++) {
@@ -411,7 +437,17 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 				}
 				convert << trans_type(entry->caller_info[pos]->types[j]);
 			}
-			convert << ":";
+
+			convert << ":";//ID VCF
+			convert << entry->caller_info[pos]->vcf_ID;
+
+			convert << ":";//RAL
+			convert << entry->caller_info[pos]->alleles.first;
+
+			convert << ":";//AAL
+			convert << entry->caller_info[pos]->alleles.second;
+
+			convert << ":";//CALLER INFO;
 			if (entry->caller_info[pos]->starts.empty()) {
 				convert << "NaN";
 			}
@@ -537,7 +573,16 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 		for (size_t j = 0; j < entries.size(); j++) {
 			breakpoint_str start = convert_position(entries[j].start);
 			breakpoint_str stop = convert_position(entries[j].stop);
-			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, entries[j].quality, root);
+			meta_data_str tmp;
+			tmp.caller_id = (int) id;
+			tmp.genotype = entries[j].genotype;
+			tmp.QV = entries[j].quality;
+			tmp.num_reads = entries[j].num_reads;
+			tmp.sv_len = entries[j].sv_len;
+			tmp.pre_supp_vec = entries[j].prev_support_vec;
+			tmp.vcf_ID = entries[j].sv_id;
+			tmp.allleles=entries[j].alleles;
+			bst.insert(start, stop, entries[j].type, entries[j].strands, tmp, root);
 		}
 		entries.clear();
 	}
