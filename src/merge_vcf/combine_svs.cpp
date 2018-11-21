@@ -365,7 +365,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << get_support(entry->caller_info);
 	convert << ";SUPP_VEC=";
 	convert << get_support_vec(entry->caller_info); //todo make aware of prev_supp/ supp vec
-	convert << ";SVGLEN=";
+	convert << ";SVLEN=";
 	if (entry->type == 0) {
 		convert << (int)round(get_avglen(entry->caller_info))* -1;
 	} else if (entry->type != 3) {
