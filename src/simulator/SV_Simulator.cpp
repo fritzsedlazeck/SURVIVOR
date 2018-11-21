@@ -16,9 +16,9 @@ void check_genome(std::map<std::string, std::string> &genome, std::string msg) {
 
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 		for (size_t j = 1; j < (*i).second.size() + 1; j++) {
-			if (!is_valid((*i).second[j - 1])) {
-				std::cout << "err! " << (*i).second[j - 1] << std::endl;
-			}
+			//if (!is_valid((*i).second[j - 1])) {
+			//std::cout << "err! " << (*i).second[j - 1] << std::endl;
+			//}
 		}
 	}
 }
@@ -55,9 +55,9 @@ parameter parse_param(std::string filename) {
 
 	myfile.getline(buffer, buffer_size);
 	myfile.getline(buffer, buffer_size);
-	tmp.dup_max = parse_value(buffer, buffer_size);
-	myfile.getline(buffer, buffer_size);
 	tmp.dup_min = parse_value(buffer, buffer_size);
+	myfile.getline(buffer, buffer_size);
+	tmp.dup_max = parse_value(buffer, buffer_size);
 	myfile.getline(buffer, buffer_size);
 	tmp.dup_num = parse_value(buffer, buffer_size);
 	myfile.getline(buffer, buffer_size);
@@ -126,7 +126,7 @@ std::map<std::string, std::string> read_fasta(std::string ref_file, int min_leng
 		exit(0);
 	}
 
-	getline(myfile,buffer);
+	getline(myfile, buffer);
 	std::map<std::string, std::string> genome;
 	std::string seq;
 	std::string name;
@@ -146,7 +146,7 @@ std::map<std::string, std::string> read_fasta(std::string ref_file, int min_leng
 				seq += toupper(buffer[i]);
 			}
 		}
-		getline(myfile,buffer);
+		getline(myfile, buffer);
 	}
 	for (size_t i = 0; i < buffer.size() && buffer[i] != '\n' && buffer[i] != '\0'; i++) {
 		seq += toupper(buffer[i]);
@@ -678,23 +678,23 @@ void write_fasta(std::string output_prefix, std::map<std::string, std::string> g
 		exit(0);
 	}
 
-	bool flag=false;
+	bool flag = false;
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 		fprintf(file2, "%c", '>');
 		fprintf(file2, "%s", (*i).first.c_str());
 		fprintf(file2, "%c", '\n');
 		int len = 0;
 		for (size_t j = 1; j < (*i).second.size() + 1; j++) {
-			if (!is_valid((*i).second[j - 1])) {
-				std::cout << "err! " << (*i).second[j - 1] << std::endl;
-			}
+			//if (!is_valid((*i).second[j - 1])) {
+		//		std::cout << "err! " << (*i).second[j - 1] << std::endl;
+		//	}
 			if ((*i).second[j - 1] != 'X') {
 				fprintf(file2, "%c", (*i).second[j - 1]);
 				len++;
-				flag=true;
+				flag = true;
 			}
 			if (len % 100 == 0 && flag) {
-				flag=false;
+				flag = false;
 				fprintf(file2, "%c", '\n');
 			}
 
@@ -949,8 +949,8 @@ void simulate_SV(std::string ref_file, std::string parameter_file, float snp_fre
 	parameter par = parse_param(parameter_file);
 	int min_chr_len = std::max(std::max(par.dup_max, par.indel_max), std::max(par.inv_max, par.translocations_max));
 	std::map<std::string, std::string> genome = read_fasta(ref_file, min_chr_len);
-	if(par.translocations_num>0 && genome.size()<2){
-		std::cerr<<"We cannot simulate translocations without a second chromosome"<<std::endl;
+	if (par.translocations_num > 0 && genome.size() < 2) {
+		std::cerr << "We cannot simulate translocations without a second chromosome" << std::endl;
 		exit(0);
 	}
 	//check_genome(genome, "First:");
