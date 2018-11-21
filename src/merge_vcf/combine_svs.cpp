@@ -68,8 +68,8 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 	fprintf(file, "%s", "##ALT=<ID=INV,Description=\"Inversion\">\n");
 	fprintf(file, "%s", "##ALT=<ID=BND,Description=\"Translocation\">\n");
 	fprintf(file, "%s", "##ALT=<ID=INS,Description=\"Insertion\">\n");
-	fprintf(file, "%s", "##INFO=<ID=CIEND,Number=1,Type=String,Description=\"PE confidence interval around END\">\n");
-	fprintf(file, "%s", "##INFO=<ID=CIPOS,Number=1,Type=String,Description=\"PE confidence interval around POS\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CIEND,Number=2,Type=String,Description=\"PE confidence interval around END\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CIPOS,Number=2,Type=String,Description=\"PE confidence interval around POS\">\n");
 	fprintf(file, "%s", "##INFO=<ID=CHR2,Number=1,Type=String,Description=\"Chromosome for END coordinate in case of a translocation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of the structural variant\">\n");
 	fprintf(file, "%s", "##INFO=<ID=MAPQ,Number=1,Type=Integer,Description=\"Median mapping quality of paired-ends\">\n");
@@ -84,7 +84,7 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 	fprintf(file, "%s", "##INFO=<ID=STRANDS,Number=1,Type=String,Description=\"Indicating the direction of the reads with respect to the type and breakpoint.\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=LN,Number=1,Type=Integer,Description=\"predicted length\">\n");
-	fprintf(file, "%s", "##FORMAT=<ID=DR,Number=1,Type=Integer,Description=\"# supporting reference,variant reads in that order\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=DR,Number=2,Type=Integer,Description=\"# supporting reference,variant reads in that order\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=ST,Number=1,Type=String,Description=\"Strand of SVs\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=TY,Number=1,Type=String,Description=\"Types\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=QV,Number=1,Type=String,Description=\"Quality values: if not defined a . otherwise the reported value.\">\n");
@@ -365,11 +365,11 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << get_support(entry->caller_info);
 	convert << ";SUPP_VEC=";
 	convert << get_support_vec(entry->caller_info); //todo make aware of prev_supp/ supp vec
-	convert << ";AVGLEN=";
+	convert << ";SVGLEN=";
 	if (entry->type == 0) {
-		convert << get_avglen(entry->caller_info) * -1;
+		convert << (int)round(get_avglen(entry->caller_info))* -1;
 	} else if (entry->type != 3) {
-		convert << get_avglen(entry->caller_info);
+		convert <<  (int)round(get_avglen(entry->caller_info));
 	} else {
 		convert << "0";   // TODO think about it.
 	}

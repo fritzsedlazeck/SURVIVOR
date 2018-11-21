@@ -128,7 +128,7 @@ void official_interface(int argc, char *argv[]) {
 				std::cerr << "Take the strands of SVs into account (1==yes, else no)" << std::endl;
 				std::cerr << "Estimate distance based on the size of SV (1==yes, else no)." << std::endl;
 				std::cerr << "Minimum size of SVs to be taken into account." << std::endl;
-				std::cerr << "Output prefix" << std::endl;
+				std::cerr << "Output VCF filename" << std::endl;
 			}
 			exit(0);
 		} else if (strcmp(argv[1], "filter") == 0) {

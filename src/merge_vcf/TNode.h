@@ -68,7 +68,7 @@ public:
 		tmp->strand = strands;
 		tmp->pre_supp_vec = meta_info.pre_supp_vec;
 		tmp->alleles = meta_info.allleles;
-		tmp->vcf_ID=meta_info.vcf_ID;
+		tmp->vcf_ID = meta_info.vcf_ID;
 		data->caller_info.push_back(tmp);
 		height = 0;
 	}
@@ -112,12 +112,10 @@ public:
 		this->data->caller_info[index]->pre_supp_vec = meta_info.pre_supp_vec;
 		this->data->caller_info[index]->quality = meta_info.QV;
 
-		if(!this->data->caller_info[index]->alleles.first.empty()){
-			this->data->caller_info[index]->alleles.first+=",";
-			this->data->caller_info[index]->alleles.second+=",";
+		if (meta_info.allleles.first.size() > this->data->caller_info[index]->alleles.first.size() || meta_info.allleles.second.size() > this->data->caller_info[index]->alleles.second.size()) {
+			this->data->caller_info[index]->alleles.first = meta_info.allleles.first;
+			this->data->caller_info[index]->alleles.second = meta_info.allleles.second;
 		}
-		this->data->caller_info[index]->alleles.first+=meta_info.allleles.first;
-		this->data->caller_info[index]->alleles.second+=meta_info.allleles.second;
 
 		if (!this->data->caller_info[index]->vcf_ID.empty()) {
 			this->data->caller_info[index]->vcf_ID += ";";
