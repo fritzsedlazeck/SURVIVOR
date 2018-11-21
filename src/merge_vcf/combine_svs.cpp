@@ -68,17 +68,18 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 	fprintf(file, "%s", "##ALT=<ID=INV,Description=\"Inversion\">\n");
 	fprintf(file, "%s", "##ALT=<ID=BND,Description=\"Translocation\">\n");
 	fprintf(file, "%s", "##ALT=<ID=INS,Description=\"Insertion\">\n");
-	fprintf(file, "%s", "##INFO=<ID=CIEND,Number=2,Type=String,Description=\"PE confidence interval around END\">\n");
-	fprintf(file, "%s", "##INFO=<ID=CIPOS,Number=2,Type=String,Description=\"PE confidence interval around POS\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CIEND,Number=2,Type=Integer,Description=\"Confidence interval around END for imprecise variants\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CIPOS,Number=2,Type=Integer,Description=\"Confidence interval around POS for imprecise variants\">\n");
 	fprintf(file, "%s", "##INFO=<ID=CHR2,Number=1,Type=String,Description=\"Chromosome for END coordinate in case of a translocation\">\n");
-	fprintf(file, "%s", "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of the structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of the variant described in this record\">\n");
 	fprintf(file, "%s", "##INFO=<ID=MAPQ,Number=1,Type=Integer,Description=\"Median mapping quality of paired-ends\">\n");
 	fprintf(file, "%s", "##INFO=<ID=RE,Number=1,Type=Integer,Description=\"read support\">\n");
 	fprintf(file, "%s", "##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description=\"Imprecise structural variation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=AVGLEN,Number=1,Type=Float,Description=\"Length of the SV\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Method for generating this merged VCF file.\">\n");
-	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of the SV.\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of structural variant\">\n");
+    fprintf(file, "%s", "##INFO=<ID=SVLEN,Number=.,Type=Integer,Description=\"Difference in length between REF and ALT alleles\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SUPP_VEC,Number=1,Type=String,Description=\"Vector of supporting samples.\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SUPP,Number=1,Type=String,Description=\"Number of samples supporting the variant\">\n");
 	fprintf(file, "%s", "##INFO=<ID=STRANDS,Number=1,Type=String,Description=\"Indicating the direction of the reads with respect to the type and breakpoint.\">\n");
@@ -365,7 +366,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << get_support(entry->caller_info);
 	convert << ";SUPP_VEC=";
 	convert << get_support_vec(entry->caller_info); //todo make aware of prev_supp/ supp vec
-	convert << ";SVGLEN=";
+	convert << ";SVLEN=";
 	if (entry->type == 0) {
 		convert << (int)round(get_avglen(entry->caller_info))* -1;
 	} else if (entry->type != 3) {
