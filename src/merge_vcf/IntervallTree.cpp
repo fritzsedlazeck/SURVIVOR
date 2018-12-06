@@ -73,14 +73,14 @@ long IntervallTree::overlap(breakpoint_str start, breakpoint_str stop, short typ
 	 }*/
 
 	int max_dist = Parameter::Instance()->max_dist;
-	if (Parameter::Instance()->dynamic_size) {
+/*	if (Parameter::Instance()->dynamic_size) {
 		max_dist = std::min(get_dist(stop.position - start.position, type), get_dist(curr_svs->first.position - curr_svs->second.position, curr_svs->type)); //
 	}
-
+*/
 	if (((!Parameter::Instance()->use_strand || is_same_strand(strands, curr_svs->strand)) && (!Parameter::Instance()->use_type || same_type(type, curr_svs->type))) && (same_breakpoint(start, curr_svs->first, max_dist) && same_breakpoint(stop, curr_svs->second, max_dist))) {
 		return 0; //to be merged
 	}
-	if (abs(start.position - curr_svs->first.position) < max_dist) {
+	if (strcmp(start.chr.c_str(), curr_svs->first.chr.c_str()) == 0  && abs(start.position - curr_svs->first.position) < max_dist) {
 		return (stop.position - curr_svs->second.position);
 	}
 	int dist = (start.position - curr_svs->first.position);

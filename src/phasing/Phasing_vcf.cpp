@@ -53,10 +53,10 @@ std::vector<snp_str> parse_hapcut2(std::string hapcut_output) {
 						count++;
 					}
 				}
-				if (strcmp(tmp.chr.c_str(), "17") == 0) {
+			//	if (strcmp(tmp.chr.c_str(), "17") == 0) {
 					snps.push_back(tmp);
 
-				}
+//				}
 
 			}
 
@@ -278,17 +278,83 @@ void update_snps_alles(std::string snp_output, std::vector<snp_str> &snps) {
 		myfile.close();
 	}
 }
+
+void update_parents_snp_array(std::string parents_vcf, std::vector<snp_str> & snps) {
+	std::string buffer;
+	std::ifstream myfile;
+	myfile.open(parents_vcf.c_str(), std::ifstream::in);
+	if (!myfile.good()) {
+		std::cout << "GATK Parser: could not open file: " << parents_vcf.c_str() << std::endl;
+		//exit(0);
+	} else {
+		getline(myfile, buffer);
+		while (!myfile.eof()) {
+			int pos = 0;
+			std::string chr;
+			std::pair<char, char> father;
+			std::pair<char, char> mother;
+			int count = 0;
+			for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				if (count == 0 && buffer[i] != '\t') {
+					chr += buffer[i];
+				}
+				if (count == 1 && buffer[i - 1] == '\t') {
+					pos = atoi(&buffer[i]);
+				}
+				//magic: record all alleles (father + mother) and determine the ref allele later:
+				if (count == 4 && buffer[i - 1] == '\t') {
+					father.first = buffer[i];
+				}
+				if (count == 5 && buffer[i - 1] == '\t') {
+					father.second = buffer[i];
+				}
+				if (count == 7 && buffer[i - 1] == '\t') {
+					mother.first = buffer[i];
+				}
+				if (count == 8 && buffer[i - 1] == '\t') {
+					mother.second = buffer[i];
+				}
+
+				if (buffer[i] == '\t') {
+					count++;
+				}
+			}
+
+			if (strncmp(chr.c_str(), "14", 2) == 0 && (mother.first!=father.first  ||mother.second!=father.second ) ) {
+				for (size_t i = 0; i < snps.size(); i++) {
+					if (snps[i].position == pos && strncmp(snps[i].chr.c_str(), chr.c_str(), chr.size()) == 0) {
+						//found the snp in the offspring (hapcut2 output)
+						if((snps[i].alt_allele== father.first ||snps[i].alt_allele== father.second) && !(snps[i].alt_allele== mother.first ||snps[i].alt_allele== mother.second)){
+							snps[i].gatk=1;
+						}else if(!(snps[i].alt_allele== father.first ||snps[i].alt_allele== father.second) && (snps[i].alt_allele== mother.first ||snps[i].alt_allele== mother.second)){
+							snps[i].gatk=2;
+						}else{
+							snps[i].gatk=0;
+						}
+
+						break;
+					}
+				}
+			}
+
+			getline(myfile, buffer);
+		}
+		myfile.close();
+	}
+
+}
 void parental_phasing(std::string parents_vcf, std::string hapcut_output, std::string gatk_output, std::string snp_file, std::string output) {
 	std::vector<snp_str> snps = parse_hapcut2(hapcut_output);
-
+	std::cout<< "Extracted: "<<snps.size()<<std::endl;
 //parse with parental SNPs:
-	update_parents_xatlas(parents_vcf, snps);
+	//update_parents_xatlas(parents_vcf, snps);
 
 //GATK parsing:
-	update_parents_gatk(gatk_output, snps);
+	//update_parents_gatk(gatk_output, snps);
+	update_parents_snp_array(parents_vcf,snps);
 
 //Add allel frequencies/ratios from propant
-	update_snps_alles(snp_file, snps);
+//	update_snps_alles(snp_file, snps);
 
 //print results:
 

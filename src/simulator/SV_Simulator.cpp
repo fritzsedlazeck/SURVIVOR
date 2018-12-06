@@ -799,25 +799,25 @@ char mut_char(char old) {
 	int index = rand() % 4;
 	switch (old) {
 	case 'A':
-		while (index != 0) {
+		while (index == 0) {
 			index = rand() % 4;
 		}
 		return nucs[index];
 		break;
 	case 'C':
-		while (index != 1) {
+		while (index == 1) {
 			index = rand() % 4;
 		}
 		return nucs[index];
 		break;
 	case 'G':
-		while (index != 2) {
+		while (index == 2) {
 			index = rand() % 4;
 		}
 		return nucs[index];
 		break;
 	case 'T':
-		while (index != 3) {
+		while (index == 3) {
 			index = rand() % 4;
 		}
 		return nucs[index];
