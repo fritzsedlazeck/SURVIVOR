@@ -89,11 +89,11 @@ void process_hapcut(std::string orig_snp, std::string hapcut2, std::string outpu
 			fprintf(file, "%s", buffer.c_str());
 			fprintf(file, "%c", '\n');
 		} else {
-		//	num++;
+			//	num++;
 
 			std::size_t found = buffer.find_last_of('\t');
 			//check found + 1 if '1' && if found+3 !='0' ->
-			if (buffer[found + 1] == '0' && buffer[found + 3] == '1') {
+			if ((buffer[found + 1] == '0' && buffer[found + 3] == '1') ||( buffer[found + 1] == '1' && buffer[found + 3] == '0') ) {
 				//search pos and replace 3 chars.
 				int count = 0;
 				std::string chr;
@@ -112,10 +112,10 @@ void process_hapcut(std::string orig_snp, std::string hapcut2, std::string outpu
 				}
 				if (strcmp(chr.c_str(), old_chr.c_str()) != 0) {
 					//load new chr set:
-					cout<<"Parsing hapcut2 output for "<<chr;
+					cout << "Parsing hapcut2 output for " << chr;
 					hapcut_res = parse_hapcut(hapcut2, chr);
-					cout<<" SNPs parsed "<<hapcut_res.size()<<endl;
-					old_chr=chr;
+					cout << " SNPs parsed " << hapcut_res.size() << endl;
+					old_chr = chr;
 
 				}
 
@@ -125,6 +125,7 @@ void process_hapcut(std::string orig_snp, std::string hapcut2, std::string outpu
 					ss << "_";
 					ss << pos;
 					if (hapcut_res.find(ss.str()) != hapcut_res.end()) {
+			//			cout << "MATCH: " << ss.str() << endl;
 						if (hapcut_res[ss.str()]) {
 							buffer[found + 1] = '1';
 							buffer[found + 2] = '|';
@@ -134,11 +135,14 @@ void process_hapcut(std::string orig_snp, std::string hapcut2, std::string outpu
 							buffer[found + 2] = '|';
 							buffer[found + 3] = '1';
 						}
+
 					}
 				}
+
 			}
 			fprintf(file, "%s", buffer.c_str());
 			fprintf(file, "%c", '\n');
+
 		}
 
 		getline(myfile, buffer);
