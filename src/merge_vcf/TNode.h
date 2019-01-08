@@ -58,7 +58,7 @@ public:
 		} else {
 			tmp->len = meta_info.sv_len;
 		}
-		tmp->quality = meta_info.QV;
+		tmp->quality.push_back(meta_info.QV);
 		tmp->num_support = meta_info.num_reads;
 		tmp->id = meta_info.caller_id;
 		tmp->starts.push_back(start.position);
@@ -110,7 +110,7 @@ public:
 		this->data->caller_info[index]->genotype = meta_info.genotype;
 		this->data->caller_info[index]->strand = strands;
 		this->data->caller_info[index]->pre_supp_vec = meta_info.pre_supp_vec;
-		this->data->caller_info[index]->quality = meta_info.QV;
+		this->data->caller_info[index]->quality.push_back(meta_info.QV);
 
 		if (meta_info.allleles.first.size() > this->data->caller_info[index]->alleles.first.size() || meta_info.allleles.second.size() > this->data->caller_info[index]->alleles.second.size()) {
 			this->data->caller_info[index]->alleles.first = meta_info.allleles.first;
@@ -118,9 +118,9 @@ public:
 		}
 
 		if (!this->data->caller_info[index]->vcf_ID.empty()) {
-			this->data->caller_info[index]->vcf_ID += ";";
+			this->data->caller_info[index]->vcf_ID +=";";// meta_info.vcf_ID;
 		}
-		this->data->caller_info[index]->vcf_ID += meta_info.vcf_ID;
+		this->data->caller_info[index]->vcf_ID = meta_info.vcf_ID;
 
 		if (this->data->caller_info[index]->len == 0) { //first time
 			this->data->caller_info[index]->len = meta_info.sv_len; //stop.position-start.position; // take the length of the svs as identifier.

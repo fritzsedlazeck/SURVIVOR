@@ -179,7 +179,6 @@ void official_interface(int argc, char *argv[]) {
 		} else if (strcmp(argv[1], "stats") == 0) {
 			if (argc == 7) {
 				summary_SV(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), std::string(argv[6]));
-				std::cout << "You can find an R script in the src/R-scripts/ to create plots given the summary output files." << std::endl;
 			} else if (argc == 5) {
 				summary_SV_stream(atoi(argv[2]), atoi(argv[3]), std::string(argv[4]));
 			} else {

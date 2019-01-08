@@ -50,14 +50,13 @@ public:
 		strand.second=false;
 		genotype="./.";
 		pre_supp_vec="";
-		quality=-1;
 	}
 	~Support_Node(){
 
 	}
 	int id;
 	int len;
-	int quality;
+	std::vector<int> quality;
 	std::vector<short> types;
 	std::vector<short> sv_lengths;
 	std::vector<int> starts;

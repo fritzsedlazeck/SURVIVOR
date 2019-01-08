@@ -409,7 +409,7 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 				tmp.num_reads.second = atoi(&buffer[i + 4]);
 			}
 			if (count == 7 && strncmp(&buffer[i], ";AF=", 4) == 0) {
-				tmp.af = atof(&buffer[i+4]);
+				tmp.af = atof(&buffer[i + 4]);
 			}
 
 			//if (count == 7 && strncmp(&buffer[i], "EAS_AF=", 7) == 0) { //EAS_AF
@@ -436,9 +436,9 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 				tmp.strands.first = (bool) (buffer[i + 9] == '+');
 				tmp.strands.second = (bool) (buffer[i + 10] == '+');
 			}
-	//		if (count == 9 && buffer[i - 1] == '\t') {
-		//		tmp.af = parse_genotypes_vcf(buffer.substr(i - 1));
-	//		}
+			//		if (count == 9 && buffer[i - 1] == '\t') {
+			//		tmp.af = parse_genotypes_vcf(buffer.substr(i - 1));
+			//		}
 
 			if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
 
@@ -590,17 +590,18 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 			tmp.stop.pos = -1;
 			tmp.type = -1;
 			bool set_strand = false;
-		//	std::string ref;
-		//	std::string alt;
+			//	std::string ref;
+			//	std::string alt;
 			tmp.genotype = "./.";
 			tmp.strands.first = true;
 			tmp.strands.second = true;
 			tmp.num_reads.first = 0;
 			tmp.num_reads.second = 0;
-			tmp.alleles.first="";
-			tmp.alleles.second="";
-			tmp.sv_id="";
+			tmp.alleles.first = "";
+			tmp.alleles.second = "";
+			tmp.sv_id = "";
 			tmp.sv_len = -1;
+			tmp.quality = -1;
 			//float freq = 0;
 			//std::cout<<buffer<<std::endl;
 			for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
@@ -616,21 +617,21 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					tmp.sv_id += buffer[i];
 				}
 				if (count == 3 && buffer[i] != '\t') {
-					tmp.alleles.first+=buffer[i];
-				//	ref += buffer[i];
+					tmp.alleles.first += buffer[i];
+					//	ref += buffer[i];
 				}
 				if (count == 4 && buffer[i] != '\t') {
-					tmp.alleles.second+=buffer[i];
-				//	alt += buffer[i];
+					tmp.alleles.second += buffer[i];
+					//	alt += buffer[i];
 				}
 				if (count == 4 && buffer[i - 1] == '\t') {
 					tmp.strands = parse_strands_lumpy(&buffer[i]);
 				}
-				if(count==5 && buffer[i-1]=='\t'){
-					if(buffer[i]=='.'){
-						tmp.quality=-1;//not set;
-					}else{
-						tmp.quality=atoi(&buffer[i]);
+				if (count == 5 && buffer[i - 1] == '\t') {
+					if (buffer[i] == '.') {
+						tmp.quality = -1;			//not set;
+					} else {
+						tmp.quality = atoi(&buffer[i]);
 					}
 				}
 				if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
@@ -787,9 +788,9 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					}
 
 				}
-			//	if (freq > Parameter::Instance()->min_freq) {
-					calls.push_back(tmp);
-			//	}
+				//	if (freq > Parameter::Instance()->min_freq) {
+				calls.push_back(tmp);
+				//	}
 
 			}
 			tmp.calls.clear();
@@ -895,18 +896,21 @@ void print_entry(FILE *&file, SVS_Node * entry, int id) {
 
 	fprintf(file, "%s", "\t");
 	//quality!
-	int max_qual=-1;
+	int max_qual = -1;
 	for (size_t i = 0; i < entry->caller_info.size(); i++) {
-		if(max_qual<entry->caller_info[i]->quality){
-			max_qual=entry->caller_info[i]->quality;
+		for (size_t j = 0; j < entry->caller_info[i]->quality.size(); j++) {
+			if (max_qual < entry->caller_info[i]->quality[j]) {
+				max_qual = entry->caller_info[i]->quality[j];
+
+			}
 		}
 	}
-	if(max_qual==-1){
+	if (max_qual == -1) {
 		fprintf(file, "%c", '.');
-	}else{
+	} else {
 		fprintf(file, "%i", max_qual);
 	}
-	fprintf(file, "%s","\tPASS\tIMPRECISE;SVMETHOD=SURVIVOR");
+	fprintf(file, "%s", "\tPASS\tIMPRECISE;SVMETHOD=SURVIVOR");
 	fprintf(file, "%s", ";CHR2=");
 	fprintf(file, "%s", entry->second.chr.c_str());
 	fprintf(file, "%s", ";END=");
@@ -980,42 +984,42 @@ void print_merged_vcf(std::string outputfile, std::string header, std::vector<st
 //main:
 /*void merge_vcf(std::string filenames, int max_dist, int min_observed, std::string outputfile) {
 
-	Parameter::Instance()->use_strand = true;
+ Parameter::Instance()->use_strand = true;
 
-	Parameter::Instance()->max_dist = max_dist;
-	Parameter::Instance()->use_type = true;
+ Parameter::Instance()->max_dist = max_dist;
+ Parameter::Instance()->use_type = true;
 
-	std::vector<std::string> names = parse_filename(filenames);
-	std::cout << "found in file: " << names.size() << std::endl;
-	std::vector<strvcfentry> final_vcf;
+ std::vector<std::string> names = parse_filename(filenames);
+ std::cout << "found in file: " << names.size() << std::endl;
+ std::vector<strvcfentry> final_vcf;
 
-	/*for (size_t i = 0; i < names.size(); i++) {
-	 merge_entries(names[i], max_dist, final_vcf);
-	 std::cout << "merged: " << final_vcf.size() << std::endl;
-	 }*/
+ /*for (size_t i = 0; i < names.size(); i++) {
+ merge_entries(names[i], max_dist, final_vcf);
+ std::cout << "merged: " << final_vcf.size() << std::endl;
+ }*/
 /*
-	IntervallTree bst;
-	TNode *root = NULL;
-	Parameter::Instance()->max_caller = names.size();
-	for (size_t id = 0; id < names.size(); id++) {
-		std::vector<strvcfentry> entries = parse_vcf(names[id], 0);
-		std::cout << id << ": merging entries: " << names[id] << " size: " << entries.size() << std::endl;
-		for (size_t j = 0; j < entries.size(); j++) {
-			breakpoint_str start = convert_position(entries[j].start);
-			breakpoint_str stop = convert_position(entries[j].stop);
-			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, entries[j].quality,root);
-		}
-		entries.clear();
-	}
+ IntervallTree bst;
+ TNode *root = NULL;
+ Parameter::Instance()->max_caller = names.size();
+ for (size_t id = 0; id < names.size(); id++) {
+ std::vector<strvcfentry> entries = parse_vcf(names[id], 0);
+ std::cout << id << ": merging entries: " << names[id] << " size: " << entries.size() << std::endl;
+ for (size_t j = 0; j < entries.size(); j++) {
+ breakpoint_str start = convert_position(entries[j].start);
+ breakpoint_str stop = convert_position(entries[j].stop);
+ bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, entries[j].quality,root);
+ }
+ entries.clear();
+ }
 
-	std::vector<SVS_Node *> points;
-	bst.get_breakpoints(root, points);
+ std::vector<SVS_Node *> points;
+ bst.get_breakpoints(root, points);
 
-	std::cout << "Merged: " << points.size() << std::endl;
+ std::cout << "Merged: " << points.size() << std::endl;
 
-	std::cout << "get header:" << std::endl;
-	std::string header = get_header(names);
-	std::cout << "print:" << std::endl;
-	print_merged_vcf(outputfile, header, points, names, min_observed);
-	//print_merged_vcf(outputfile, header, final_vcf, names);
-}*/
+ std::cout << "get header:" << std::endl;
+ std::string header = get_header(names);
+ std::cout << "print:" << std::endl;
+ print_merged_vcf(outputfile, header, points, names, min_observed);
+ //print_merged_vcf(outputfile, header, final_vcf, names);
+ }*/
