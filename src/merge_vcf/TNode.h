@@ -117,10 +117,12 @@ public:
 			this->data->caller_info[index]->alleles.second = meta_info.allleles.second;
 		}
 
-		if (!this->data->caller_info[index]->vcf_ID.empty()) {
-			this->data->caller_info[index]->vcf_ID +=";";// meta_info.vcf_ID;
+		if (meta_info.vcf_ID[0] != '.') {
+			if (!this->data->caller_info[index]->vcf_ID.empty()) {
+				this->data->caller_info[index]->vcf_ID += ";"; // meta_info.vcf_ID;
+			}
+			this->data->caller_info[index]->vcf_ID = meta_info.vcf_ID;
 		}
-		this->data->caller_info[index]->vcf_ID = meta_info.vcf_ID;
 
 		if (this->data->caller_info[index]->len == 0) { //first time
 			this->data->caller_info[index]->len = meta_info.sv_len; //stop.position-start.position; // take the length of the svs as identifier.

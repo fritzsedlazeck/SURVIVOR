@@ -190,7 +190,7 @@ std::string print_strands(std::pair<bool, bool> strands) {
 	return strand;
 }
 
-void print_GTs(std::ostringstream & convert,SVS_Node * entry) {
+void print_GTs(std::ostringstream & convert, SVS_Node * entry) {
 	convert << "\tGT:PSV:LN:DR:ST:QV:TY:ID:RAL:AAL:CO";
 	int pos = 0;
 	//std::cout<<"Check: "<<Parameter::Instance()->max_caller <<" vs "<<entry->caller_info.size()<<std::endl;
@@ -358,15 +358,13 @@ void print_entry_overlap_BND(FILE *& file, SVS_Node * entry, int id) {
 		convert << ";STRANDS=";
 		convert << print_strands(entry->caller_info[index]->strand);
 		//}
-		print_GTs(convert,entry);
+		print_GTs(convert, entry);
 
 		fprintf(file, "%s", convert.str().c_str());
 		fprintf(file, "%c", '\n');
 
 	}
 }
-
-
 
 void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	std::ostringstream convert;   // stream used for the conversion
@@ -390,25 +388,46 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	}
 
 	convert << "\t";
-	if (entry->caller_info[index]->alleles.first.empty()) {
 
-		convert << "N";
+
+	//REF / ALT field:
+	if (entry->type == 3) { //FOR TRA for the BND annotation
+		convert << "N\t";
+		if (!entry->strand.first) { //&&
+			convert << "]";
+			convert << entry->second.chr;
+			convert << ":";
+			convert << entry->second.position;
+			convert << "]N";
+		} else {
+			convert << "N[";
+			convert << entry->second.chr;
+			convert << ":";
+			convert << entry->second.position;
+			convert << "[";
+		}
 	} else {
-		convert << entry->caller_info[index]->alleles.first;
+		if (entry->caller_info[index]->alleles.first.empty()) {
+
+			convert << "N";
+		} else {
+			convert << entry->caller_info[index]->alleles.first;
+		}
+		convert << "\t";
+
+		if (entry->caller_info[index]->alleles.second.empty()) {
+
+			convert << "<";
+			convert << trans_type(entry->caller_info[index]->types[0]);
+			convert << ">";
+
+		} else {
+			convert << entry->caller_info[index]->alleles.second;
+		}
 	}
 	convert << "\t";
 
-	if (entry->caller_info[index]->alleles.second.empty()) {
 
-		convert << "<";
-		convert << trans_type(entry->caller_info[index]->types[0]);
-		convert << ">";
-
-	} else {
-		convert << entry->caller_info[index]->alleles.second;
-	}
-
-	convert << "\t";
 	int max_qual = -1;
 	for (size_t i = 0; i < entry->caller_info.size(); i++) {
 		for (size_t j = 0; j < entry->caller_info[i]->quality.size(); j++) {
@@ -423,6 +442,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 		convert << max_qual;
 	}
 	convert << "\tPASS\t";
+	//INFO FIELD
 	convert << "SUPP=";
 	convert << get_support(entry->caller_info);
 	convert << ";SUPP_VEC=";
@@ -460,7 +480,7 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << ";STRANDS=";
 	convert << print_strands(entry->caller_info[index]->strand);
 	//}
-	print_GTs(convert,entry);
+	print_GTs(convert, entry);
 	fprintf(file, "%s", convert.str().c_str());
 	fprintf(file, "%c", '\n');
 }
@@ -586,7 +606,6 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	file = fopen(output.c_str(), "w");
 	print_header(file, names, chrs);
 
-
 	int id = 0;
 
 	std::vector<std::string> keys;
@@ -611,7 +630,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 			}
 
 			if (support >= min_support && len > min_svs) {
-				print_entry_overlap_BND(file, (*i), id);
+				print_entry_overlap(file, (*i), id);
 			}
 
 			id++;
