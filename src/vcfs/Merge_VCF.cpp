@@ -708,7 +708,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					//delly
 					tmp.num_reads = parse_delly(&buffer[i]);
 				}
-				if (count == 8 && strncmp(&buffer[i], "DR:DV", 5) == 0) {
+				if (count == 8 && strncmp(&buffer[i], "GT:DR:DV", 5) == 0) {
 					//manta
 					tmp.num_reads = parse_sniffles(&buffer[i]);
 				}
