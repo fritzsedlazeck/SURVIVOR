@@ -24,7 +24,7 @@ bool is_valid_alleles(std::pair<std::string, std::string> alleles) {
 
 	//search for a <> tag in second:
 	for (size_t i = 0; i < alleles.second.size(); i++) {
-		if (alleles.second[i] == '<') {
+		if (alleles.second[i] == '<' || alleles.second[i] == ':') {
 			return false;
 		}
 	}
