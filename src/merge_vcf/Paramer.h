@@ -21,7 +21,7 @@ class Parameter {
 private:
 	Parameter() {
 		min_freq=-1;
-		version ="1.0.5";
+		version ="1.0.6";
 	}
 	~Parameter() {
 

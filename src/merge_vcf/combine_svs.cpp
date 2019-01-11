@@ -461,7 +461,9 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	 convert << get_stop_medpos(entry->caller_info);*/
 	convert << ";SVTYPE=";
 	convert << trans_type(entry->caller_info[index]->types[0]);
-	convert << ";SVMETHOD=SURVIVORv2;CHR2=";
+	convert << ";SVMETHOD=SURVIVOR";
+	convert << Parameter::Instance()->version;
+	convert <<";CHR2=";
 	convert << entry->second.chr;   //caller_info[index]->stops[0].chr;
 	convert << ";END=";
 	convert << entry->caller_info[index]->stops[0];   //entry->second.position;
