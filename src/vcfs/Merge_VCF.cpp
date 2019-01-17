@@ -557,8 +557,8 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 
 	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
-		exit(0);
+		std::cerr << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
+		exit(1);
 	}
 
 	std::vector<strvcfentry> calls;
@@ -980,46 +980,3 @@ void print_merged_vcf(std::string outputfile, std::string header, std::vector<st
 		fprintf(file, "%c", '\n');
 	}
 }
-
-//main:
-/*void merge_vcf(std::string filenames, int max_dist, int min_observed, std::string outputfile) {
-
- Parameter::Instance()->use_strand = true;
-
- Parameter::Instance()->max_dist = max_dist;
- Parameter::Instance()->use_type = true;
-
- std::vector<std::string> names = parse_filename(filenames);
- std::cout << "found in file: " << names.size() << std::endl;
- std::vector<strvcfentry> final_vcf;
-
- /*for (size_t i = 0; i < names.size(); i++) {
- merge_entries(names[i], max_dist, final_vcf);
- std::cout << "merged: " << final_vcf.size() << std::endl;
- }*/
-/*
- IntervallTree bst;
- TNode *root = NULL;
- Parameter::Instance()->max_caller = names.size();
- for (size_t id = 0; id < names.size(); id++) {
- std::vector<strvcfentry> entries = parse_vcf(names[id], 0);
- std::cout << id << ": merging entries: " << names[id] << " size: " << entries.size() << std::endl;
- for (size_t j = 0; j < entries.size(); j++) {
- breakpoint_str start = convert_position(entries[j].start);
- breakpoint_str stop = convert_position(entries[j].stop);
- bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, entries[j].quality,root);
- }
- entries.clear();
- }
-
- std::vector<SVS_Node *> points;
- bst.get_breakpoints(root, points);
-
- std::cout << "Merged: " << points.size() << std::endl;
-
- std::cout << "get header:" << std::endl;
- std::string header = get_header(names);
- std::cout << "print:" << std::endl;
- print_merged_vcf(outputfile, header, points, names, min_observed);
- //print_merged_vcf(outputfile, header, final_vcf, names);
- }*/

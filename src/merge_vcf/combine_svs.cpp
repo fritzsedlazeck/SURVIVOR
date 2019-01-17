@@ -73,6 +73,21 @@ const std::string currentDateTime() {
 	return buf;
 }
 void print_header(FILE *& file, std::vector<std::string> names, std::map<std::string, int> chrs) {
+	std::map<std::string,int> names_checked;
+	for (size_t i=0;i<names.size();i++){ // To aviod reporting the same identifier twice!
+		if(names_checked.find(names[i])==names_checked.end()){
+			names_checked[names[i]]=1;
+
+		}else{
+			std::stringstream new_name;
+			new_name<<names[i];
+			new_name<<"_";
+			new_name<<names_checked[names[i]];
+			names_checked[names[i]]++;
+			names[i]=new_name.str();
+		}
+	}
+
 	fprintf(file, "%s", "##fileformat=VCFv4.1\n");
 	fprintf(file, "%s", "##source=SURVIVOR\n");
 	std::string time = currentDateTime();
@@ -537,8 +552,8 @@ void parse_vcf_header(std::map<std::string, int> &chrs, std::string filename) {
 	std::ifstream myfile;
 	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
-		exit(0);
+		std::cerr << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
+		exit(1);
 	}
 	getline(myfile, buffer);
 	while (!myfile.eof() && buffer[0] == '#') {
