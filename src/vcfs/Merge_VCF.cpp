@@ -690,13 +690,15 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
 					size_t j = i;
 					tmp.genotype = "./.";
-					while (buffer[j] != '\0' && (tmp.genotype[0] == '.')) {
-						if (buffer[j - 1] == '\t') {
-							tmp.genotype[0] = buffer[j];
-							tmp.genotype[1] = buffer[j + 1];
-							tmp.genotype[2] = buffer[j + 2];
+					if (buffer[j + 1] == '/' || buffer[j + 1] == '|') {
+						while (buffer[j] != '\0' && (tmp.genotype[0] == '.')) {
+							if (buffer[j - 1] == '\t') {
+								tmp.genotype[0] = buffer[j];
+								tmp.genotype[1] = buffer[j + 1];
+								tmp.genotype[2] = buffer[j + 2];
+							}
+							j++;
 						}
-						j++;
 					}
 					//	std::cout<<"GO: "<<tmp.genotype<<std::endl;
 				}
