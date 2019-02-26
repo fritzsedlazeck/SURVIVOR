@@ -758,12 +758,14 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				tmp.stop.chr = tmp.start.chr;
 				tmp.sv_len = (int) tmp.alleles.first.size() - (int) tmp.alleles.second.size();
 				tmp.stop.pos = tmp.start.pos + abs(tmp.sv_len);
-				if (tmp.sv_len > 0) {
-					tmp.type = 0; //deletion
-				} else if (tmp.sv_len < 0) {
-					tmp.type = 4; //insertions
-					tmp.sv_len = abs(tmp.sv_len);
-					//	std::cout<<"INS: "<<tmp.sv_len <<std::endl;
+				if (tmp.type == -1) {
+					if (tmp.sv_len > 0) {
+						tmp.type = 0; //deletion
+					} else if (tmp.sv_len < 0) {
+						tmp.type = 4; //insertions
+						tmp.sv_len = abs(tmp.sv_len);
+						//	std::cout<<"INS: "<<tmp.sv_len <<std::endl;
+					}
 				}
 			}
 			if (tmp.stop.chr.empty()) {
@@ -791,6 +793,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 
 				}
 				//	if (freq > Parameter::Instance()->min_freq) {
+			//	std::cout<<"Call: "<<tmp.start.pos <<" "<<tmp.stop.pos<<" "<<tmp.type<<std::endl;
 				calls.push_back(tmp);
 				//	}
 

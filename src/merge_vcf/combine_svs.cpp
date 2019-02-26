@@ -253,7 +253,13 @@ void print_GTs(std::ostringstream & convert, SVS_Node * entry) {
 				}
 			}
 			convert << ":";   //ID VCF
-			convert << entry->caller_info[pos]->vcf_ID;
+			for(size_t j=0; j<entry->caller_info[pos]->vcf_ID.size();j++){
+				if(entry->caller_info[pos]->vcf_ID[j]!=':'){
+					convert << entry->caller_info[pos]->vcf_ID[j];
+				}else{
+					convert<<"_";
+				}
+			}
 
 			if (is_valid_alleles(entry->caller_info[pos]->alleles)) {
 				convert << ":";   //RAL
