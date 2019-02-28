@@ -93,7 +93,7 @@ void process_hapcut(std::string orig_snp, std::string hapcut2, std::string outpu
 	while (!myfile.eof()) {
 		if (buffer[0] == '#') {
 			if (buffer[1] == 'C') {
-				fprintf(file, "%s", "##FORMAT=<ID=PS,Number=1,Type=Integer,Description=\"Phase set identifier\">");
+				fprintf(file, "%s", "##FORMAT=<ID=PS,Number=1,Type=Integer,Description=\"Phase set identifier\">\n");
 			}
 			fprintf(file, "%s", buffer.c_str());
 			fprintf(file, "%c", '\n');
