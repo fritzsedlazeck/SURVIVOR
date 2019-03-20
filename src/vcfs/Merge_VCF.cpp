@@ -4,7 +4,7 @@
  *  Created on: Feb 12, 2015
  *      Author: fsedlaze
  */
-
+#include "../GzipStream.h"
 #include "Merge_VCF.h"
 
 //read in all the vcf filenames:
@@ -16,8 +16,8 @@ std::vector<std::string> parse_filename(std::string filename) {
 
 	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "File Parser: could not open file: " << filename.c_str() << std::endl;
-		exit(0);
+		std::cerr << "File Parser: could not open file: " << filename.c_str() << std::endl;
+		exit(EXIT_FAILURE);
 	}
 	myfile.getline(buffer, buffer_size);
 	while (!myfile.eof()) {
@@ -553,12 +553,12 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 	//char*buffer = new char[buffer_size];
 
 	std::string buffer;
-	std::ifstream myfile;
+	GzipStreamBuf gzbuf(filename.c_str());
+	std::istream myfile(&gzbuf);
 
-	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cerr << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
-		exit(1);
+		std::cerr << "VCF Parser: could not open file: " << filename.c_str() << " " << strerror(errno) << std::endl;
+		exit(EXIT_FAILURE);
 	}
 
 	std::vector<strvcfentry> calls;
@@ -804,7 +804,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 		}
 		getline(myfile, buffer);
 	}
-	myfile.close();
+	
 //std::cout << calls.size() << std::endl;
 	return calls;
 }
@@ -849,8 +849,8 @@ std::string get_header(std::vector<std::string> names) {
 
 	myfile.open(names[0].c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "Annotation Parser: could not open file: " << names[0].c_str() << std::endl;
-		exit(0);
+		std::cerr << "Annotation Parser: could not open file: " << names[0].c_str() << std::endl;
+		exit(EXIT_FAILURE);
 	}
 	std::string header;
 	myfile.getline(buffer, buffer_size);

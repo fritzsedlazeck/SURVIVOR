@@ -4,6 +4,8 @@
 
 -include ../makefile.init
 
+
+
 RM := rm -rf
 
 # All of the sources participating in the build are defined here
@@ -45,6 +47,8 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 
+LIBS +=-lz
+
 # All Target
 all: SURVIVOR
 
@@ -52,7 +56,7 @@ all: SURVIVOR
 SURVIVOR: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: Cross G++ Linker'
-	g++  -o "SURVIVOR" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++  -o $@ $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
