@@ -614,7 +614,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					//std::cout<<tmp.start.pos<<std::endl;
 				}
 				if (count == 2 && buffer[i] != '\t') {
-					tmp.sv_id += buffer[i];
+					tmp.sv_id += (buffer[i]==':'?'~':buffer[i]);
 				}
 				if (count == 3 && buffer[i] != '\t') {
 					tmp.alleles.first += buffer[i];
