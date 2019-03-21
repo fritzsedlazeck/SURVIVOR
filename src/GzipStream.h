@@ -36,7 +36,10 @@ SOFTWARE.
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
+#include <cstdio>
+#include <cerrno>
 
+using namespace std;
 
 class GzipStreamBuf : public std::basic_streambuf<char>
 	{
