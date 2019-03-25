@@ -114,7 +114,7 @@ class GzipStreamBuf : public std::basic_streambuf<char>
 
 			setg(	(char*)this->buffer,
 				(char*)&this->buffer[1],
-				(char*)&this->buffer[nRead+1]
+				(char*)&this->buffer[nRead]
 				);
 			
 			return this->buffer[0];
