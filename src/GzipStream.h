@@ -36,7 +36,10 @@ SOFTWARE.
 #include <cstdlib>
 #include <cstring>
 #include <cassert>
+#include <cstdio>
+#include <cerrno>
 
+using namespace std;
 
 class GzipStreamBuf : public std::basic_streambuf<char>
 	{
@@ -109,9 +112,9 @@ class GzipStreamBuf : public std::basic_streambuf<char>
 				return EOF;
 				}
 
-			setg(	(char*)this->buffer,
-				(char*)&this->buffer[1],
-				(char*)&this->buffer[nRead+1]
+			setg(	(char*)&this->buffer[0],
+				(char*)&this->buffer[0],
+				(char*)&this->buffer[nRead]
 				);
 			
 			return this->buffer[0];
