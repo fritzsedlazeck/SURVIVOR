@@ -7,10 +7,10 @@
 
 #include "MT_identifier.h"
 int parse_read_start(std::string cigar, bool strand) {
-	std::string::size_type sz;   // alias of size_t
+	//std::string::size_type sz;   // alias of size_t
 	int pos = 0;
 	if (strand) {
-		size_t found = cigar.find_first_of("S");
+		//size_t found = cigar.find_first_of("S");
 		pos = 0;//stoi(cigar.substr(0, found), &sz);
 	} else {
 		std::string tmp="";
@@ -87,7 +87,7 @@ void detect_MT_copies(std::string chr_identifier) {
 					//found: @SQ     SN:MT   LN:19431
 					found = line.find_first_of("LN:");
 					found += 3;
-					std::string::size_type sz;   // alias of size_t
+				//	std::string::size_type sz;   // alias of size_t
 					int len = 0;//std::stoi(line.substr(found), &sz);   //get chr size
 					min_len = len * 2;
 					std::cout << "LEN: " << min_len << std::endl;

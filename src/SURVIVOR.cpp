@@ -47,6 +47,8 @@
 
 Parameter* Parameter::m_pInstance = NULL;
 
+//make file: LIBS +=-lz
+
 void official_interface(int argc, char *argv[]) {
 
 	if (argc > 1) {
