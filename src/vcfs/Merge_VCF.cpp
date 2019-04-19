@@ -37,11 +37,11 @@ strcoordinate parse_stop(const char * buffer) {
 	pos.pos = -1;
 	while (buffer[i] != '\t' && (buffer[i] != '\n' && buffer[i] != '\0')) {
 
-		if (strncmp(&buffer[i], ";END=", 5) == 0 || (i==0 && strncmp(&buffer[i], "END=", 5) == 0)) {
+		if (strncmp(&buffer[i], ";END=", 5) == 0 || (i == 0 && strncmp(&buffer[i], "END=", 5) == 0)) {
 			//if (pos.pos == -1) {
-				pos.pos = atoi(&buffer[i + 5]);
+			pos.pos = atoi(&buffer[i + 5]);
 			//}
-		//	std::cout<<"pos"<<pos.pos<<std::endl;
+			//	std::cout<<"pos"<<pos.pos<<std::endl;
 		}
 		if (strncmp(&buffer[i], "CHR2=", 5) == 0) {
 			i = i + 5;
@@ -146,6 +146,7 @@ std::string trans_type23(short type) {
 }
 
 strcoordinate parse_pos(char * buffer) {
+
 	strcoordinate pos;
 	pos.chr = "";
 	pos.pos = -1;
@@ -552,7 +553,6 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 	//size_t buffer_size = 200000000;
 	//char*buffer = new char[buffer_size];
 
-
 	std::string buffer;
 	std::ifstream myfile;
 
@@ -562,15 +562,15 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 		exit(0);
 	}
 	/*std::string buffer; There seems to be some problem with the parsing!
-	GzipStreamBuf gzbuf(filename.c_str());
-	std::istream myfile(&gzbuf);
+	 GzipStreamBuf gzbuf(filename.c_str());
+	 std::istream myfile(&gzbuf);
 
-	myfile.open(filename.c_str(), std::ifstream::in);
+	 myfile.open(filename.c_str(), std::ifstream::in);
 
-	if (!myfile.good()) {
-		std::cerr << "VCF Parser: could not open file: " << filename.c_str() << " " << strerror(errno) << std::endl;
-		exit(EXIT_FAILURE);
-	}*/
+	 if (!myfile.good()) {
+	 std::cerr << "VCF Parser: could not open file: " << filename.c_str() << " " << strerror(errno) << std::endl;
+	 exit(EXIT_FAILURE);
+	 }*/
 
 	std::vector<strvcfentry> calls;
 	getline(myfile, buffer);
@@ -638,9 +638,20 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					tmp.alleles.second += buffer[i];
 					//	alt += buffer[i];
 				}
+
+				if ((tmp.stop.pos ==-1 && count == 4) && (buffer[i - 1] == '[' || buffer[i - 1] == ']')) {
+
+
+					tmp.stop = parse_pos(&buffer[i - 1]);
+					if (tmp.start.pos == 102590230 || tmp.start.pos == 102590234) {
+						cout << "HIT: "<< tmp.stop.chr<<" "<<tmp.stop.pos << endl;
+					}
+				}
+
 				if (count == 4 && buffer[i - 1] == '\t') {
 					tmp.strands = parse_strands_lumpy(&buffer[i]);
 				}
+
 				if (count == 5 && buffer[i - 1] == '\t') {
 					if (buffer[i] == '.') {
 						tmp.quality = -1;			//not set;
@@ -648,12 +659,13 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 						tmp.quality = atoi(&buffer[i]);
 					}
 				}
-				if (count == 7 && buffer[i - 1] == '\t'){
+				if (tmp.stop.pos ==-1 && (count == 7 && buffer[i - 1] == '\t')) {
 					tmp.stop = parse_stop(&buffer[i]);
-			//		if (tmp.start.pos == 1142719) {
-			//			std::cout << "Stop:" << tmp.stop.pos << std::endl;
-			//		}
+					//		if (tmp.start.pos == 1142719) {
+					//			std::cout << "Stop:" << tmp.stop.pos << std::endl;
+					//		}
 				}
+
 				if (count == 7 && strncmp(&buffer[i], "SVTYPE=", 7) == 0) {
 					tmp.type = get_type(std::string(&buffer[i + 7]));
 				}
@@ -734,9 +746,6 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				if (count == 4 && buffer[i - 1] == '<') {
 					tmp.type = get_type(std::string(&buffer[i]));
 				}
-				if (tmp.stop.pos == -1 && (count == 4 && (buffer[i - 1] == '[' || buffer[i - 1] == ']'))) {
-					tmp.stop = parse_pos(&buffer[i - 1]);
-				}
 
 				if (count == 9 && buffer[i - 1] == '\t') {
 					tmp.calls[filename] = std::string(&buffer[i]);
@@ -784,9 +793,9 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				tmp.stop.pos = tmp.start.pos + abs(tmp.sv_len);
 			}
 
-		//	if (tmp.start.pos == 1142719) {
-		//		std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
-		//	}
+			if (tmp.start.pos == 102590230 || tmp.start.pos == 102590234) {
+				std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
+			}
 			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (tmp.sv_len >= min_svs))) { // || tmp.type==4
 				/*	std::size_t found = tmp.stop.chr.find("chr");
 				 if (found != std::string::npos) {
