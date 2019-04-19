@@ -643,9 +643,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 
 
 					tmp.stop = parse_pos(&buffer[i - 1]);
-					if (tmp.start.pos == 102590230 || tmp.start.pos == 102590234) {
-						cout << "HIT: "<< tmp.stop.chr<<" "<<tmp.stop.pos << endl;
-					}
+
 				}
 
 				if (count == 4 && buffer[i - 1] == '\t') {
@@ -793,9 +791,9 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				tmp.stop.pos = tmp.start.pos + abs(tmp.sv_len);
 			}
 
-			if (tmp.start.pos == 102590230 || tmp.start.pos == 102590234) {
-				std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
-			}
+		//	if (tmp.start.pos == 102590230 || tmp.start.pos == 102590234) {
+		//		std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
+		//	}
 			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (tmp.sv_len >= min_svs))) { // || tmp.type==4
 				/*	std::size_t found = tmp.stop.chr.find("chr");
 				 if (found != std::string::npos) {
