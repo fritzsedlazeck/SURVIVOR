@@ -685,11 +685,11 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				}
 
 				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i], ";AVGLEN=", 8) == 0)) {
-					tmp.sv_len = abs((int) atof(&buffer[i + 7]));
+					tmp.sv_len = abs((int) atof(&buffer[i + 8]));
 				}
 
 				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i], ";SVLEN=", 7) == 0)) {
-					tmp.sv_len = abs((int) atof(&buffer[i + 6]));
+					tmp.sv_len = abs((int) atof(&buffer[i + 7]));
 				}
 				if (count == 7 && (strncmp(&buffer[i], "SUPP=", 5) == 0)) {
 					std::stringstream ss;
@@ -703,7 +703,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				}
 				if ((tmp.sv_len == -1 && count == 7) && strncmp(&buffer[i], ";INSLEN=", 8) == 0) {
 					if (atof(&buffer[i + 7]) > 0) {
-						tmp.sv_len = abs((int) atof(&buffer[i + 7]));
+						tmp.sv_len = abs((int) atof(&buffer[i + 8]));
 					}
 				}
 				if (count == 7 && strncmp(&buffer[i], ";STRANDS=", 9) == 0) {
