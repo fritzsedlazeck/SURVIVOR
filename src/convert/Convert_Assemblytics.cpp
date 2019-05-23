@@ -80,6 +80,9 @@ void parse_assemblytics(std::string assemblytics,int minlen, std::vector<strvcfe
 			if (count == 2 && buffer[i - 1] == '\t') {
 				tmp.stop.pos = atoi(&buffer[i]);
 			}
+			if(count == 3 && buffer[i]!='\t'){
+				tmp.sv_id+=buffer[i];
+			}
 			if (count == 6 && buffer[i] != '\t') {
 				type += buffer[i];
 			}
@@ -114,9 +117,8 @@ std::string print_entry(strvcfentry & region) {
 	convert << "\t";
 	convert << region.start.pos;      // insert the textual representation of 'Number' in the characters in the stream
 	convert << "\t";
-	convert << trans_type(region.type);
-	convert << "00";
-	convert << "Assym\tN\t<";
+	convert << region.sv_id;
+	convert << "\tN\t<";
 	convert << trans_type(region.type);
 	convert << ">\t.\tLowQual\tIMPRECISE;SVTYPE=";
 	convert << trans_type(region.type);
