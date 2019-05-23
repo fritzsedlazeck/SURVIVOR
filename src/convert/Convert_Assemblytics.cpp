@@ -58,7 +58,7 @@ void parse_assemblytics(std::string assemblytics,int minlen, std::vector<strvcfe
 	std::ifstream myfile;
 	myfile.open(assemblytics.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "Pindel Parser: could not open file: " << assemblytics.c_str() << std::endl;
+		std::cout << "Assemblytics Parser: could not open file: " << assemblytics.c_str() << std::endl;
 		exit(0);
 	}
 	myfile.getline(buffer, buffer_size); //avoid header
