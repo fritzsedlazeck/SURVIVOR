@@ -50,7 +50,8 @@ std::string get_support_vec(std::vector<Support_Node *> caller_info) {
 	return ss;
 }
 int get_support(std::vector<Support_Node *> caller_info) {
-	//return caller_info.size();
+	return caller_info.size();
+
 
 	int support = 0;
 	for (size_t i = 0; i < caller_info.size(); i++) {
@@ -617,6 +618,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 			tmp.pre_supp_vec = entries[j].prev_support_vec;
 			tmp.vcf_ID = entries[j].sv_id;
 			tmp.allleles = entries[j].alleles;
+
 			bst.insert(start, stop, entries[j].type, entries[j].strands, tmp, root);
 		}
 		entries.clear();

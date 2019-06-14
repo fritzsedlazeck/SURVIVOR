@@ -639,8 +639,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					//	alt += buffer[i];
 				}
 
-				if ((tmp.stop.pos ==-1 && count == 4) && (buffer[i - 1] == '[' || buffer[i - 1] == ']')) {
-
+				if ((tmp.stop.pos == -1 && count == 4) && (buffer[i - 1] == '[' || buffer[i - 1] == ']')) {
 
 					tmp.stop = parse_pos(&buffer[i - 1]);
 
@@ -657,7 +656,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 						tmp.quality = atoi(&buffer[i]);
 					}
 				}
-				if (tmp.stop.pos ==-1 && (count == 7 && buffer[i - 1] == '\t')) {
+				if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
 					tmp.stop = parse_stop(&buffer[i]);
 					//		if (tmp.start.pos == 1142719) {
 					//			std::cout << "Stop:" << tmp.stop.pos << std::endl;
@@ -688,8 +687,11 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					tmp.sv_len = abs((int) atof(&buffer[i + 8]));
 				}
 
+				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i - 1], "\tSVLEN=", 7) == 0)) { //thanks to assemblytics!
+					tmp.sv_len = abs((int) atoi(&buffer[i + 8]));
+				}
 				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i], ";SVLEN=", 7) == 0)) {
-					tmp.sv_len = abs((int) atof(&buffer[i + 7]));
+					tmp.sv_len = abs((int) atoi(&buffer[i + 7]));
 				}
 				if (count == 7 && (strncmp(&buffer[i], "SUPP=", 5) == 0)) {
 					std::stringstream ss;
@@ -716,7 +718,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					size_t j = i;
 					tmp.genotype = "./.";
 					if (buffer[j + 1] == '/' || buffer[j + 1] == '|') {
-						while (buffer[j] != '\0' && (tmp.genotype[0] == '.')) {
+						while (buffer[j] != '\0' && (tmp.genotype[0] == '.' || tmp.genotype[2]=='0')) {
 							if (buffer[j - 1] == '\t') {
 								tmp.genotype[0] = buffer[j];
 								tmp.genotype[1] = buffer[j + 1];
@@ -773,6 +775,10 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				tmp.stop.chr = tmp.start.chr;
 			}
 
+		//	if (tmp.start.pos == 112179238 || tmp.start.pos == 112179329) {
+		//		std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
+		//	}
+
 			if (tmp.sv_len == -1) {
 				if (tmp.stop.pos != -1) {
 					tmp.sv_len = abs(tmp.start.pos - tmp.stop.pos);
@@ -781,7 +787,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					if (found != std::string::npos) {
 						tmp.alleles.second = get_most_effect(tmp.alleles.second, (int) tmp.alleles.first.size());
 					}
-					tmp.sv_len = (int) tmp.alleles.first.size() - (int) tmp.alleles.second.size();
+					tmp.sv_len = abs((int) tmp.alleles.first.size() - (int) tmp.alleles.second.size());
 				}
 
 			}
@@ -790,9 +796,10 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				tmp.stop.pos = tmp.start.pos + abs(tmp.sv_len);
 			}
 
-		//	if (tmp.start.pos == 102590230 || tmp.start.pos == 102590234) {
-		//		std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
-		//	}
+			//if(tmp.start.pos==112179329 || tmp.start.pos==112179238){
+			//	std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
+			//}
+
 			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (tmp.sv_len >= min_svs))) { // || tmp.type==4
 				/*	std::size_t found = tmp.stop.chr.find("chr");
 				 if (found != std::string::npos) {

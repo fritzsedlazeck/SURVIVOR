@@ -41,7 +41,7 @@ long IntervallTree::overlap_SNP(breakpoint_str start, SVS_Node * curr_svs) {
 	if (curr_svs->type == 0 || (curr_svs->type == 1 || curr_svs->type == 6)) { // DEL, DUP, CNV?
 		if (strcmp(curr_svs->first.chr.c_str(), start.chr.c_str()) == 0) {
 			if (start.position >= curr_svs->first.position && start.position <= curr_svs->second.position) {
-						std::cout << "FOUND" << std::endl;
+				std::cout << "FOUND" << std::endl;
 				return 0; // is overlapping
 			}
 		}
@@ -73,31 +73,55 @@ long IntervallTree::overlap(breakpoint_str start, breakpoint_str stop, short typ
 	 return  (start.position - curr_svs->first.position);
 	 }*/
 
+	/*	if (start.position == 112179238 || start.position == 112179329) {
+		std::cout << "Comp: " << start.chr << " " << start.position << " " << curr_svs->first.chr << " " << curr_svs->first.position << " " << type << " " << curr_svs->type << std::endl;
+	}*/
+
 	int max_dist = Parameter::Instance()->max_dist;
-/*	if (Parameter::Instance()->dynamic_size) {
-		max_dist = std::min(get_dist(stop.position - start.position, type), get_dist(curr_svs->first.position - curr_svs->second.position, curr_svs->type)); //
-	}
-*/
+	/*	if (Parameter::Instance()->dynamic_size) {
+	 max_dist = std::min(get_dist(stop.position - start.position, type), get_dist(curr_svs->first.position - curr_svs->second.position, curr_svs->type)); //
+	 }
+	 */
 	if (((!Parameter::Instance()->use_strand || is_same_strand(strands, curr_svs->strand)) && (!Parameter::Instance()->use_type || same_type(type, curr_svs->type))) && (same_breakpoint(start, curr_svs->first, max_dist) && same_breakpoint(stop, curr_svs->second, max_dist))) {
-		//std::cout<<"MERGE"<<std::endl;
+	/*	if (start.position == 112179238 || start.position == 112179329) {
+			std::cout << "MERGE" << std::endl;
+			std::cout << std::endl;
+		}*/
 		return 0; //to be merged
 	}
 
-/*	std::cout<<"no MERGE: "<<start.position <<" "<<curr_svs->first.position <<" vs "<< stop.position << " " << curr_svs->second.position<<std::endl;
-	if( is_same_strand(strands, curr_svs->strand)){
-		std::cout<<"\tsame strand"<<std::endl;
-	}
-	if(same_type(type, curr_svs->type)){
-		std::cout<<"\tsame type"<<std::endl;
-	}
-	std::cout<<"dist: "<<max_dist<<std::endl;
-	if(same_breakpoint(start, curr_svs->first, max_dist)){
-		std::cout<<"\tsame breakpoint start"<<std::endl;
-	}
-	if(same_breakpoint(stop, curr_svs->second, max_dist)){
-			std::cout<<"\tsame breakpoint stop"<<std::endl;
-		}*/
-	if (strcmp(start.chr.c_str(), curr_svs->first.chr.c_str()) == 0  && abs(start.position - curr_svs->first.position) < max_dist) {
+	/*if (start.position == 112179238 || start.position == 112179329) {
+		std::cout << "no MERGE: "<<stop.chr<<" "<<stop.position<<" "<<curr_svs->second.chr<<" "<<curr_svs->second.position  << std::endl;
+		if (is_same_strand(strands, curr_svs->strand)) {
+			std::cout << "\tsame strand" << std::endl;
+		}
+		if (same_type(type, curr_svs->type)) {
+			std::cout << "\tsame type" << std::endl;
+		}
+		std::cout << "dist: " << max_dist << std::endl;
+		if (same_breakpoint(start, curr_svs->first, max_dist)) {
+			std::cout << "\tsame breakpoint start" << std::endl;
+		}
+		if (same_breakpoint(stop, curr_svs->second, max_dist)) {
+			std::cout << "\tsame breakpoint stop" << std::endl;
+		}
+		std::cout << std::endl;
+	}*/
+	/*	std::cout<<"no MERGE: "<<start.position <<" "<<curr_svs->first.position <<" vs "<< stop.position << " " << curr_svs->second.position<<std::endl;
+	 if( is_same_strand(strands, curr_svs->strand)){
+	 std::cout<<"\tsame strand"<<std::endl;
+	 }
+	 if(same_type(type, curr_svs->type)){
+	 std::cout<<"\tsame type"<<std::endl;
+	 }
+	 std::cout<<"dist: "<<max_dist<<std::endl;
+	 if(same_breakpoint(start, curr_svs->first, max_dist)){
+	 std::cout<<"\tsame breakpoint start"<<std::endl;
+	 }
+	 if(same_breakpoint(stop, curr_svs->second, max_dist)){
+	 std::cout<<"\tsame breakpoint stop"<<std::endl;
+	 }*/
+	if (strcmp(start.chr.c_str(), curr_svs->first.chr.c_str()) == 0 && abs(start.position - curr_svs->first.position) < max_dist) {
 
 		return (stop.position - curr_svs->second.position);
 	}
@@ -128,14 +152,14 @@ void IntervallTree::insert(breakpoint_str &start, breakpoint_str& stop, short ty
 		return;
 	}
 	if (p == NULL) {
-		p = new TNode(start, stop, type,  strands, meta_info);
+		p = new TNode(start, stop, type, strands, meta_info);
 		if (p == NULL) {
 			std::cout << "Out of Space\n" << std::endl;
 		}
 	} else {
 		long score = overlap(start, stop, type, strands, p->get_data()); //comparison function
 		if (score == 0) {
-			p->add(start, stop, type,  strands,meta_info);
+			p->add(start, stop, type, strands, meta_info);
 			start.position = -1;
 			stop.position = -1;
 			return;
@@ -157,7 +181,7 @@ void IntervallTree::insert(breakpoint_str &start, breakpoint_str& stop, short ty
 				}
 			}
 		} else if (score < 0) {
-			insert(start, stop, type,  strands, meta_info, p->right);
+			insert(start, stop, type, strands, meta_info, p->right);
 			if ((bsheight(p->right) - bsheight(p->left)) == 2) {
 				score = overlap(start, stop, type, strands, p->right->get_data());
 				if (score < 0) {
@@ -204,10 +228,10 @@ std::string IntervallTree::findSNP(breakpoint_str &snp, TNode *&p) {
 				ss << "INS";
 				break;
 			case 5:
-				ss<<"UNK";
+				ss << "UNK";
 				break;
 			case 6:
-				ss<<"CNV";
+				ss << "CNV";
 				break;
 
 			default:
@@ -351,7 +375,7 @@ void IntervallTree::get_breakpoints(TNode *p, std::vector<SVS_Node *> & points) 
 void IntervallTree::get_breakpoints(TNode *p, std::map<std::string, std::vector<SVS_Node *> > & points) {
 	if (p != NULL) {
 		get_breakpoints(p->left, points);
-		if((int)p->get_data()->caller_info.size()>=Parameter::Instance()->min_support){
+		if ((int) p->get_data()->caller_info.size() >= Parameter::Instance()->min_support) {
 			points[p->get_data()->first.chr].push_back(p->get_data());
 		}
 		get_breakpoints(p->right, points);
