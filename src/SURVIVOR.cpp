@@ -115,7 +115,6 @@ void official_interface(int argc, char *argv[]) {
 				std::cerr << "*.smap file" << std::endl;
 				std::cerr << "output file" << std::endl;
 			}
-
 			exit(0);
 		} else if (strcmp(argv[1], "merge") == 0) {
 			if (argc == 10) {
