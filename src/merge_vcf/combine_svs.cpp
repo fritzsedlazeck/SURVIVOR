@@ -43,9 +43,9 @@ std::string get_support_vec(std::vector<Support_Node *> caller_info) {
 	std::string ss;
 	ss.resize(Parameter::Instance()->max_caller, '0');
 	for (size_t i = 0; i < caller_info.size(); i++) {
-		if (strncmp(caller_info[i]->genotype.c_str(), "0/0", 3) != 0) {
+		//if (strncmp(caller_info[i]->genotype.c_str(), "0/0", 3) != 0) {
 			ss[caller_info[i]->id] = '1';
-		}
+		//}
 	}
 	return ss;
 }
@@ -98,8 +98,10 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 		//	std::cout<<"Header: "<<(*i).first<<" "<<(*i).second<<std::endl;
 		fprintf(file, "%s", "##contig=<ID=");
 		fprintf(file, "%s", (*i).first.c_str());
-		fprintf(file, "%s", ",length=");
-		fprintf(file, "%i", (*i).second);
+		if((*i).second>0){
+			fprintf(file, "%s", ",length=");
+			fprintf(file, "%i", (*i).second);
+		}
 		fprintf(file, "%s", ">\n");
 	}
 	fprintf(file, "%s", "##ALT=<ID=DEL,Description=\"Deletion\">\n");
@@ -567,7 +569,7 @@ bool numeric_string_compare(const std::string& s1, const std::string& s2) {
 std::string parse_name(char * buffer) {
 	size_t i = 0;
 	std::string name = "";
-	while (buffer[i] != ',') {
+	while (buffer[i] != ',' && (buffer[i]!='>' && buffer[i]!='\n')) {
 		name += buffer[i];
 		i++;
 	}
@@ -602,6 +604,9 @@ void parse_vcf_header(std::map<std::string, int> &chrs, std::string filename) {
 					break;
 				}
 			}
+			if (chrs.find(name) == chrs.end()) {
+				chrs[name] =-1;
+			}
 		}
 		getline(myfile, buffer);
 	}
@@ -617,6 +622,7 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	Parameter::Instance()->min_length = min_svs;
 	Parameter::Instance()->dynamic_size = false;   //(dynamic_size==1);
 	Parameter::Instance()->min_support = min_support;
+
 
 //	std::cout<<"Min: "<<	Parameter::Instance()->min_support<<std::endl;
 	IntervallTree bst;
