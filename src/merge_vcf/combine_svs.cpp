@@ -87,7 +87,6 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 			names[i] = new_name.str();
 		}
 	}
-
 	fprintf(file, "%s", "##fileformat=VCFv4.1\n");
 	fprintf(file, "%s", "##source=SURVIVOR\n");
 	std::string time = currentDateTime();
@@ -117,7 +116,7 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 	fprintf(file, "%s", "##INFO=<ID=RE,Number=1,Type=Integer,Description=\"read support\">\n");
 	fprintf(file, "%s", "##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description=\"Imprecise structural variation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variation\">\n");
-	fprintf(file, "%s", "##INFO=<ID=SVLEN,Number=1,Type=Float,Description=\"Length of the SV\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVLEN,Number=1,Type=Integer,Description=\"Length of the SV\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Method for generating this merged VCF file.\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of the SV.\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SUPP_VEC,Number=1,Type=String,Description=\"Vector of supporting samples.\">\n");
