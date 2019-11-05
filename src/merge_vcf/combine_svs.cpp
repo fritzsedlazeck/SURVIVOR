@@ -44,7 +44,7 @@ std::string get_support_vec(std::vector<Support_Node *> caller_info) {
 	ss.resize(Parameter::Instance()->max_caller, '0');
 	for (size_t i = 0; i < caller_info.size(); i++) {
 		//if (strncmp(caller_info[i]->genotype.c_str(), "0/0", 3) != 0) {
-			ss[caller_info[i]->id] = '1';
+		ss[caller_info[i]->id] = '1';
 		//}
 	}
 	return ss;
@@ -97,7 +97,7 @@ void print_header(FILE *& file, std::vector<std::string> names, std::map<std::st
 		//	std::cout<<"Header: "<<(*i).first<<" "<<(*i).second<<std::endl;
 		fprintf(file, "%s", "##contig=<ID=");
 		fprintf(file, "%s", (*i).first.c_str());
-		if((*i).second>0){
+		if ((*i).second > 0) {
 			fprintf(file, "%s", ",length=");
 			fprintf(file, "%i", (*i).second);
 		}
@@ -294,7 +294,12 @@ void print_GTs(std::ostringstream & convert, SVS_Node * entry) {
 				convert << entry->second.chr;
 				convert << "_";
 				if (entry->caller_info[pos]->starts[j] != 0) {
-					convert << entry->caller_info[pos]->stops[j];
+					if (entry->caller_info[pos]->types[j] == 4) {   //TODO for mike A.
+						convert << std::max(entry->caller_info[pos]->stops[j] - entry->caller_info[pos]->sv_lengths[j], 1);
+					} else {
+						convert << entry->caller_info[pos]->stops[j];   //entry->second.position;
+					}
+					//convert << entry->caller_info[pos]->stops[j];
 				} else {
 					convert << "1";
 				}
@@ -507,7 +512,11 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << entry->second.chr;   //caller_info[index]->stops[0].chr;
 	convert << ";END=";
 	if (entry->caller_info[index]->stops[0] != 0) {
-		convert << entry->caller_info[index]->stops[0];   //entry->second.position;
+		if (entry->caller_info[index]->types[0] == 4) {   //TODO for mike A.
+			convert << std::max((entry->caller_info[index]->stops[0] - (int)entry->caller_info[index]->sv_lengths[0]), 1);
+		} else {
+			convert << entry->caller_info[index]->stops[0];   //entry->second.position;
+		}
 	} else {
 		convert << "1";
 	}
@@ -568,7 +577,7 @@ bool numeric_string_compare(const std::string& s1, const std::string& s2) {
 std::string parse_name(char * buffer) {
 	size_t i = 0;
 	std::string name = "";
-	while (buffer[i] != ',' && (buffer[i]!='>' && buffer[i]!='\n')) {
+	while (buffer[i] != ',' && (buffer[i] != '>' && buffer[i] != '\n')) {
 		name += buffer[i];
 		i++;
 	}
@@ -604,7 +613,7 @@ void parse_vcf_header(std::map<std::string, int> &chrs, std::string filename) {
 				}
 			}
 			if (chrs.find(name) == chrs.end()) {
-				chrs[name] =-1;
+				chrs[name] = -1;
 			}
 		}
 		getline(myfile, buffer);
@@ -622,7 +631,6 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 	Parameter::Instance()->dynamic_size = false;   //(dynamic_size==1);
 	Parameter::Instance()->min_support = min_support;
 
-
 //	std::cout<<"Min: "<<	Parameter::Instance()->min_support<<std::endl;
 	IntervallTree bst;
 	TNode *root = NULL;
@@ -634,6 +642,9 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 		for (size_t j = 0; j < entries.size(); j++) {
 			breakpoint_str start = convert_position(entries[j].start);
 			breakpoint_str stop = convert_position(entries[j].stop);
+			if (entries[j].type == 4) { //TODO for mike A.
+				stop.position += entries[j].sv_len;
+			}
 			meta_data_str tmp;
 			tmp.caller_id = (int) id;
 			tmp.genotype = entries[j].genotype;

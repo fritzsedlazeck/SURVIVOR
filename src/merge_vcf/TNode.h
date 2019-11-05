@@ -62,6 +62,7 @@ public:
 		tmp->num_support = meta_info.num_reads;
 		tmp->id = meta_info.caller_id;
 		tmp->starts.push_back(start.position);
+		tmp->sv_lengths.push_back(meta_info.sv_len);
 		tmp->stops.push_back(stop.position);
 		tmp->types.push_back(type);
 		tmp->genotype = meta_info.genotype;
@@ -105,6 +106,7 @@ public:
 		this->data->caller_info[index]->starts.push_back(start.position);
 		this->data->caller_info[index]->stops.push_back(stop.position);
 		this->data->caller_info[index]->types.push_back(type);
+		this->data->caller_info[index]->sv_lengths.push_back(meta_info.sv_len);
 		this->data->caller_info[index]->num_support.first = std::max(meta_info.num_reads.first, this->data->caller_info[index]->num_support.first);
 		this->data->caller_info[index]->num_support.second = std::max(meta_info.num_reads.second, this->data->caller_info[index]->num_support.second);
 		this->data->caller_info[index]->genotype = meta_info.genotype;
