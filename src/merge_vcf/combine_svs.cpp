@@ -620,7 +620,7 @@ void parse_vcf_header(std::map<std::string, int> &chrs, std::string filename) {
 	}
 }
 
-void combine_calls_svs(std::string files, int max_dist, int min_support, int type_save, int strand_save, int dynamic_size, int min_svs, std::string output) {
+void combine_calls_svs(std::string files, double max_dist, int min_support, int type_save, int strand_save, int dynamic_size, int min_svs, std::string output) {
 	std::vector<std::string> names = parse_filename(files);
 
 	Parameter::Instance()->max_caller = names.size();
@@ -691,6 +691,9 @@ void combine_calls_svs(std::string files, int max_dist, int min_support, int typ
 			}
 
 			if (support >= min_support && len > min_svs) {
+				if(Parameter::Instance()->use_strand || Parameter::Instance()->use_type){
+
+				}
 				print_entry_overlap(file, (*i), id);
 			}
 

@@ -31,7 +31,7 @@ private:
 
 public:
 	std::string version;
-	int max_dist;
+	double max_dist;
 	int max_caller;
 	bool use_type;
 	bool use_strand;

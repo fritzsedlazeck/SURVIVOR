@@ -12,18 +12,43 @@ bool IntervallTree::same_breakpoint(breakpoint_str first, breakpoint_str second,
 	return (strcmp(first.chr.c_str(), second.chr.c_str()) == 0 && (abs(first.position - second.position) < max_dist));
 }
 
-bool is_same_strand(std::pair<bool, bool> first, std::pair<bool, bool> second) {
-	return (first.first == second.first && first.second == second.second);
+bool is_same_strand(std::pair<bool, bool> first, bool strands[]){//std::pair<bool, bool> second) {
+
+	short count=0;
+	if(strands[0] && first.first){
+		count++;
+	}
+	if(strands[1] && !first.first){
+		count++;
+	}
+	if(strands[2] && first.second){
+		count++;
+	}
+	if(strands[3] && !first.second){
+		count++;
+	}
+
+	return(bool)(count==2);
+
+
+	//return (first.first == second.first && first.second == second.second);
 }
-bool same_type(short first, short second) {
-	if (first == second) {
+bool same_type(short first, bool types[]) {
+
+	if(types[first]==1){
 		return true;
-	} else if (((first == 3 || first == 2) && second == 5) || ((second == 3 || second == 2) && first == 5)) { // compare BND to inv or tra -> same type!
+	}else if(((first==3 || first ==2 ) && types[5]==1) || ((types[3]==1 || types[2]==1) && first==5)){
 		return true;
 	}
+
+	//if (first == second) {
+	//	return true;
+	//} else if (((first == 3 || first == 2) && second == 5) || ((second == 3 || second == 2) && first == 5)) { // compare BND to inv or tra -> same type!
+	//	return true;
+	//}
 	return false;
 }
-int get_dist(long dist, short type) {
+/*int get_dist(long dist, short type) {
 
 	if (type == 3) { //TRA
 		return Parameter::Instance()->max_dist; //TODO: change!
@@ -32,7 +57,7 @@ int get_dist(long dist, short type) {
 	dist = std::max((long) Parameter::Instance()->min_length * 2, dist);
 
 	return std::min((int) (dist * 4), Parameter::Instance()->max_dist);
-}
+}*/
 
 long IntervallTree::overlap_SNP(breakpoint_str start, SVS_Node * curr_svs) {
 
@@ -74,39 +99,46 @@ long IntervallTree::overlap(breakpoint_str start, breakpoint_str stop, short typ
 	 }*/
 
 	/*	if (start.position == 112179238 || start.position == 112179329) {
-		std::cout << "Comp: " << start.chr << " " << start.position << " " << curr_svs->first.chr << " " << curr_svs->first.position << " " << type << " " << curr_svs->type << std::endl;
-	}*/
+	 std::cout << "Comp: " << start.chr << " " << start.position << " " << curr_svs->first.chr << " " << curr_svs->first.position << " " << type << " " << curr_svs->type << std::endl;
+	 }*/
 
-	int max_dist = Parameter::Instance()->max_dist;
+
+	double max_dist = Parameter::Instance()->max_dist;
+	if(max_dist<1 && strcmp(start.chr.c_str(),stop.chr.c_str())!=0){
+		max_dist=1000;
+	}else if(max_dist<1){
+		max_dist=std::floor((double)(stop.position - start.position) * max_dist);
+		//std::cout<<max_dist<<std::endl;
+	}
 	/*	if (Parameter::Instance()->dynamic_size) {
 	 max_dist = std::min(get_dist(stop.position - start.position, type), get_dist(curr_svs->first.position - curr_svs->second.position, curr_svs->type)); //
 	 }
 	 */
-	if (((!Parameter::Instance()->use_strand || is_same_strand(strands, curr_svs->strand)) && (!Parameter::Instance()->use_type || same_type(type, curr_svs->type))) && (same_breakpoint(start, curr_svs->first, max_dist) && same_breakpoint(stop, curr_svs->second, max_dist))) {
-	/*	if (start.position == 112179238 || start.position == 112179329) {
-			std::cout << "MERGE" << std::endl;
-			std::cout << std::endl;
-		}*/
+	if (((!Parameter::Instance()->use_strand || is_same_strand(strands, curr_svs->strands)) && (!Parameter::Instance()->use_type || same_type(type, curr_svs->types))) && (same_breakpoint(start, curr_svs->first, max_dist) && same_breakpoint(stop, curr_svs->second, max_dist))) {
+		/*	if (start.position == 112179238 || start.position == 112179329) {
+		 std::cout << "MERGE" << std::endl;
+		 std::cout << std::endl;
+		 }*/
 		return 0; //to be merged
 	}
 
 	/*if (start.position == 112179238 || start.position == 112179329) {
-		std::cout << "no MERGE: "<<stop.chr<<" "<<stop.position<<" "<<curr_svs->second.chr<<" "<<curr_svs->second.position  << std::endl;
-		if (is_same_strand(strands, curr_svs->strand)) {
-			std::cout << "\tsame strand" << std::endl;
-		}
-		if (same_type(type, curr_svs->type)) {
-			std::cout << "\tsame type" << std::endl;
-		}
-		std::cout << "dist: " << max_dist << std::endl;
-		if (same_breakpoint(start, curr_svs->first, max_dist)) {
-			std::cout << "\tsame breakpoint start" << std::endl;
-		}
-		if (same_breakpoint(stop, curr_svs->second, max_dist)) {
-			std::cout << "\tsame breakpoint stop" << std::endl;
-		}
-		std::cout << std::endl;
-	}*/
+	 std::cout << "no MERGE: "<<stop.chr<<" "<<stop.position<<" "<<curr_svs->second.chr<<" "<<curr_svs->second.position  << std::endl;
+	 if (is_same_strand(strands, curr_svs->strand)) {
+	 std::cout << "\tsame strand" << std::endl;
+	 }
+	 if (same_type(type, curr_svs->type)) {
+	 std::cout << "\tsame type" << std::endl;
+	 }
+	 std::cout << "dist: " << max_dist << std::endl;
+	 if (same_breakpoint(start, curr_svs->first, max_dist)) {
+	 std::cout << "\tsame breakpoint start" << std::endl;
+	 }
+	 if (same_breakpoint(stop, curr_svs->second, max_dist)) {
+	 std::cout << "\tsame breakpoint stop" << std::endl;
+	 }
+	 std::cout << std::endl;
+	 }*/
 	/*	std::cout<<"no MERGE: "<<start.position <<" "<<curr_svs->first.position <<" vs "<< stop.position << " " << curr_svs->second.position<<std::endl;
 	 if( is_same_strand(strands, curr_svs->strand)){
 	 std::cout<<"\tsame strand"<<std::endl;

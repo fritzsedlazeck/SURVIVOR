@@ -530,7 +530,7 @@ std::vector<int> parse_supp_vec(std::string buffer) {
 	return ids;
 }
 
-void summary_venn(std::string filename, std::string output) {
+void summary_venn(std::string filename, bool normalize, std::string output) {
 	std::vector<std::vector<int> > mat;
 //	cout << "file: " << filename << endl;
 
@@ -600,7 +600,19 @@ void summary_venn(std::string filename, std::string output) {
 	FILE * file = fopen(output.c_str(), "w");
 	for (size_t i = 0; i < mat.size(); i++) {
 		for (size_t j = 0; j < mat.size(); j++) {
-			fprintf(file, "%i", mat[i][j]);
+			if(normalize){
+				//if(i>j){
+					if(mat[i][i]>0){
+						fprintf(file, "%e", (double)mat[i][j]/(double)mat[i][i]);
+					}else{
+						fprintf(file, "%e", 0);
+					}
+			//	}else{
+				//	fprintf(file, "%e", (double)mat[i][j]/(double)mat[i][i]);
+				//}
+			}else{
+				fprintf(file, "%i", mat[i][j]);
+			}
 			fprintf(file, "%c", '\t');
 		}
 		fprintf(file, "%c", '\n');

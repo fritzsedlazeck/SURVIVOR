@@ -49,7 +49,20 @@ public:
 		this->data->second = stop;
 		this->data->type = type;
 		this->data->strand = strands;
+		if (strands.first) {
+			this->data->strands[0] = true;
+		} else {
+			this->data->strands[1] = true;
+		}
+
+		if (strands.second) {
+			this->data->strands[2] = true;
+		} else {
+			this->data->strands[3] = true;
+		}
+
 		this->data->genotype = meta_info.genotype; //do I need this?
+		this->data->types[type] = true;
 
 		init();
 		Support_Node * tmp = new Support_Node();
@@ -101,6 +114,19 @@ public:
 			Support_Node * tmp = new Support_Node();
 			tmp->id = meta_info.caller_id;
 			this->data->caller_info.push_back(tmp);
+		}
+
+		this->data->types[type] = true; //extend if there is an in sample merge!
+		if (strands.first) {
+			this->data->strands[0] = true;
+		} else {
+			this->data->strands[1] = true;
+		}
+
+		if (strands.second) {
+			this->data->strands[2] = true;
+		} else {
+			this->data->strands[3] = true;
 		}
 
 		this->data->caller_info[index]->starts.push_back(start.position);

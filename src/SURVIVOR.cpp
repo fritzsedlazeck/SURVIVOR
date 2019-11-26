@@ -47,6 +47,8 @@
 
 Parameter* Parameter::m_pInstance = NULL;
 
+//todo: merge 1: Check all subtypes during overlap. 2: Manage split up after merge.
+//todo: maybe a low mem version..?? Just storing the variant ID per input, then go back in the end..
 //make file: LIBS +=-lz
 
 void official_interface(int argc, char *argv[]) {
@@ -120,10 +122,10 @@ void official_interface(int argc, char *argv[]) {
 			if (argc == 10) {
 				//merge 3 SV calls from the same strain
 				//	combine_calls_new(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), std::string(argv[5]));
-				combine_calls_svs(std::string(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), atoi(argv[8]), std::string(argv[9]));
+				combine_calls_svs(std::string(argv[2]), atof(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]), atoi(argv[7]), atoi(argv[8]), std::string(argv[9]));
 			} else {
 				std::cerr << "File with VCF names and paths" << std::endl;
-				std::cerr << "max distance between breakpoints " << std::endl;
+				std::cerr << "max distance between breakpoints (0-1 percent of length, 1- number of bp) " << std::endl;
 				std::cerr << "Minimum number of supporting caller" << std::endl;
 				std::cerr << "Take the type into account (1==yes, else no)" << std::endl;
 				std::cerr << "Take the strands of SVs into account (1==yes, else no)" << std::endl;
@@ -236,10 +238,11 @@ void official_interface(int argc, char *argv[]) {
 			exit(0);
 
 		} else if (strcmp(argv[1], "genComp") == 0) {
-			if (argc == 4) {
-				summary_venn(std::string(argv[2]), std::string(argv[3]));
+			if (argc == 5) {
+				summary_venn(std::string(argv[2]), bool(atoi(argv[3])==1), std::string(argv[4]));
 			} else {
 				std::cerr << "Merged Vcf file" << std::endl;
+				std::cerr << "Normalize output (1==yes, else no)" << std::endl;
 				std::cerr << "Output: pariwise overlap matrix" << std::endl;
 			}
 			exit(0);
@@ -546,7 +549,7 @@ int main(int argc, char *argv[]) {
 		case 19:
 			if (argc == 4) {
 				//summarize venn
-				summary_venn(std::string(argv[2]), std::string(argv[3]));
+				summary_venn(std::string(argv[2]),false, std::string(argv[3]));
 			} else {
 				std::cerr << "vcf venn file" << std::endl;
 				std::cerr << "output file" << std::endl;
