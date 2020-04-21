@@ -305,6 +305,84 @@ std::pair<bool, bool> parse_strands_lumpy(char * buffer) {
 	}
 	return strand;
 }
+
+std::pair<int, int> parse_DR(char *buffer) {
+	std::pair<int, int> res;
+	res.first = 0;
+	res.second = 0;
+	//first identify which position DR is reported;
+
+	//AD/
+	int count_AD = -1;
+	int count_DR = -1;
+	int count_DV = -1;
+	size_t i = 0;
+	int count = 0;
+	while (buffer[i] != '\t' && (buffer[i] != '\n' && buffer[i] != '\0')) {
+		if (count_AD == -1 && (strncmp(":AD", &buffer[i], 3) == 0 || strncmp("AD:", &buffer[i], 3) == 0)) {
+			count_AD = count;
+			if (buffer[i] == ':') {
+				count_AD++;
+			}
+		}
+		if (count_DR == -1 && (strncmp(":DR", &buffer[i], 3) == 0 || strncmp("DR:", &buffer[i], 3) == 0)) {
+			count_DR = count;
+			if (buffer[i] == ':') {
+				count_DR++;
+			}
+		}
+		if (count_DV == -1 && (strncmp(":DV", &buffer[i], 3) == 0 || strncmp("DV:", &buffer[i], 3) == 0)) {
+
+			count_DV = count;
+			if (buffer[i] == ':') {
+				count_DV++;
+			}
+		}
+
+		if (buffer[i] == ':') {
+			count++;
+		}
+		i++;
+	}
+
+	//parse DR field
+//	cout << &buffer[i] << endl;
+	count = 0;
+	while (buffer[i] != '\n' && buffer[i] != '\0') {
+		if (count_AD != -1 && count_AD == count) {
+			//ref
+			res.first = atoi(&buffer[i]);
+			while (buffer[i] != ',') {
+				i++;
+			}
+			i++;
+			//alt;
+			res.second = atoi(&buffer[i]);
+			break;
+		}
+
+		if (count_DR != -1 && count_DR == count) {
+			//	cout << cout << " " << count_DR << " HIT DR: " << buffer[i] << buffer[i + 1] << buffer[i + 2] << endl;
+			res.first = atoi(&buffer[i]);
+			count_DR = -1;
+		}
+
+		if (count_DV != -1 && count_DV == count) {
+			//	cout << cout << " " << count_DV << " HIT DV: " << buffer[i] << buffer[i + 1] << buffer[i + 2] << endl;
+			res.second = atoi(&buffer[i]);
+			count_DV = -1;
+		}
+
+		if (buffer[i] == ':') {
+			count++;
+		}
+		i++;
+	}
+//	cout << "ref: " << res.first << " alt: " << res.second << endl;
+	return res;
+
+}
+
 std::string get_most_effect(std::string alt, int ref) {
 	size_t i = 0;
 	std::string most_alt = "";
@@ -453,14 +531,21 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 				}
 				//	std::cout<<"GO: "<<tmp.genotype<<std::endl;
 			}
-			if (count == 8 && strncmp(&buffer[i], "PR:SR", 5) == 0) {
-				//manta
-				tmp.num_reads = parse_manta(&buffer[i]);
+
+			if (count == 8 && buffer[i - 1] == '\t') {
+				if (tmp.num_reads.first == -1 || tmp.num_reads.second == -1) {
+					tmp.num_reads = parse_DR(&buffer[i]);
+				}
 			}
-			if (count == 8 && strncmp(&buffer[i], "DR:DV:RR:RV", 11) == 0) {
-				//delly
-				tmp.num_reads = parse_delly(&buffer[i]);
-			}
+
+			/*	if (count == 8 && strncmp(&buffer[i], "PR:SR", 5) == 0) {
+			 //manta
+			 tmp.num_reads = parse_manta(&buffer[i]);
+			 }
+			 if (count == 8 && strncmp(&buffer[i], "DR:DV:RR:RV", 11) == 0) {
+			 //delly
+			 tmp.num_reads = parse_delly(&buffer[i]);
+			 }*/
 
 			if (count == 4 && buffer[i - 1] == '<') {
 				tmp.type = get_type(std::string(&buffer[i]));
@@ -718,7 +803,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					size_t j = i;
 					tmp.genotype = "./.";
 					if (buffer[j + 1] == '/' || buffer[j + 1] == '|') {
-						while (buffer[j] != '\0' && (tmp.genotype[0] == '.' || tmp.genotype[2]=='0')) {
+						while (buffer[j] != '\0' && (tmp.genotype[0] == '.' || tmp.genotype[2] == '0')) {
 							if (buffer[j - 1] == '\t') {
 								tmp.genotype[0] = buffer[j];
 								tmp.genotype[1] = buffer[j + 1];
@@ -729,18 +814,22 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					}
 					//	std::cout<<"GO: "<<tmp.genotype<<std::endl;
 				}
-				if (count == 8 && strncmp(&buffer[i], "PR:SR", 5) == 0) {
-					//manta
-					tmp.num_reads = parse_manta(&buffer[i]);
+				if (count == 8 && buffer[i - 1] == '\t') {
+					tmp.num_reads = parse_DR(&buffer[i]);
 				}
-				if (count == 8 && strncmp(&buffer[i], "DR:DV:RR:RV", 11) == 0) {
-					//delly
-					tmp.num_reads = parse_delly(&buffer[i]);
-				}
-				if (count == 8 && strncmp(&buffer[i], "GT:DR:DV", 5) == 0) {
-					//manta
-					tmp.num_reads = parse_sniffles(&buffer[i]);
-				}
+				/*
+				 if (count == 8 && strncmp(&buffer[i], "PR:SR", 5) == 0) {
+				 //manta
+				 tmp.num_reads = parse_manta(&buffer[i]);
+				 }
+				 if (count == 8 && strncmp(&buffer[i], "DR:DV:RR:RV", 11) == 0) {
+				 //delly
+				 tmp.num_reads = parse_delly(&buffer[i]);
+				 }
+				 if (count == 8 && strncmp(&buffer[i], "GT:DR:DV", 5) == 0) {
+				 //manta
+				 tmp.num_reads = parse_sniffles(&buffer[i]);
+				 }*/
 
 				if (count == 4 && buffer[i - 1] == '<') {
 					tmp.type = get_type(std::string(&buffer[i]));
@@ -775,9 +864,9 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				tmp.stop.chr = tmp.start.chr;
 			}
 
-		//	if (tmp.start.pos == 112179238 || tmp.start.pos == 112179329) {
-		//		std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
-		//	}
+			//	if (tmp.start.pos == 112179238 || tmp.start.pos == 112179329) {
+			//		std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
+			//	}
 
 			if (tmp.sv_len == -1) {
 				if (tmp.stop.pos != -1) {
@@ -787,9 +876,9 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					if (found != std::string::npos) {
 						tmp.alleles.second = get_most_effect(tmp.alleles.second, (int) tmp.alleles.first.size());
 					}
-					tmp.sv_len = abs((int) tmp.alleles.first.size() - (int) tmp.alleles.second.size());
+					tmp.sv_len = abs((int) tmp.alleles.first.size() - (int) tmp.alleles.second.size()) - 1; // because the sequences includ 1bp patting .
 				}
-
+				//cout<<"Test:  "<<tmp.start.pos<<" "<<tmp.sv_len<<endl;
 			}
 
 			if (tmp.stop.pos == -1 && tmp.sv_len != -1) {
