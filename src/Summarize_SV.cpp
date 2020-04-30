@@ -314,10 +314,10 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 						supp = atoi(&line[i + 3]);
 					}
 					if (count == 7 && strncmp(&line[i], "AVGLEN=", 7) == 0 ) {
-						leng = atof(&line[i + 7]);
+						leng = abs(atof(&line[i + 7]));
 					}
 					if (count == 7 && strncmp(&line[i], "SVLEN=",6) == 0 ) {
-						leng = atof(&line[i + 6]);
+						leng = abs(atof(&line[i + 6]));
 					}
 
 					if(count>8 && line[i-1]=='\t'){

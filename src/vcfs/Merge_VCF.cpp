@@ -710,7 +710,9 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				}
 				if (count == 1 && buffer[i - 1] == '\t') {
 					tmp.start.pos = atoi(&buffer[i]);
-					//std::cout<<tmp.start.pos<<std::endl;
+				//	if(tmp.start.pos==55986511){
+				//		std::cout<<tmp.start.pos<<std::endl;
+				//	}
 				}
 				if (count == 2 && buffer[i] != '\t') {
 					tmp.sv_id += buffer[i];

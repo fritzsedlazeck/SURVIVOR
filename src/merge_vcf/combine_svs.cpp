@@ -494,9 +494,11 @@ void print_entry_overlap(FILE *& file, SVS_Node * entry, int id) {
 	convert << get_support_vec(entry->caller_info); //todo make aware of prev_supp/ supp vec
 	convert << ";SVLEN=";
 	if (entry->type == 0) {
-		convert << (int) round(get_avglen(entry->caller_info)) * -1;
+		convert<< (int)entry->caller_info[index]->len *-1;
+	//	convert << (int) round(get_avglen(entry->caller_info)) * -1;
 	} else if (entry->type != 3) {
-		convert << (int) round(get_avglen(entry->caller_info));
+		convert<< (int)entry->caller_info[index]->len;
+		//convert << (int) round(get_avglen(entry->caller_info));
 	} else {
 		convert << "0";   // TODO think about it.
 	}
@@ -626,6 +628,7 @@ void combine_calls_svs(std::string files, double max_dist, int min_support, int 
 	Parameter::Instance()->max_caller = names.size();
 	Parameter::Instance()->max_dist = max_dist;
 	Parameter::Instance()->use_type = (type_save == 1);
+
 	Parameter::Instance()->use_strand = (strand_save == 1);
 	Parameter::Instance()->min_length = min_svs;
 	Parameter::Instance()->dynamic_size = false;   //(dynamic_size==1);
@@ -655,6 +658,9 @@ void combine_calls_svs(std::string files, double max_dist, int min_support, int 
 			tmp.vcf_ID = entries[j].sv_id;
 			tmp.allleles = entries[j].alleles;
 
+			if(start.position==151164){
+				std::cout<<"FOUND "<<std::endl;
+			}
 			bst.insert(start, stop, entries[j].type, entries[j].strands, tmp, root);
 		}
 		entries.clear();
@@ -691,9 +697,6 @@ void combine_calls_svs(std::string files, double max_dist, int min_support, int 
 			}
 
 			if (support >= min_support && len > min_svs) {
-				if(Parameter::Instance()->use_strand || Parameter::Instance()->use_type){
-
-				}
 				print_entry_overlap(file, (*i), id);
 			}
 

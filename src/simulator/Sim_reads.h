@@ -18,6 +18,8 @@
 #include <map>
 #include <stdio.h>
 #include <math.h>
+#include <random>
+
 #include "Error_scanner.h"
 using namespace std;
 void simulate_reads(std::string genome,std::string error_profile,int coverage, std::string output);

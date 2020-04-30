@@ -102,6 +102,11 @@ public:
 	}
 
 	void add(breakpoint_str start, breakpoint_str stop, short type, std::pair<bool, bool> strands, meta_data_str meta_info) {
+
+		if (start.position == 55986511 || start.position == 55986511) {
+			std::cout << "ADD " << type << " " << this->data->type << std::endl;
+			std::cout << std::endl;
+		}
 		int index = -1;
 		for (size_t i = 0; i < this->data->caller_info.size(); i++) {
 			if (this->data->caller_info[i]->id == meta_info.caller_id) {

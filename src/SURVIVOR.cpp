@@ -129,7 +129,7 @@ void official_interface(int argc, char *argv[]) {
 				std::cerr << "Minimum number of supporting caller" << std::endl;
 				std::cerr << "Take the type into account (1==yes, else no)" << std::endl;
 				std::cerr << "Take the strands of SVs into account (1==yes, else no)" << std::endl;
-				std::cerr << "Estimate distance based on the size of SV (1==yes, else no)." << std::endl;
+				std::cerr << "Disabled." << std::endl;
 				std::cerr << "Minimum size of SVs to be taken into account." << std::endl;
 				std::cerr << "Output VCF filename" << std::endl;
 			}
