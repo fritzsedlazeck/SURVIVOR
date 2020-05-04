@@ -227,9 +227,9 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 //	cout << "\t\tReads simulated: " << prev << "%" << std::endl;
 	for (int i = 0; i < num_reads; i++) { //start to simulate reads:
 		double bp = (rand() % 1000000);
-		if (bp / 1000000 < 0.0000001) {
-			cout << "BP " << bp << " " << bp / 1000000 << endl;
-		}
+	//	if (bp / 1000000 < 0.0000001) {
+	//		cout << "BP " << bp << " " << bp / 1000000 << endl;
+	//	}
 		bp = bp / 1000000;
 		size_t size = 0;
 		while (size < error_profile.size()) { //1: Pick a read size based on the profile
