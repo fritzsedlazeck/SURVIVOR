@@ -374,10 +374,10 @@ void process_bed_file(std::string bedfile, std::string type, std::string output)
 				region.stop.chr += buffer[i];
 			}
 			if (count == 1 && buffer[i - 1] == '\t') {
-				region.start.pos = atoi(&buffer[i]) - 1;
+				region.start.pos = atoi(&buffer[i]) + 1;
 			}
 			if (count == 2 && buffer[i - 1] == '\t') {
-				region.stop.pos = atoi(&buffer[i]) - 1;
+				region.stop.pos = atoi(&buffer[i]);
 				break;
 			}
 			if (buffer[i] == '\t') {
@@ -424,9 +424,9 @@ void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::stri
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", entries[i].stop.chr.c_str());
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].stop.pos - 1 + entries[i].cend.first);
+			fprintf(file, "%i", entries[i].stop.pos + entries[i].cend.first);
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].stop.pos - 1 + entries[i].cend.second);
+			fprintf(file, "%i", entries[i].stop.pos + entries[i].cend.second);
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", entries[i].sv_id.c_str());
 			fprintf(file, "%c", '\t');
@@ -444,7 +444,7 @@ void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::stri
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", entries[i].stop.chr.c_str());
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].stop.pos - 1);
+			fprintf(file, "%i", entries[i].stop.pos);
 			fprintf(file, "%c", '\n');
 
 			//	fprintf(file, "%s", entries[i].stop.chr.c_str());
