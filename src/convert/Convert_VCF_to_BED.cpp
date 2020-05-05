@@ -51,7 +51,7 @@ std::string get_names(const char * buffer) {
 	return name;	//.substr(start,stop-start);
 }
 std::vector<std::string> parse_names(std::string vcf_file) {
-	std::vector < std::string > names;
+	std::vector<std::string> names;
 	size_t buffer_size = 2000000;
 	char*buffer = new char[buffer_size];
 	std::ifstream myfile;
@@ -374,10 +374,10 @@ void process_bed_file(std::string bedfile, std::string type, std::string output)
 				region.stop.chr += buffer[i];
 			}
 			if (count == 1 && buffer[i - 1] == '\t') {
-				region.start.pos = atoi(&buffer[i])-1;
+				region.start.pos = atoi(&buffer[i]) - 1;
 			}
 			if (count == 2 && buffer[i - 1] == '\t') {
-				region.stop.pos = atoi(&buffer[i])-1;
+				region.stop.pos = atoi(&buffer[i]) - 1;
 				break;
 			}
 			if (buffer[i] == '\t') {
@@ -418,15 +418,15 @@ void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::stri
 			//	if ((entries[i].type == 0 && entries[i].sv_len < 3000) || (entries[i].type == 4 && entries[i].sv_len < 311)) {
 			fprintf(file, "%s", entries[i].start.chr.c_str());
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].start.pos+1);
+			fprintf(file, "%i", entries[i].start.pos - 1 + entries[i].cpos.first);
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].start.pos+1);
+			fprintf(file, "%i", entries[i].start.pos - 1 + entries[i].cpos.second);
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", entries[i].stop.chr.c_str());
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].stop.pos+1);
+			fprintf(file, "%i", entries[i].stop.pos - 1 + entries[i].cend.first);
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].stop.pos+1);
+			fprintf(file, "%i", entries[i].stop.pos - 1 + entries[i].cend.second);
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", entries[i].sv_id.c_str());
 			fprintf(file, "%c", '\t');
@@ -437,7 +437,14 @@ void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::stri
 			fprintf(file, "%c", trans_strands(entries[i].strands.second));
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", trans_type(entries[i].type).c_str());
-
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%s", entries[i].start.chr.c_str());
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].start.pos - 1);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%s", entries[i].stop.chr.c_str());
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].stop.pos - 1);
 			fprintf(file, "%c", '\n');
 
 			//	fprintf(file, "%s", entries[i].stop.chr.c_str());

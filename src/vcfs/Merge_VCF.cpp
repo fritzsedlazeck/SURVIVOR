@@ -632,6 +632,16 @@ std::string parse_supp_vec(char * buffer) {
 	return supp;
 }
 
+std::pair<int, int> parse_pair(char * buffer) {
+	std::pair<int, int> pos;
+	pos.first = atoi(buffer);
+	size_t i = 0;
+	while (buffer[i - 1] != ',') {
+		i++;
+	}
+	pos.second = atoi(&buffer[i]);
+	return pos;
+}
 //for each file parse the entries
 
 std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
@@ -701,6 +711,10 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 			tmp.sv_id = "";
 			tmp.sv_len = -1;
 			tmp.quality = -1;
+			tmp.cend.first = -1;
+			tmp.cend.second = -1;
+			tmp.cpos.first = -1;
+			tmp.cpos.second = -1;
 			//float freq = 0;
 			//std::cout<<buffer<<std::endl;
 			for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
@@ -710,9 +724,9 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				}
 				if (count == 1 && buffer[i - 1] == '\t') {
 					tmp.start.pos = atoi(&buffer[i]);
-				//	if(tmp.start.pos==55986511){
-				//		std::cout<<tmp.start.pos<<std::endl;
-				//	}
+					//	if(tmp.start.pos==55986511){
+					//		std::cout<<tmp.start.pos<<std::endl;
+					//	}
 				}
 				if (count == 2 && buffer[i] != '\t') {
 					tmp.sv_id += buffer[i];
@@ -758,6 +772,12 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				}
 				if (count == 7 && strncmp(&buffer[i], ";RE=", 4) == 0) { //for sniffles!
 					tmp.num_reads.second = atoi(&buffer[i + 4]);
+				}
+				if (count == 7 && strncmp(&buffer[i], ";CIPOS=", 6) == 0) { //for sniffles!
+					tmp.cpos = parse_pair(&buffer[i + 6]);
+				}
+				if (count == 7 && strncmp(&buffer[i], ";CIEND=", 6) == 0) { //for sniffles!
+					tmp.cend = parse_pair(&buffer[i + 6]);
 				}
 
 				//	if (count == 7 && strncmp(&buffer[i], "EUR_AF=", 7) == 0) { //EAS_AF
