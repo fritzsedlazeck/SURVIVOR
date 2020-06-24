@@ -116,9 +116,9 @@ int IntervallTree::overlap(breakpoint_str start, breakpoint_str stop, short type
 //		std::cout << std::endl;
 //	}
 
-	//if (strcmp(start.chr.c_str(), curr_svs->first.chr.c_str()) == 0 && abs(start.position - curr_svs->first.position) < max_dist) {
-	//	return (stop.position - curr_svs->second.position);
-	//}
+	if (strcmp(start.chr.c_str(), curr_svs->first.chr.c_str()) == 0 && abs(start.position - curr_svs->first.position) < max_dist) {
+		return (stop.position - curr_svs->second.position);
+	}
 	int dist = (start.position - curr_svs->first.position);
 
 	//if (start.position == 55986511 || start.position == 55986511) {

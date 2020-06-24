@@ -114,7 +114,7 @@ public:
 #include "../structs.h"
 #include "IntervallTree.h"
 #include "../vcfs/Merge_VCF.h"
-
+void parse_vcf_header(std::map<std::string, int> &chrs, std::string filename);
 void combine_calls_svs(std::string file, double max_dist, int min_support, int type_save, int strand_save,int dynamic_size,int min_svs, std::string output);
 breakpoint_str convert_position(strcoordinate pos);
 void summarize_VCF_files(std::string filename, int min_size, std::string output);

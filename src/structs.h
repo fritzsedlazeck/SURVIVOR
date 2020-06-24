@@ -39,6 +39,7 @@ struct strvcfentry{
 	std::pair<std::string,std::string> alleles;
 	std::pair<int,int> cpos;
 	std::pair<int,int> cend;
+	int supp;
 	//int num_reads;
 };
 

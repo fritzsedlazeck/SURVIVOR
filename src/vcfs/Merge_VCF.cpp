@@ -515,12 +515,8 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 				tmp.strands.first = (bool) (buffer[i + 9] == '+');
 				tmp.strands.second = (bool) (buffer[i + 10] == '+');
 			}
-			//		if (count == 9 && buffer[i - 1] == '\t') {
-			//		tmp.af = parse_genotypes_vcf(buffer.substr(i - 1));
-			//		}
 
 			if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
-
 				size_t j = i;
 				tmp.genotype = "";
 				while (buffer[j] != '\0' && buffer[j] != ':') {
@@ -537,15 +533,6 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 					tmp.num_reads = parse_DR(&buffer[i]);
 				}
 			}
-
-			/*	if (count == 8 && strncmp(&buffer[i], "PR:SR", 5) == 0) {
-			 //manta
-			 tmp.num_reads = parse_manta(&buffer[i]);
-			 }
-			 if (count == 8 && strncmp(&buffer[i], "DR:DV:RR:RV", 11) == 0) {
-			 //delly
-			 tmp.num_reads = parse_delly(&buffer[i]);
-			 }*/
 
 			if (count == 4 && buffer[i - 1] == '<') {
 				tmp.type = get_type(std::string(&buffer[i]));
@@ -698,6 +685,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 			tmp.stop.pos = -1;
 			tmp.start.pos = -1;
 			tmp.type = -1;
+			tmp.supp = -1;
 			bool set_strand = false;
 			//	std::string ref;
 			//	std::string alt;
@@ -779,7 +767,12 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				if (count == 7 && strncmp(&buffer[i], ";CIEND=", 6) == 0) { //for sniffles!
 					tmp.cend = parse_pair(&buffer[i + 6]);
 				}
-
+				if (count == 7 && (strncmp(&buffer[i], "SUPP=", 5) == 0)) {
+					tmp.supp = atoi(&buffer[i + 5]);
+				}
+				if (count == 7 && (strncmp(&buffer[i], "AC=", 3) == 0)) {
+					tmp.supp = atoi(&buffer[i + 3]);
+				}
 				//	if (count == 7 && strncmp(&buffer[i], "EUR_AF=", 7) == 0) { //EAS_AF
 				//		freq = atof(&buffer[i + 7]);
 				//	}
@@ -801,10 +794,12 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					tmp.sv_len = abs((int) atoi(&buffer[i + 7]));
 				}
 				if (count == 7 && (strncmp(&buffer[i], "SUPP=", 5) == 0)) {
-					std::stringstream ss;
-					ss << atoi(&buffer[i + 5]);
-					tmp.prev_support_vec = ss.str();
-					tmp.prev_support_vec += ",";
+
+					tmp.supp = atoi(&buffer[i + 5]);
+					//std::stringstream ss;
+					//ss << atoi(&buffer[i + 5]);
+					//tmp.prev_support_vec = ss.str();
+					//tmp.prev_support_vec += ",";
 
 				}
 				if (count == 7 && (strncmp(&buffer[i], "SUPP_VEC=", 9) == 0)) {
