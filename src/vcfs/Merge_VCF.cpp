@@ -31,19 +31,22 @@ std::vector<std::string> parse_filename(std::string filename) {
 
 strcoordinate parse_stop(const char * buffer) {
 	size_t i = 0;
+	if(buffer[i]=='\t'){
+		i++;
+	}
 	bool chr_flag = false;
 	strcoordinate pos;
 	pos.chr = "";
 	pos.pos = -1;
 	while (buffer[i] != '\t' && (buffer[i] != '\n' && buffer[i] != '\0')) {
 
-		if (strncmp(&buffer[i], ";END=", 5) == 0 || (i == 0 && strncmp(&buffer[i], "END=", 5) == 0)) {
+		if (pos.pos==-1 && strncmp(&buffer[i], "END=", 4) == 0 ){
 			//if (pos.pos == -1) {
-			pos.pos = atoi(&buffer[i + 5]);
+			pos.pos = atoi(&buffer[i + 4]);
 			//}
-			//	std::cout<<"pos"<<pos.pos<<std::endl;
+		//		std::cout<<"pos"<<pos.pos<<std::endl;
 		}
-		if (strncmp(&buffer[i], "CHR2=", 5) == 0) {
+		if (pos.chr.empty() && strncmp(&buffer[i], "CHR2=", 5) == 0) {
 			i = i + 5;
 			chr_flag = true;
 		}
@@ -745,8 +748,12 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 						tmp.quality = atoi(&buffer[i]);
 					}
 				}
-				if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
+
+				if ((tmp.stop.pos == -1 && count >=6 )&& (strncmp(&buffer[i], ";END=", 5) == 0 || (strncmp(&buffer[i], "\tEND=", 5) == 0))) {
+
+			//	if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
 					tmp.stop = parse_stop(&buffer[i]);
+				//	cout<<"Parse Stop: "<<tmp.stop.pos<<endl;
 					//		if (tmp.start.pos == 1142719) {
 					//			std::cout << "Stop:" << tmp.stop.pos << std::endl;
 					//		}
@@ -906,6 +913,8 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 			//	std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
 			//}
 
+			//std::cout<<"Call: "<<tmp.start.pos <<" "<<tmp.stop.pos<<" "<<tmp.type<<" "<<tmp.sv_len<<std::endl;
+
 			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (tmp.sv_len >= min_svs))) { // || tmp.type==4
 				/*	std::size_t found = tmp.stop.chr.find("chr");
 				 if (found != std::string::npos) {
@@ -925,7 +934,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 
 				}
 				//	if (freq > Parameter::Instance()->min_freq) {
-				//	std::cout<<"Call: "<<tmp.start.pos <<" "<<tmp.stop.pos<<" "<<tmp.type<<std::endl;
+
 				calls.push_back(tmp);
 				//	}
 
