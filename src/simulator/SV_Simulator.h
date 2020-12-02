@@ -59,6 +59,7 @@ struct struct_var {
 	position pos;
 	position target;
 	std::string seq; //not mandadory!
+	std::string ref;
 };
 
 struct insertions {

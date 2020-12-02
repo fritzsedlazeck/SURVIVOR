@@ -517,6 +517,7 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 		case 1:
 			//insertion:
 			svs[i].seq = rand_seq(svs[i].target.stop - svs[i].target.start);
+			svs[i].ref=genome[svs[i].pos.chr][svs[i].pos.start];
 			in.seq = svs[i].seq;
 			in.target = svs[i].target;
 			store_ins(ins, in);
@@ -549,7 +550,10 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 		case 4: //deletion: //just mark those regions
 			//std::cout<<"DEL: "<<svs[i].pos.chr<<" "<<svs[i].pos.start <<" "<<svs[i].pos.stop<<" g: "<< genome[svs[i].pos.chr].size()<<std::endl;
 			//	std::cout << "size: " << genome[svs[i].pos.chr].size() << " " << svs[i].pos.start << " " << (svs[i].pos.stop - svs[i].pos.start) << std::endl;
+			svs[i].seq=genome[svs[i].pos.chr][svs[i].pos.start];
+			svs[i].ref="";
 			for (int j = svs[i].pos.start; j < svs[i].pos.stop; j++) {
+				svs[i].ref+=genome[svs[i].pos.chr][j];
 				genome[svs[i].pos.chr][j] = 'X';
 			}
 			break;
@@ -686,8 +690,8 @@ void write_fasta(std::string output_prefix, std::map<std::string, std::string> g
 		int len = 0;
 		for (size_t j = 1; j < (*i).second.size() + 1; j++) {
 			//if (!is_valid((*i).second[j - 1])) {
-		//		std::cout << "err! " << (*i).second[j - 1] << std::endl;
-		//	}
+			//		std::cout << "err! " << (*i).second[j - 1] << std::endl;
+			//	}
 			if ((*i).second[j - 1] != 'X') {
 				fprintf(file2, "%c", (*i).second[j - 1]);
 				len++;
@@ -862,6 +866,8 @@ void print_vcf_header2(FILE *&file, std::map<std::string, std::string> genome) {
 	fprintf(file, "%s", "##ALT=<ID=INVDUP,Description=\"InvertedDUP with unknown boundaries\">\n");
 	fprintf(file, "%s", "##ALT=<ID=TRA,Description=\"Translocation\">\n");
 	fprintf(file, "%s", "##ALT=<ID=INS,Description=\"Insertion\">\n");
+	fprintf(file, "%s", "##FILTER=<ID=UNRESOLVED,Description=\"An insertion that is longer than the read and thus we cannot predict the full size.\">\n");
+	fprintf(file, "%s", "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=CHR2,Number=1,Type=String,Description=\"Chromosome for END coordinate in case of a translocation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of the structural variant\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVLEN,Number=1,Type=Integer,Description=\"Length of the SV\">\n");
@@ -869,6 +875,7 @@ void print_vcf_header2(FILE *&file, std::map<std::string, std::string> genome) {
 	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of structural variant\">\n");
 	fprintf(file, "%s", "##INFO=<ID=AF,Number=.,Type=Integer,Description=\"Allele Frequency.\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
+
 	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\n");
 }
 void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, FILE *&file, int id) {
@@ -888,7 +895,7 @@ void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, F
 	fprintf(file, "%c", '\n');
 }
 
-std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string end_chr, int end_pos, int id) {
+std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string end_chr, int end_pos, int id, std::string seq, std::string ref) {
 	std::ostringstream convert;   // stream used for the conversion
 	convert << chr;
 	convert << "\t";
@@ -896,9 +903,19 @@ std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string
 	convert << "\t";
 	convert << type;
 	convert << id;
-	convert << "SURVIVOR\tN\t<";
-	convert << type;
-	convert << ">\t.\tLowQual\tPRECISE;SVTYPE=";
+	convert << "SURVIVOR\t";
+	if(strncmp(type.c_str(),"INS",3)==0 ||strncmp(type.c_str(),"DEL",3)==0){
+		convert <<	ref;
+		convert << "\t";
+		convert <<	seq;
+		convert << "\t";
+	}else{
+		convert <<	"N\t<";
+		convert << type;
+		convert <<	">";
+	}
+
+	convert << "\t.\tPASS\tPRECISE;SVTYPE=";
 	convert << type;
 	convert << ";SVMETHOD=SURVIVOR_sim;CHR2=";
 	convert << end_chr;
@@ -913,8 +930,8 @@ void print_vcf_svs(FILE *& file, std::vector<struct_var> svs, int id) {
 	for (size_t i = 0; i < svs.size(); i++) {
 		//write pseudo bed:
 		if (svs[i].type == 3) {
-			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, "TRA", svs[i].target.chr, svs[i].target.start, id).c_str());
-			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.stop, "TRA", svs[i].target.chr, svs[i].target.stop, id).c_str());
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, "TRA", svs[i].target.chr, svs[i].target.start, id,svs[i].seq,svs[i].ref).c_str());
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.stop, "TRA", svs[i].target.chr, svs[i].target.stop, id,svs[i].seq,svs[i].ref).c_str());
 		} else { // all other types:
 			std::string type = "";
 			switch (svs[i].type) {
@@ -936,7 +953,7 @@ void print_vcf_svs(FILE *& file, std::vector<struct_var> svs, int id) {
 			default:
 				break;
 			}
-			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, type, svs[i].pos.chr, svs[i].pos.stop, id).c_str());
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, type, svs[i].pos.chr, svs[i].pos.stop, id,svs[i].seq,svs[i].ref).c_str());
 		}
 		id++;
 	}
@@ -951,10 +968,15 @@ void simulate_SV(std::string ref_file, std::string parameter_file, float snp_fre
 	std::map<std::string, std::string> genome = read_fasta(ref_file, min_chr_len);
 	if (par.translocations_num > 0 && genome.size() < 2) {
 		std::cerr << "We cannot simulate translocations without a second chromosome" << std::endl;
-		exit(0);
+		exit(1);
+	}
+
+	if (genome.empty()) {
+		std::cerr << "No Chromosomes found that are larger than min length of "<<min_chr_len<<". Check parameter file to reduce the size of SV" << std::endl;
+		exit(1);
 	}
 	//check_genome(genome, "First:");
-	std::cout << "generate SV" << std::endl;
+	std::cout << "generate SV over chrs:" << genome.size() << std::endl;
 	std::vector<struct_var> svs;
 	if (coordinates) {
 		//simulate reads
