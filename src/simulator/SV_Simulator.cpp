@@ -866,7 +866,9 @@ void print_vcf_header2(FILE *&file, std::map<std::string, std::string> genome) {
 	fprintf(file, "%s", "##ALT=<ID=INVDUP,Description=\"InvertedDUP with unknown boundaries\">\n");
 	fprintf(file, "%s", "##ALT=<ID=TRA,Description=\"Translocation\">\n");
 	fprintf(file, "%s", "##ALT=<ID=INS,Description=\"Insertion\">\n");
+	fprintf(file, "%s", "##FILTER=<ID=PASS,Description=\"PASS variant.\">\n");
 	fprintf(file, "%s", "##FILTER=<ID=UNRESOLVED,Description=\"An insertion that is longer than the read and thus we cannot predict the full size.\">\n");
+
 	fprintf(file, "%s", "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=CHR2,Number=1,Type=String,Description=\"Chromosome for END coordinate in case of a translocation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of the structural variant\">\n");
@@ -890,7 +892,7 @@ void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, F
 	convert << old_allele;
 	convert << "\t";
 	convert << new_allele;
-	convert << "\tPRECISE;SVMETHOD=SURVIVOR_sim;SVLEN=1\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t1/1";
+	convert << "\t.\tPASS\tPRECISE;SVMETHOD=SURVIVOR_sim;SVLEN=1\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t1/1";
 	fprintf(file, "%s", convert.str().c_str());
 	fprintf(file, "%c", '\n');
 }
@@ -908,7 +910,7 @@ std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string
 		convert <<	ref;
 		convert << "\t";
 		convert <<	seq;
-		convert << "\t";
+//convert << "\t";
 	}else{
 		convert <<	"N\t<";
 		convert << type;
