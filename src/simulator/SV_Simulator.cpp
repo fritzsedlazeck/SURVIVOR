@@ -878,7 +878,7 @@ void print_vcf_header2(FILE *&file, std::map<std::string, std::string> genome) {
 	fprintf(file, "%s", "##INFO=<ID=AF,Number=.,Type=Integer,Description=\"Allele Frequency.\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
 
-	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\n");
+	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE\n");
 }
 void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, FILE *&file, int id) {
 	std::ostringstream convert;   // stream used for the conversion
