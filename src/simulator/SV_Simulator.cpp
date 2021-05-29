@@ -1009,7 +1009,7 @@ void simulate_SV(std::string ref_file, std::string parameter_file, float snp_fre
 				float x = ((float) rand() / (float) (RAND_MAX));
 				if (x < snp_freq) {
 					char new_nuc = mut_char(toupper((*i).second[pos]));
-					print_snp_vcf((*i).first, pos, (*i).second[pos], new_nuc, file2, id);
+					print_snp_vcf((*i).first, pos+1, (*i).second[pos], new_nuc, file2, id); // The SNP positions in VCF file are 1-based.
 					id++;
 					(*i).second[pos] = new_nuc;
 				}
