@@ -878,7 +878,7 @@ void print_vcf_header2(FILE *&file, std::map<std::string, std::string> genome) {
 	fprintf(file, "%s", "##INFO=<ID=AF,Number=.,Type=Integer,Description=\"Allele Frequency.\">\n");
 	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
 
-	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\n");
+	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE\n");
 }
 void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, FILE *&file, int id) {
 	std::ostringstream convert;   // stream used for the conversion
@@ -1005,11 +1005,11 @@ void simulate_SV(std::string ref_file, std::string parameter_file, float snp_fre
 	int id = 0;
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 		for (size_t pos = 0; pos < (*i).second.size(); pos++) {
-			if ((*i).second[pos] != 'X') {
+			if ((*i).second[pos] != 'X' && (*i).second[pos] != 'N') {  // Do not mutate the nuc when it is X or N.
 				float x = ((float) rand() / (float) (RAND_MAX));
 				if (x < snp_freq) {
 					char new_nuc = mut_char(toupper((*i).second[pos]));
-					print_snp_vcf((*i).first, pos, (*i).second[pos], new_nuc, file2, id);
+					print_snp_vcf((*i).first, pos+1, (*i).second[pos], new_nuc, file2, id); // The SNP positions in VCF file are 1-based.
 					id++;
 					(*i).second[pos] = new_nuc;
 				}
