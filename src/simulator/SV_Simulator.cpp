@@ -35,6 +35,19 @@ int parse_value(char* buffer, size_t buffer_size) { //required for parameter!
 	return -1;
 }
 
+float parse_value_float(char* buffer, size_t buffer_size) { //required for parameter!
+	int count = 0;
+	for (size_t i = 1; i < buffer_size && buffer[i] != '\n' && buffer[i] != '\0'; i++) {
+		if (count == 1) {
+			return atof(&buffer[i]);
+		}
+		if (buffer[i] == ' ') {
+			count++;
+		}
+	}
+	return -1;
+}
+
 void simulate(std::map<std::string, std::string> genome, std::vector<struct_var> svs, std::string output_prefix) {
 
 	std::cout << "apply SV" << std::endl;
@@ -101,6 +114,14 @@ parameter parse_param(std::string filename) {
 		tmp.inv_dup_num = parse_value(buffer, buffer_size);
 		myfile.getline(buffer, buffer_size);
 	}
+	tmp.diploid=false;
+	if (!myfile.eof()) {
+		tmp.diploid=(bool)( parse_value(buffer,buffer_size)==2);
+		myfile.getline(buffer, buffer_size);
+		tmp.hom_rate= parse_value_float(buffer,buffer_size);
+		myfile.getline(buffer, buffer_size);
+	}
+
 	tmp.intrachr_num = 0;
 	/*if (!myfile.eof()) {
 	 tmp.intrachr_min = parse_value(buffer, buffer_size);
@@ -1018,9 +1039,6 @@ std::vector<struct_var> mut_snv(std::map<std::string, std::string> & genome, flo
 }
 void simulate_SV(std::string ref_file, std::string parameter_file, float snp_freq, bool coordinates, std::string output_prefix) {
 
-	//int haplotypes = 2;
-	float hom_rate = 0.6;
-	bool diploid = true;
 
 	//read in list of SVs over vcf?
 	//apply vcf to genome?
@@ -1051,17 +1069,17 @@ void simulate_SV(std::string ref_file, std::string parameter_file, float snp_fre
 
 	/// Start sim of SV:
 	std::cout << "generate SV over chrs:" << genome.size() << std::endl;
-	float snv_ration = (snp_freq * hom_rate);
+	float snv_ration = (snp_freq * par.hom_rate);
 	std::vector<struct_var> svs;
 	std::vector<struct_var> snv;
 	int id = 0;
 	if (coordinates) {	//simulate reads
 		svs = generate_mutations(parameter_file, genome); // select coordinates and mark genome.
-		if (!diploid) {
+		if (!par.diploid) {
 
 			snv = mut_snv(genome, (snv_ration * 2), file2, id, -1, -1); // apply SNV (no indels) , div 2 since this is only 1 hap.
 		} else {
-			snv = mut_snv(genome, snp_freq, file2, id, 1, hom_rate);
+			snv = mut_snv(genome, snp_freq, file2, id, 1, par.hom_rate);
 		}
 		apply_mutations(genome, svs);	// apply changes to the genome (e.g. insertions).
 	} else { //real read fake ref!
@@ -1076,7 +1094,7 @@ void simulate_SV(std::string ref_file, std::string parameter_file, float snp_fre
 	write_fasta(output_prefix, genome, false);
 	std::cout << "write SV" << std::endl;
 
-	if (diploid) {
+	if (par.diploid) {
 		std::cout << "Simulate diploid!" << std::endl;
 
 		genome = read_fasta(ref_file, min_chr_len);
@@ -1091,7 +1109,7 @@ void simulate_SV(std::string ref_file, std::string parameter_file, float snp_fre
 
 		for (size_t i = 0; i < svs2.size(); i++) {
 			float x = ((float) rand() / (float) (RAND_MAX));
-			if (x < (hom_rate)) { // homozygous SV
+			if (x < (par.hom_rate)) { // homozygous SV
 				svs2[i] = svs[i];
 				//svs[i].gt = "1/1";
 				if (svs[i].type == 3) {
@@ -1195,6 +1213,9 @@ void generate_parameter_file(std::string parameter_file) {
 	fprintf(file2, "%s", "INV_dup_minimum_length: 600\n");
 	fprintf(file2, "%s", "INV_dup_maximum_length: 800\n");
 	fprintf(file2, "%s", "INV_dup_number: 2\n");
+
+	fprintf(file2, "%s", "Number_haploid: 1\n");
+	fprintf(file2, "%s", "homozygous_ratio: 0.6\n");
 
 	fclose(file2);
 }

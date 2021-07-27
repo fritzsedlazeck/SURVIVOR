@@ -46,6 +46,9 @@ struct parameter {
 	int intrachr_num;
 	int intrachr_min;
 	int intrachr_max;
+
+	bool diploid;
+	float hom_rate;
 };
 
 struct position {
