@@ -60,6 +60,7 @@ struct struct_var {
 	position target;
 	std::string seq; //not mandadory!
 	std::string ref;
+	bool print;
 };
 
 struct insertions {

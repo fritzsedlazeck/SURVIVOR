@@ -274,6 +274,7 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 		//get_start location;
 		mut.pos = choose_pos(genome, par.dup_min, par.dup_max, svs);
 		//get_opposit location
+		mut.print = true;
 		svs.push_back(mut);
 	}
 	//indels
@@ -286,6 +287,7 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 		}
 		mut.pos = choose_pos(genome, par.indel_min, par.indel_max, svs);
 		mut.target = mut.pos;
+		mut.print = true;
 		svs.push_back(mut);
 	}
 	//inv
@@ -296,6 +298,7 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 		mut.target = mut.pos;
 		mut.target.start = mut.pos.stop;
 		mut.target.stop = mut.pos.start;
+		mut.print = true;
 		svs.push_back(mut);
 	}
 
@@ -335,6 +338,7 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 
 		mut.pos.stop = mut.pos.start + std::min(size1, size2);
 		mut.target.stop = mut.target.start + std::min(size1, size2);
+		mut.print = true;
 		svs.push_back(mut);
 	}
 	//complex inv_del
@@ -349,7 +353,7 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 		mut.target = mut.pos;
 		mut.target.start = mut.pos.stop;
 		mut.target.stop = mut.pos.start;
-
+		mut.print = true;
 		svs.push_back(mut);
 
 		struct_var del;
@@ -359,12 +363,14 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 		del.pos.stop = mut.pos.start;
 		del.pos.start = del.pos.stop - len;
 		del.target = del.pos;
+		mut.print = true;
 		svs.push_back(del);
 
 		//the del behind:
 		del.pos.start = mut.pos.stop;
 		del.pos.stop = del.pos.start + len;
 		del.target = del.pos;
+		mut.print = true;
 		svs.push_back(del);
 	}
 	//inv dup
@@ -373,6 +379,7 @@ std::vector<struct_var> generate_mutations(std::string parameter_file, std::map<
 		//get_start location;
 		mut.pos = choose_pos(genome, par.inv_dup_min, par.inv_dup_max, svs);
 		//get_opposit location
+		mut.print = true;
 		svs.push_back(mut);
 	}
 //	sort_svs(svs);
@@ -517,7 +524,7 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 		case 1:
 			//insertion:
 			svs[i].seq = rand_seq(svs[i].target.stop - svs[i].target.start);
-			svs[i].ref=genome[svs[i].pos.chr][svs[i].pos.start];
+			svs[i].ref = genome[svs[i].pos.chr][svs[i].pos.start];
 			in.seq = svs[i].seq;
 			in.target = svs[i].target;
 			store_ins(ins, in);
@@ -550,10 +557,10 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 		case 4: //deletion: //just mark those regions
 			//std::cout<<"DEL: "<<svs[i].pos.chr<<" "<<svs[i].pos.start <<" "<<svs[i].pos.stop<<" g: "<< genome[svs[i].pos.chr].size()<<std::endl;
 			//	std::cout << "size: " << genome[svs[i].pos.chr].size() << " " << svs[i].pos.start << " " << (svs[i].pos.stop - svs[i].pos.start) << std::endl;
-			svs[i].seq=genome[svs[i].pos.chr][svs[i].pos.start];
-			svs[i].ref="";
+			svs[i].seq = genome[svs[i].pos.chr][svs[i].pos.start];
+			svs[i].ref = "";
 			for (int j = svs[i].pos.start; j < svs[i].pos.stop; j++) {
-				svs[i].ref+=genome[svs[i].pos.chr][j];
+				svs[i].ref += genome[svs[i].pos.chr][j];
 				genome[svs[i].pos.chr][j] = 'X';
 			}
 			break;
@@ -589,7 +596,8 @@ void apply_mutations(std::map<std::string, std::string> &genome, std::vector<str
 		}
 	}
 
-	for (std::vector<insertions>::reverse_iterator i = ins.rbegin(); i != ins.rend(); i++) {
+	//so far coorindates remain the same!
+	for (std::vector<insertions>::reverse_iterator i = ins.rbegin(); i != ins.rend(); i++) { /// sequence is getting added!
 		genome[(*i).target.chr].insert((*i).target.start, (*i).seq);
 	}
 	for (size_t i = 0; i < new_svs.size(); i++) {
@@ -672,11 +680,15 @@ void apply_mutations_ref(std::map<std::string, std::string> &genome, std::vector
 	}
 
 }
-void write_fasta(std::string output_prefix, std::map<std::string, std::string> genome) {
+void write_fasta(std::string output_prefix, std::map<std::string, std::string> genome, bool append) {
 	std::string out = output_prefix;
 	out += ".fasta";
 	FILE *file2;
-	file2 = fopen(out.c_str(), "w");
+	if (!append) {
+		file2 = fopen(out.c_str(), "w");
+	} else {
+		file2 = fopen(out.c_str(), "a");
+	}
 	if (file2 == NULL) {
 		std::cout << "Error in printing: The file or path that you set " << output_prefix.c_str() << " is not valid. It can be that there is no disc space available." << std::endl;
 		exit(0);
@@ -880,7 +892,7 @@ void print_vcf_header2(FILE *&file, std::map<std::string, std::string> genome) {
 
 	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSAMPLE\n");
 }
-void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, FILE *&file, int id) {
+void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, FILE *&file, int id, std::string gt) {
 	std::ostringstream convert;   // stream used for the conversion
 	convert << chr;
 	convert << "\t";
@@ -892,12 +904,36 @@ void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, F
 	convert << old_allele;
 	convert << "\t";
 	convert << new_allele;
-	convert << "\t.\tPASS\tPRECISE;SVMETHOD=SURVIVOR_sim;SVLEN=1\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t1/1";
+
+	convert << "\t.\tPASS\tPRECISE;SVMETHOD=SURVIVOR_sim;SVLEN=1\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t";
+	convert << gt;
+
 	fprintf(file, "%s", convert.str().c_str());
 	fprintf(file, "%c", '\n');
 }
 
-std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string end_chr, int end_pos, int id, std::string seq, std::string ref) {
+std::string print_vcf_sv(std::string chr, int pos, int type_id, std::string end_chr, int end_pos, int id, std::string seq, std::string ref, std::string gt) {
+	std::string type = "";
+	switch (type_id) {
+	case 0:
+		type = "DUP";
+		break;
+	case 1:
+		type = "INS";
+		break;
+	case 2:
+		type = "INV";
+		break;
+	case 4:
+		type = "DEL";
+		break;
+	case 5:
+		type = "INVDUP";
+		break;
+	default:
+		break;
+	}
+
 	std::ostringstream convert;   // stream used for the conversion
 	convert << chr;
 	convert << "\t";
@@ -906,15 +942,15 @@ std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string
 	convert << type;
 	convert << id;
 	convert << "SURVIVOR\t";
-	if(strncmp(type.c_str(),"INS",3)==0 ||strncmp(type.c_str(),"DEL",3)==0){
-		convert <<	ref;
+	if (strncmp(type.c_str(), "INS", 3) == 0 || strncmp(type.c_str(), "DEL", 3) == 0) {
+		convert << ref;
 		convert << "\t";
-		convert <<	seq;
+		convert << seq;
 //convert << "\t";
-	}else{
-		convert <<	"N\t<";
+	} else {
+		convert << "N\t<";
 		convert << type;
-		convert <<	">";
+		convert << ">";
 	}
 
 	convert << "\t.\tPASS\tPRECISE;SVTYPE=";
@@ -925,91 +961,50 @@ std::string print_vcf_sv(std::string chr, int pos, std::string type, std::string
 	convert << end_pos;
 	convert << ";SVLEN=";
 	convert << end_pos - pos;
-	convert << "\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t1/1\n";
+	convert << "\tGT\t";
+	convert << gt;
+	convert << "\n";
 	return convert.str();
 }
 void print_vcf_svs(FILE *& file, std::vector<struct_var> svs, int id) {
 	for (size_t i = 0; i < svs.size(); i++) {
 		//write pseudo bed:
 		if (svs[i].type == 3) {
-			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, "TRA", svs[i].target.chr, svs[i].target.start, id,svs[i].seq,svs[i].ref).c_str());
-			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.stop, "TRA", svs[i].target.chr, svs[i].target.stop, id,svs[i].seq,svs[i].ref).c_str());
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, svs[i].type, svs[i].target.chr, svs[i].target.start, id, svs[i].seq, svs[i].ref, "1/1").c_str());
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.stop, svs[i].type, svs[i].target.chr, svs[i].target.stop, id, svs[i].seq, svs[i].ref, "1/1").c_str());
 		} else { // all other types:
-			std::string type = "";
-			switch (svs[i].type) {
-			case 0:
-				type = "DUP";
-				break;
-			case 1:
-				type = "INS";
-				break;
-			case 2:
-				type = "INV";
-				break;
-			case 4:
-				type = "DEL";
-				break;
-			case 5:
-				type = "INVDUP";
-				break;
-			default:
-				break;
-			}
-			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, type, svs[i].pos.chr, svs[i].pos.stop, id,svs[i].seq,svs[i].ref).c_str());
+
+			fprintf(file, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, svs[i].type, svs[i].pos.chr, svs[i].pos.stop, id, svs[i].seq, svs[i].ref, "1/1").c_str());
 		}
 		id++;
 	}
 }
-
-void simulate_SV(std::string ref_file, std::string parameter_file, float snp_freq, bool coordinates, std::string output_prefix) {
-	//read in list of SVs over vcf?
-	//apply vcf to genome?
-	srand(time(NULL));
-	parameter par = parse_param(parameter_file);
-	int min_chr_len = std::max(std::max(par.dup_max, par.indel_max), std::max(par.inv_max, par.translocations_max));
-	std::map<std::string, std::string> genome = read_fasta(ref_file, min_chr_len);
-	if (par.translocations_num > 0 && genome.size() < 2) {
-		std::cerr << "We cannot simulate translocations without a second chromosome" << std::endl;
-		exit(1);
-	}
-
-	if (genome.empty()) {
-		std::cerr << "No Chromosomes found that are larger than min length of "<<min_chr_len<<". Check parameter file to reduce the size of SV" << std::endl;
-		exit(1);
-	}
-	//check_genome(genome, "First:");
-	std::cout << "generate SV over chrs:" << genome.size() << std::endl;
-	std::vector<struct_var> svs;
-	if (coordinates) {
-		//simulate reads
-		svs = generate_mutations(parameter_file, genome);
-		//	check_genome(genome, "Sec:");
-		apply_mutations(genome, svs);	//problem: We need two different coordinates. Simulate once for one and then for the other???
-	} else { //real read fake ref!
-		svs = generate_mutations_ref(parameter_file, genome);
-		//	check_genome(genome, "Sec:");
-		apply_mutations_ref(genome, svs); //problem: We need two different coordinates. Simulate once for one and then for the other???
-	}
-	check_genome(genome, "Post SV simulation");
-
-	std::string out = output_prefix;
-	out += ".vcf";
-	FILE *file2;
-	file2 = fopen(out.c_str(), "w");
-	if (file2 == NULL) {
-		std::cout << "Error in printing: The file or path that you set " << out.c_str() << " is not valid. It can be that there is no disc space available." << std::endl;
-		exit(0);
-	}
+std::vector<struct_var> mut_snv(std::map<std::string, std::string> & genome, float snp_freq, FILE *&file2, int &id, int hap, float hom_rat) {
 	std::cout << "generate SNP" << std::endl;
-	print_vcf_header2(file2, genome);
-	int id = 0;
+	std::vector<struct_var> snv;
+	struct_var tmp;
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 		for (size_t pos = 0; pos < (*i).second.size(); pos++) {
 			if ((*i).second[pos] != 'X' && (*i).second[pos] != 'N') {  // Do not mutate the nuc when it is X or N.
 				float x = ((float) rand() / (float) (RAND_MAX));
 				if (x < snp_freq) {
 					char new_nuc = mut_char(toupper((*i).second[pos]));
-					print_snp_vcf((*i).first, pos+1, (*i).second[pos], new_nuc, file2, id); // The SNP positions in VCF file are 1-based.
+
+					if (hap != -1) { //otherwise we dont need this!
+						x = ((float) rand() / (float) (RAND_MAX));
+						if (x < hom_rat) {
+							tmp.pos.chr = (*i).first;
+							tmp.pos.start = pos;
+							tmp.seq = new_nuc;
+							tmp.ref = (*i).second[pos];
+							snv.push_back(tmp);
+							print_snp_vcf(tmp.pos.chr, tmp.pos.start + 1, tmp.ref[0], tmp.seq[0], file2, id, "1/1");
+						} else {
+							print_snp_vcf((*i).first, pos + 1, (*i).second[pos], new_nuc, file2, id, "0|1"); // The SNP positions in VCF file are 1-based.
+						}
+					} else {
+						print_snp_vcf((*i).first, pos + 1, (*i).second[pos], new_nuc, file2, id, "1/1");
+					}
 					id++;
 					(*i).second[pos] = new_nuc;
 				}
@@ -1019,12 +1014,154 @@ void simulate_SV(std::string ref_file, std::string parameter_file, float snp_fre
 			}
 		}
 	}
+	return snv;
+}
+void simulate_SV(std::string ref_file, std::string parameter_file, float snp_freq, bool coordinates, std::string output_prefix) {
 
+	//int haplotypes = 2;
+	float hom_rate = 0.6;
+	bool diploid = true;
+
+	//read in list of SVs over vcf?
+	//apply vcf to genome?
+	srand(time(NULL));
+	parameter par = parse_param(parameter_file);
+	int min_chr_len = std::max(std::max(par.dup_max, par.indel_max), std::max(par.inv_max, par.translocations_max));
+	std::map<std::string, std::string> genome = read_fasta(ref_file, min_chr_len);
+
+	if (par.translocations_num > 0 && genome.size() < 2) {
+		std::cerr << "We cannot simulate translocations without a second chromosome" << std::endl;
+		exit(1);
+	}
+
+	if (genome.empty()) {
+		std::cerr << "No Chromosomes found that are larger than min length of " << min_chr_len << ". Check parameter file to reduce the size of SV" << std::endl;
+		exit(1);
+	}
+
+	std::string out = output_prefix;
+	out += ".vcf";
+	FILE *file2;
+	file2 = fopen(out.c_str(), "w");
+	if (file2 == NULL) {
+		std::cout << "Error in printing: The file or path that you set " << out.c_str() << " is not valid. It can be that there is no disc space available." << std::endl;
+		exit(0);
+	}
+	print_vcf_header2(file2, genome);
+
+	/// Start sim of SV:
+	std::cout << "generate SV over chrs:" << genome.size() << std::endl;
+	float snv_ration = (snp_freq * hom_rate);
+	std::vector<struct_var> svs;
+	std::vector<struct_var> snv;
+	int id = 0;
+	if (coordinates) {	//simulate reads
+		svs = generate_mutations(parameter_file, genome); // select coordinates and mark genome.
+		if (!diploid) {
+
+			snv = mut_snv(genome, (snv_ration * 2), file2, id, -1, -1); // apply SNV (no indels) , div 2 since this is only 1 hap.
+		} else {
+			snv = mut_snv(genome, snp_freq, file2, id, 1, hom_rate);
+		}
+		apply_mutations(genome, svs);	// apply changes to the genome (e.g. insertions).
+	} else { //real read fake ref!
+		svs = generate_mutations_ref(parameter_file, genome);
+		apply_mutations_ref(genome, svs);
+		mut_snv(genome, snp_freq, file2, id, -1, -1); // apply SNV (no indels) -1: cannot be diplod!
+	}
+	//check_genome(genome, "Post SV simulation");
+
+	/// Start writing out:
 	std::cout << "write genome" << std::endl;
-	write_fasta(output_prefix, genome);
+	write_fasta(output_prefix, genome, false);
 	std::cout << "write SV" << std::endl;
-	write_sv(output_prefix, svs);
-	print_vcf_svs(file2, svs, id);
+
+	if (diploid) {
+		std::cout << "Simulate diploid!" << std::endl;
+
+		genome = read_fasta(ref_file, min_chr_len);
+		if (!coordinates) {
+			std::cerr << "This is not possible" << std::endl;
+			exit(0);
+		}
+		std::vector<struct_var> svs2;
+		svs2 = generate_mutations(parameter_file, genome); // select coordinates and mark genome.
+
+		//TODO swap a few svs vs. svs2!
+
+		for (size_t i = 0; i < svs2.size(); i++) {
+			float x = ((float) rand() / (float) (RAND_MAX));
+			if (x < (hom_rate)) { // homozygous SV
+				svs2[i] = svs[i];
+				//svs[i].gt = "1/1";
+				if (svs[i].type == 3) {
+					fprintf(file2, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, svs[i].type, svs[i].target.chr, svs[i].target.start, id, svs[i].seq, svs[i].ref, "1/1").c_str());
+					fprintf(file2, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.stop, svs[i].type, svs[i].target.chr, svs[i].target.stop, id, svs[i].seq, svs[i].ref, "1/1").c_str());
+				} else { // all other types:
+					fprintf(file2, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, svs[i].type, svs[i].pos.chr, svs[i].pos.stop, id, svs[i].seq, svs[i].ref, "1/1").c_str());
+				}
+				svs2[i].print=false;
+			} else { // het SVs!
+				if (svs[i].type == 3) {
+					fprintf(file2, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, svs[i].type, svs[i].target.chr, svs[i].target.start, id, svs[i].seq, svs[i].ref, "0|1").c_str());
+					fprintf(file2, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.stop, svs[i].type, svs[i].target.chr, svs[i].target.stop, id, svs[i].seq, svs[i].ref, "0|1").c_str());
+				} else { // all other types:
+					fprintf(file2, "%s", print_vcf_sv(svs[i].pos.chr, svs[i].pos.start, svs[i].type, svs[i].pos.chr, svs[i].pos.stop, id, svs[i].seq, svs[i].ref, "0|1").c_str());
+				}
+				id++;
+
+			}
+		}
+
+		//SNV:
+		for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
+			for (size_t pos = 0; pos < (*i).second.size(); pos++) {
+				if ((*i).second[pos] != 'X' && (*i).second[pos] != 'N') {  // Do not mutate the nuc when it is X or N.
+					float x = ((float) rand() / (float) (RAND_MAX));
+					if (x < (snv_ration)) { // Div 2 since this is only on the other hap!
+						char new_nuc = mut_char(toupper((*i).second[pos]));
+						print_snp_vcf((*i).first, pos + 1, (*i).second[pos], new_nuc, file2, id, "1|0"); // The SNP positions in VCF file are 1-based.
+						id++;
+						(*i).second[pos] = new_nuc;
+					}
+					if ((*i).second[pos] == ' ') {
+						std::cout << "ERR" << std::endl;
+					}
+				}
+			}
+		}
+		for (size_t i = 0; i < snv.size(); i++) {
+			genome[snv[i].pos.chr][snv[i].pos.start] = snv[i].seq[0];
+			//print_snp_vcf(snv[i].pos.chr, snv[i].pos.start + 1, snv[i].ref[0], snv[i].seq[0], file2, id, "1/1");
+		}
+
+		//	mut_snv(genome, snp_freq, file2, id, 2,hom_rate); // apply SNV (no indels)
+		apply_mutations(genome, svs2);
+
+		for (size_t i = 0; i < svs2.size(); i++) {
+			if (svs2[i].print) {
+				if (svs2[i].type == 3) {
+					fprintf(file2, "%s", print_vcf_sv(svs2[i].pos.chr, svs2[i].pos.start, svs2[i].type, svs2[i].target.chr, svs2[i].target.start, id, svs2[i].seq, svs2[i].ref, "1|0").c_str());
+					fprintf(file2, "%s", print_vcf_sv(svs2[i].pos.chr, svs2[i].pos.stop, svs2[i].type, svs2[i].target.chr, svs2[i].target.stop, id, svs2[i].seq, svs2[i].ref, "1|0").c_str());
+				} else { // all other types:
+					fprintf(file2, "%s", print_vcf_sv(svs2[i].pos.chr, svs2[i].pos.start, svs2[i].type, svs2[i].pos.chr, svs2[i].pos.stop, id, svs2[i].seq, svs2[i].ref, "1|0").c_str());
+				}
+				id++;
+			}
+
+		}
+
+		std::cout << "write genome" << std::endl;
+		write_fasta(output_prefix, genome, true);
+		std::cout << "write SV" << std::endl;
+		//	write_sv(output_prefix, svs2);
+		write_sv(output_prefix, svs);
+		write_sv(output_prefix, svs2);
+	} else {
+		write_sv(output_prefix, svs);
+		print_vcf_svs(file2, svs, id);
+
+	}
 }
 
 void generate_parameter_file(std::string parameter_file) {
