@@ -21,6 +21,7 @@
 struct parameter {
 	int dup_min;
 	int dup_max;
+	int dup_max_amp;
 	int dup_num;
 
 	int indel_min;
@@ -64,6 +65,7 @@ struct struct_var {
 	std::string seq; //not mandadory!
 	std::string ref;
 	bool print;
+	int copy_num;
 };
 
 struct insertions {
