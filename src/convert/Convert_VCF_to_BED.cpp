@@ -344,7 +344,12 @@ std::string print_entry_bed(strvcfentry & region) {
 	convert << ";END=";
 	convert << region.stop.pos;
 	convert << ";CIPOS=0,0;CIEND=0,0;SVLEN=";
-	convert << region.stop.pos - region.start.pos;
+    if(region.sv_len == -1){
+        convert << region.stop.pos - region.start.pos;
+    } else {
+        convert << region.sv_len;
+    }
+
 	convert << "\tGT\t.\/.";
 	return convert.str();
 }
@@ -369,6 +374,7 @@ void process_bed_file(std::string bedfile, std::string type, std::string output)
 		int count = 0;
 		strvcfentry region;
 		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+            region.sv_len = -1;
 			if (count == 0 && buffer[i] != '\t') {
 				region.start.chr += buffer[i];
 				region.stop.chr += buffer[i];
@@ -378,8 +384,12 @@ void process_bed_file(std::string bedfile, std::string type, std::string output)
 			}
 			if (count == 2 && buffer[i - 1] == '\t') {
 				region.stop.pos = atoi(&buffer[i]);
-				break;
 			}
+            if (count == 3 && buffer[i - 1] == '\t') {
+                region.sv_len = atoi(&buffer[i]);
+                break;
+            }
+
 			if (buffer[i] == '\t') {
 				count++;
 			}
