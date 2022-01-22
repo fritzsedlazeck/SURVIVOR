@@ -374,7 +374,7 @@ void process_bed_file(std::string bedfile, std::string type, std::string output)
 		int count = 0;
 		strvcfentry region;
 		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-            region.sv_len = -1;
+            region.sv_len = -0;
 			if (count == 0 && buffer[i] != '\t') {
 				region.start.chr += buffer[i];
 				region.stop.chr += buffer[i];
@@ -383,7 +383,7 @@ void process_bed_file(std::string bedfile, std::string type, std::string output)
 				region.start.pos = atoi(&buffer[i]) + 1;
 			}
 			if (count == 2 && buffer[i - 1] == '\t') {
-				region.stop.pos = atoi(&buffer[i]);
+				region.stop.pos = atoi(&buffer[i]) + 1;
 			}
             if (count == 3 && buffer[i - 1] == '\t') {
                 region.sv_len = atoi(&buffer[i]);

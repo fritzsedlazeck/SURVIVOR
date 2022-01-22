@@ -696,7 +696,7 @@ void combine_calls_svs(std::string files, double max_dist, int min_support, int 
 				type = 5;
 			}
 
-			if (support >= min_support && len > min_svs) {
+			if (support >= min_support && len >= min_svs) {
 				print_entry_overlap(file, (*i), id);
 			}
 
