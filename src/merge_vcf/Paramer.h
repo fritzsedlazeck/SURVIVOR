@@ -21,7 +21,7 @@ class Parameter {
 private:
 	Parameter() {
 		min_freq=-1;
-		version ="1.0.3";
+		version ="1.0.7";
 	}
 	~Parameter() {
 
@@ -31,7 +31,7 @@ private:
 
 public:
 	std::string version;
-	int max_dist;
+	double max_dist;
 	int max_caller;
 	bool use_type;
 	bool use_strand;

@@ -13,6 +13,12 @@
 #include "../simulator/Eval_vcf.h"
 #include <math.h>
 #include <iosfwd>
+#include <string.h>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
 
 void print_header(std::string name, std::string output);
 void print_entries(std::string output, std::vector<strvcfentry>& entries);

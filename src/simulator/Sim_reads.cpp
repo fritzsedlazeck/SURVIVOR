@@ -30,7 +30,7 @@ std::map<std::string, std::string> parse_genome(std::string genome_file, int min
 	std::map<std::string, std::string> genome;
 	while (!myfile.eof()) {
 		if (buffer[0] == '>') {
-			if ((int)seq.size() > min_length) {
+			if ((int) seq.size() > min_length) {
 
 				//	int border=distribution(generator);
 				//cout<<"max copies: "<<border<<std::endl;
@@ -57,7 +57,7 @@ std::map<std::string, std::string> parse_genome(std::string genome_file, int min
 		}
 		myfile.getline(buffer, buffer_size);
 	}
-	if ((int)seq.size() > min_length) {
+	if ((int) seq.size() > min_length) {
 		stringstream ss;
 		ss << name;
 		//	ss << i;
@@ -223,105 +223,122 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 	std::cout << "\tNum of reads: " << num_reads << std::endl;
 	FILE *file;
 	file = fopen(output.c_str(), "w");
+	double prev = 0;
+//	cout << "\t\tReads simulated: " << prev << "%" << std::endl;
 
-	for (int i = 0; i < num_reads; i++) {
+	std::map<std::string, int> cov_reported;
+
+	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
+
+		cov_reported[(*i).first]=(*i).second.size()*coverage;
+	}
+
+	for (int i = 0; i < num_reads; i++) { //start to simulate reads:
 		double bp = (rand() % 1000000);
+	//	if (bp / 1000000 < 0.0000001) {
+	//		cout << "BP " << bp << " " << bp / 1000000 << endl;
+	//	}
 		bp = bp / 1000000;
 		size_t size = 0;
-		while (size < error_profile.size()) {
-			if (bp < error_profile[size].total) {
+		while (size < error_profile.size()) { //1: Pick a read size based on the profile
+			if (size > 10 && bp < error_profile[size].total) {
 				break;
 			}
 			size++;
 		}
 
-	//	cout << size << ": " << bp << endl;
+
+		// Issue that the reads are not normalized by the chr size!
+
+		//cout << size << ": " << bp << endl;
 		//std::cout<<"Read init: "<<size<<std::endl;
-		size_t len=0;
+		size_t len = 0;
 		std::string chr;
-		while (size > len) {
+		while (size > len) {  //2: Pick a chromosome:
 			int pos = rand() % (int) (genome.size());
-			 chr = (*genome.begin()).first; //check that again...
+			chr = (*genome.begin()).first; //check that again...
 			for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end() && pos >= 0; j++) {
-				chr = (*j).first;
+				if (pos == 0 && cov_reported[(*j).first]>0) {
+					chr = (*j).first;
+				}
 				pos--;
 			}
-			len=genome[chr].size();
+			len = genome[chr].size();
 		}
-	//	cout << "choose subregion" << chr << endl;
-		std::string read = "N";
-		double num_N = 1;
+		//cout << "choose subregion" << chr << endl;
+		std::string read = "";
+		double num_N = 0;
 		size_t start_pos = 0;
-		while (num_N / (double) read.size() > 0.1) { //Obtaining the sequence (avoid large regions of N's)
-			read = "";
-			num_N = 0;
-			//cout << "lim: " << ((int) genome[chr].size() - size) << endl;
-			start_pos = rand() % (int) (genome[chr].size() - size);
-			while ((start_pos + size) >= genome[chr].size()) { // check such that we dont always just get the ends.
-				start_pos = rand() % (int) (genome[chr].size() - size);
-				cout << "st: " << (start_pos + size) << " " << genome[chr].size() << endl;
+
+		//Obtaining the sequence (avoid large regions of N's)
+		int attempts = 10;
+		std::string final_read;
+		do { //2: Pick a position on chromosome and obtain sequence avoiding too many N's:
+			final_read = "";
+			start_pos = (size_t) rand() % (genome[chr].size() - size + 2);
+
+			//new attempt to make it faster:
+			//	cout << " Start2: " << chr << " " << start_pos  << endl;
+			read = genome[chr].substr(start_pos, size);
+			if (read.empty()) {
+				cerr << "ERROR! " << endl;
 			}
 
-			for (size_t j = 0; j < size && j + (size_t) start_pos < genome[chr].size(); j++) {
-				read += genome[chr][start_pos + j];
-				if (genome[chr][start_pos + j] == 'N' || genome[chr][start_pos + j] == 'n') {
+			for (size_t j = 0; j < read.size(); j++) {
+				if (read[j] == 'N' || read[j] == 'n') {
 					num_N++;
+					if (num_N / (double) read.size() > 0.1) {
+						break;
+					}
+					read[j] = new_nuc('N');
+				}
+				double bp = (rand() % 1000000); //bp probability
+				bp = bp / 1000000;
+				if (bp < error_profile[j].match) {
+					final_read += read[j];
+				} else if (bp < error_profile[j].mismatch + error_profile[j].match) {
+					final_read += new_nuc(read[j]);
+				} else if (bp < error_profile[j].ins + error_profile[j].match + error_profile[j].mismatch) {
+					final_read += read[j];
+					final_read += new_nuc('N');
 				}
 			}
-		//	cout << "Ns: " << num_N / (double) read.size() << endl;
-		}
-		//cout << "apply errors" << endl;
-		size_t t = 0;
-		std::string final_read = "";
-		while (t < read.size()) {
-			if(read[t]=='N'){
-				read[t]=new_nuc('N');
+			attempts--;
+			//	cout << "Ns: " << num_N <<" size: "<<(double) read.size() << endl;
+		} while (num_N / (double) read.size() > 0.1 && attempts != 0);
+		if (attempts != 0) {
+			bool flag = true;
+			if (rand() % 100 < 51) {
+				flag = false;
+				//reverse read.
+				std::string new_read;
+				for (std::string::reverse_iterator ri = final_read.rbegin(); ri != final_read.rend(); ri++) {
+					new_read += complementbp((*ri));
+				}
+				final_read = new_read;
 			}
-			double bp = (rand() % 1000000); //bp probability
-			bp = bp / 1000000;
-			if (bp < error_profile[t].match) {
-				final_read += read[t];
-			} else if (bp < error_profile[t].mismatch + error_profile[t].match) {
-				final_read += new_nuc(read[t]);
-			} else if (bp < error_profile[t].ins + error_profile[t].match + error_profile[t].mismatch) {
-				final_read += read[t];
-				final_read += new_nuc('N');
+
+			std::stringstream name;
+			name << chr;
+			name << "_";
+			name << start_pos;
+			if (flag) {
+				name << "_+";
+			} else {
+				name << "_-";
 			}
-			t++;
-		}
 
-		bool flag=true;
-		if (rand() % 100 < 51) {
-			flag=false;
-			//reverse read.
-			std::string new_read;
-			for (std::string::reverse_iterator ri = final_read.rbegin(); ri != final_read.rend(); ri++) {
-			//cout<<read<<endl;
+			fprintf(file, "%s", name.str().c_str());
+			fprintf(file, "%c", '\n');
+			fprintf(file, "%s", final_read.c_str());
+			fprintf(file, "%c", '\n');
 
-				new_read += complementbp((*ri));
+			if (i % 10000 == 0 && prev < (i * 100) / num_reads) {
+				prev = (i * 100) / num_reads;
+				std::cout << "\t\tReads simulated: " << prev << "%" << '\r' << std::flush;
+				//cout << "\t\tReads simulated: " << prev << "%" << std::endl;
 			}
-		//	cout << "done" << endl;
-			final_read = new_read;
-		}
-
-		std::stringstream name;
-		name << chr;
-		name << "_";
-		name << start_pos;
-		if(flag){
-			name << "_+";
-		}else{
-			name << "_-";
-		}
-		//std::cout << "Read: " << read.size() << std::endl;
-		//if (read.size() > min_length) {
-		fprintf(file, "%s", name.str().c_str());
-		fprintf(file, "%c", '\n');
-		fprintf(file, "%s", final_read.c_str());
-		fprintf(file, "%c", '\n');
-		//	}
-		if (i % 1000 == 0) {
-			cout << "\t\tReads simulated: " << (i * 100) / num_reads << "%" << std::endl;
+			cov_reported[chr]-=final_read.size();
 		}
 	}
 

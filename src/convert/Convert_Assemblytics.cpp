@@ -7,6 +7,39 @@
 
 #include "Convert_Assemblytics.h"
 
+
+void print_header_ass(std::string name, FILE *&file) {
+
+
+	fprintf(file, "%s", "##fileformat=VCFv4.1\n");
+	fprintf(file, "%s", "##fileDate=20150217\n");
+	fprintf(file, "%s", "##ALT=<ID=DEL,Description=\"Deletion\">\n");
+	fprintf(file, "%s", "##ALT=<ID=DUP,Description=\"Duplication\">\n");
+	fprintf(file, "%s", "##ALT=<ID=INV,Description=\"Inversion\">\n");
+	fprintf(file, "%s", "##ALT=<ID=TRA,Description=\"Translocation\">\n");
+	fprintf(file, "%s", "##ALT=<ID=INS,Description=\"Insertion\">\n");
+
+	fprintf(file, "%s", "##FILTER=<ID=LowQual,Description=\"PE support below 3.\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CHR2,Number=1,Type=String,Description=\"Chromosome for END coordinate in case of a translocation\">\n");
+	fprintf(file, "%s", "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of the structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=PE,Number=1,Type=Integer,Description=\"Paired-end support of the structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description=\"Imprecise structural variation\">\n");
+	fprintf(file, "%s", "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variation\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVLEN,Number=1,Type=Integer,Description=\"Length of the SV\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=OTHER,Number=1,Type=String,Description=\"Type of structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Type of approach used to detect SV\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVSCORE,Number=1,Type=Integer,Description=\"Score of SV\">\n");
+
+	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
+	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t");
+	fprintf(file, "%s", name.c_str());
+	fprintf(file, "%c", '\n');
+
+}
+
+
+
 short get_type_assemblytics(std::string type) {
 	if(strcmp(type.c_str(), "Tandem_expansion") == 0){
 		return 1;
@@ -47,6 +80,9 @@ void parse_assemblytics(std::string assemblytics,int minlen, std::vector<strvcfe
 			if (count == 2 && buffer[i - 1] == '\t') {
 				tmp.stop.pos = atoi(&buffer[i]);
 			}
+			if(count == 3 && buffer[i]!='\t'){
+				tmp.sv_id+=buffer[i];
+			}
 			if (count == 6 && buffer[i] != '\t') {
 				type += buffer[i];
 			}
@@ -81,13 +117,12 @@ std::string print_entry(strvcfentry & region) {
 	convert << "\t";
 	convert << region.start.pos;      // insert the textual representation of 'Number' in the characters in the stream
 	convert << "\t";
-	convert << trans_type(region.type);
-	convert << "00";
-	convert << "Assym\tN\t<";
+	convert << region.sv_id;
+	convert << "\tN\t<";
 	convert << trans_type(region.type);
 	convert << ">\t.\tLowQual\tIMPRECISE;SVTYPE=";
 	convert << trans_type(region.type);
-	convert << ";SVMETHOD=PINDELv0.2.5a8;CHR2=";
+	convert << ";SVMETHOD=Assemblytics;CHR2=";
 	convert << region.stop.chr;
 	convert << ";END=";
 	convert << region.stop.pos;
@@ -95,12 +130,7 @@ std::string print_entry(strvcfentry & region) {
 	convert << region.stop.pos - region.start.pos;
 	convert << ";PE=";
 	convert << 1;
-	convert << "\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t";
-	std::stringstream s;
-	s << "1/1:0,0,0:0:PASS:0:0:";
-	s << 1;
-	s << ":0:0";
-	//std::cout<<convert.str()<<std::endl;
+	convert << "\tGT\t1/1";
 	return convert.str();
 }
 
@@ -110,6 +140,7 @@ void process_Assemblytics(std::string assemblytics,int minlen, std::string outpu
 	parse_assemblytics(assemblytics,minlen, entries);
 	FILE *file;
 	file = fopen(output.c_str(), "w");
+	print_header_ass(assemblytics,file);
 	for (size_t i = 0; i < entries.size(); i++) {
 		fprintf(file, "%s", print_entry(entries[i]).c_str());
 		fprintf(file, "%c", '\n');

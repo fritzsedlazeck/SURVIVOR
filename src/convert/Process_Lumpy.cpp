@@ -121,6 +121,10 @@ strvcfentry create_entry(strregion region, double eval, int support, short type,
 
 	if (tmp.type == 3) {
 		convert << ";SVLEN=0;PE=";
+	} else if (tmp.type == 0) {
+		convert << ";SVLEN=";
+		convert << (region.stop.pos - region.start.pos) *-1;
+		convert << ";PE=";
 	} else {
 		convert << ";SVLEN=";
 		convert << region.stop.pos - region.start.pos;
@@ -163,7 +167,7 @@ std::string print_entry(strregion region, std::string type, double score, std::s
 	convert << region.stop.pos - region.start.pos;
 	convert << ";STRANDS=";
 	convert << strand;
-	convert << ";";
+	convert << ";OTHER=";
 	convert << info;
 
 	convert << "\tGT\t";
@@ -177,7 +181,6 @@ void parse_lumpy(std::string lumpy_bede, std::string output) {      //, int min_
 	std::string buffer;
 	std::ifstream myfile;
 
-
 	myfile.open(lumpy_bede.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
 		std::cout << "Bedpe Parser: could not open file: " << lumpy_bede.c_str() << std::endl;
@@ -186,7 +189,7 @@ void parse_lumpy(std::string lumpy_bede, std::string output) {      //, int min_
 
 	FILE * file = fopen(output.c_str(), "a");
 	int id = 0;
-	getline(myfile,buffer);
+	getline(myfile, buffer);
 	while (!myfile.eof()) {
 		int count = 0;
 		std::string type;
@@ -235,7 +238,7 @@ void parse_lumpy(std::string lumpy_bede, std::string output) {      //, int min_
 		}
 		fprintf(file, "%s", print_entry(region, type, score, strand, info, id).c_str());
 		fprintf(file, "%c", '\n');
-		getline(myfile,buffer);
+		getline(myfile, buffer);
 	}
 
 	myfile.close();
@@ -261,6 +264,7 @@ void print_header(std::string name, std::string output) {
 	fprintf(file, "%s", "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variation\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVLEN,Number=1,Type=Integer,Description=\"Length of the SV\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=OTHER,Number=1,Type=String,Description=\"Type of structural variant\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Type of approach used to detect SV\">\n");
 	fprintf(file, "%s", "##INFO=<ID=SVSCORE,Number=1,Type=Integer,Description=\"Score of SV\">\n");
 

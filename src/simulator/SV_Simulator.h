@@ -21,6 +21,7 @@
 struct parameter {
 	int dup_min;
 	int dup_max;
+	int dup_max_amp;
 	int dup_num;
 
 	int indel_min;
@@ -46,6 +47,9 @@ struct parameter {
 	int intrachr_num;
 	int intrachr_min;
 	int intrachr_max;
+
+	bool diploid;
+	float hom_rate;
 };
 
 struct position {
@@ -59,6 +63,9 @@ struct struct_var {
 	position pos;
 	position target;
 	std::string seq; //not mandadory!
+	std::string ref;
+	bool print;
+	int copy_num;
 };
 
 struct insertions {

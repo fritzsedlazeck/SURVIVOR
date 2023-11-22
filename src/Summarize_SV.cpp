@@ -8,7 +8,7 @@
 #include "Summarize_SV.h"
 
 void adjust(std::vector<int> & vec, int dist) {
-	while ((int) vec.size() < dist+1) {
+	while ((int) vec.size() < dist + 1) {
 		vec.push_back(0);
 	}
 }
@@ -269,16 +269,36 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 	int UNK = 0;
 	std::map<std::string, std::map<int, int> > SV_chrs;
 	int num = 0;
+	vector<int> num_svs_persample;
+	vector<std::string> sample_names;
 	while (!cin.eof()) {
 		string line;
 		getline(cin, line);
 		if (!cin.fail()) {
-			if (line[0] != '#') {
+			if(line[0]=='#' && line[1]=='C' ){ //parse out sample names;
+				int count=0;
+				std::string tmp_name="";
+				for (size_t i = 0; i < line.size(); i++) {
+					if(count>8 && line[i]!='\t'){
+						tmp_name+=line[i];
+					}
+					if(line[i]=='\t'){
+						if(!tmp_name.empty()){
+							sample_names.push_back(tmp_name);
+							tmp_name="";
+						}
+						count++;
+					}
+				}
+				sample_names.push_back(tmp_name);
+				cerr<<"Detected: "<<sample_names.size() << " Samples"<<endl;
+			}else if (line[0] != '#') {
 				int count = 0;
 				std::string chr = "";
 				double leng = 0;
 				int supp = 0;
 				short type;
+				int id=0;
 				for (size_t i = 0; i < line.size(); i++) {
 					if (count == 0 && line[i] != '\t') {
 						chr += line[i];
@@ -290,10 +310,26 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 					if (count == 7 && strncmp(&line[i], "SUPP=", 5) == 0) { //for lumpy!
 						supp = atoi(&line[i + 5]);
 					}
-					if (count == 7 && strncmp(&line[i], "AVGLEN=", 7) == 0) {
-						leng = atof(&line[i + 7]);
-						break;
+					if (count == 7 && strncmp(&line[i], "AC=", 3) == 0) { //for lumpy!
+						supp = atoi(&line[i + 3]);
 					}
+					if (count == 7 && strncmp(&line[i], "AVGLEN=", 7) == 0 ) {
+						leng = abs(atof(&line[i + 7]));
+					}
+					if (count == 7 && strncmp(&line[i], "SVLEN=",6) == 0 ) {
+						leng = abs(atof(&line[i + 6]));
+					}
+
+					if(count>8 && line[i-1]=='\t'){
+						while(id>=num_svs_persample.size()){
+							num_svs_persample.push_back(0);
+						}
+						if(line[i]=='1' || line[i+2]=='1'){ //Only if GT is set!
+							num_svs_persample[id]++;
+						}
+						id++;
+					}
+
 					if (line[i] == '\t') {
 						count++;
 					}
@@ -369,11 +405,11 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 						break;
 					}
 
-					FILE * file = fopen(out.c_str(), "a");
+				/*	FILE * file = fopen(out.c_str(), "a");
 					fprintf(file, "%s", line.c_str());
 					fprintf(file, "%c", '\n');
 					fclose(file);
-
+*/
 					//std::string chr = entries[i].start.chr;
 					if (SV_chrs.find(chr) != SV_chrs.end() || SV_chrs[chr].find(type) != SV_chrs[chr].end()) {
 						SV_chrs[chr][type]++;
@@ -381,7 +417,7 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 						SV_chrs[chr][type] = 1;
 					}
 				}
-				if (num % 10 == 0) {
+				if (num % 1000 == 0) {
 					cout << "\t Streamed " << num << " SV entries" << endl;
 				}
 				num++;
@@ -407,6 +443,24 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 		}
 		fclose(file);
 	}
+
+	out = output;
+	if (!num_svs_persample.empty()) {
+		out += "_per_sample";
+		file = fopen(out.c_str(), "w");
+		for (size_t i = 0; i < sample_names.size(); i++) {
+			fprintf(file, "%s", sample_names[i].c_str());
+			fprintf(file, "%c", '\t');
+			if(i>num_svs_persample.size()){
+				fprintf(file, "%i", 0);
+			}else{
+				fprintf(file, "%i", num_svs_persample[i]);
+			}
+			fprintf(file, "%c", '\n');
+		}
+		fclose(file);
+	}
+
 	int maxim = std::max(std::max((int) len_Del.size(), (int) len_Dup.size()), std::max((int) len_Inv.size(), (int) len_unk.size()));
 	file = fopen(output.c_str(), "w");
 	fprintf(file, "%s", "Len\tDel\tDup\tInv\tINS\tTRA\tUNK\n");
@@ -519,9 +573,20 @@ void summary_SV_stream(int min_size, int max_size, std::string output) {
 	fclose(file);
 }
 
-void summary_venn(std::string filename, std::string output) {
+std::vector<int> parse_supp_vec(std::string buffer) {
+	std::vector<int> ids;
+	for (size_t i = 0; i < buffer.size() && buffer[i] != ';'; i++) {
+		if (buffer[i] == '1') {
+			//	cout<<i<<endl;
+			ids.push_back(i);
+		}
+	}
+	return ids;
+}
+
+void summary_venn(std::string filename, bool normalize, std::string output) {
 	std::vector<std::vector<int> > mat;
-	cout << "file: " << filename << endl;
+//	cout << "file: " << filename << endl;
 
 	size_t buffer_size = 200000000;
 	char*buffer = new char[buffer_size];
@@ -535,40 +600,73 @@ void summary_venn(std::string filename, std::string output) {
 
 	myfile.getline(buffer, buffer_size);
 
+	std::vector<std::string> names;
 	while (!myfile.eof()) {
-		size_t count = 0;
-		std::vector<int> ids;
-		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
-			if (buffer[i] == '1') {
-				ids.push_back(count); //-1 since we have the ID in the first column.
+		if (buffer[0] == '#' && buffer[1] == 'C') {
+			size_t count = 0;
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				if (count > 8 && buffer[i - 1] == '\t') {
+					std::string name = "";
+					for (size_t j = i; j < buffer_size && buffer[j] != '\t'; j++) {
+						name += buffer[j];
+					}
+					//cout<<name<<endl;
+					names.push_back(name);
+				}
+				if (buffer[i] == '\t') {
+					count++;
+				}
 			}
-			if (buffer[i] == ' ') {
-				count++;
+			//cout<<"names: "<<names.size()<<endl;
+		} else if (buffer[0] != '#') {
+			size_t count = 0;
+			std::vector<int> ids;
+
+			for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+				if (count == 7 && strncmp(&buffer[i], "SUPP_VEC=", 9) == 0) {
+					ids = parse_supp_vec(&buffer[i + 9]);
+				}
+
+				if (buffer[i] == '\t') {
+					count++;
+				}
 			}
-		}
-		if (mat.empty()) {
-			vector<int> tmp;
-			tmp.resize(count, 0);
-			mat.resize(count, tmp);
-		}
-		//cout<<"ids: "<<ids.size()<<endl;
-		for (size_t i = 0; i < ids.size(); i++) {
-			for (size_t j = 0; j < ids.size(); j++) {
-				//if (ids[i] <= ids[j]) {
-				mat[ids[i]][ids[j]]++;
-				//}
+			if (mat.empty()) {
+				vector<int> tmp;
+				tmp.resize(names.size(), 0);
+				mat.resize(names.size(), tmp);
+			}
+			//	cout<<"ids: "<<ids.size() <<" "<< mat.size() <<" "<< mat[0].size()<<endl;
+			for (size_t i = 0; i < ids.size(); i++) {
+				for (size_t j = 0; j < ids.size(); j++) {
+					//if (ids[i] <= ids[j]) {
+					mat[ids[i]][ids[j]]++;
+					//}
+				}
 			}
 		}
 
 		myfile.getline(buffer, buffer_size);
 	}
 	myfile.close();
-	cout << "fin parsing: " << mat.size() << endl;
+	//cout << "fin parsing: " << mat.size() << endl;
 
 	FILE * file = fopen(output.c_str(), "w");
 	for (size_t i = 0; i < mat.size(); i++) {
 		for (size_t j = 0; j < mat.size(); j++) {
-			fprintf(file, "%i", mat[i][j]);
+			if (normalize) {
+				//if(i>j){
+				if (mat[i][i] > 0) {
+					fprintf(file, "%e", (double) mat[i][j] / (double) mat[i][i]);
+				} else {
+					fprintf(file, "%e", 0);
+				}
+				//	}else{
+				//	fprintf(file, "%e", (double)mat[i][j]/(double)mat[i][i]);
+				//}
+			} else {
+				fprintf(file, "%i", mat[i][j]);
+			}
 			fprintf(file, "%c", '\t');
 		}
 		fprintf(file, "%c", '\n');

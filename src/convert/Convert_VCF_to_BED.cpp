@@ -298,6 +298,8 @@ short get_type_bed(std::string type) {
 		return 2;
 	} else if (strncmp(type.c_str(), "INS", 3) == 0) {
 		return 4;
+	} else if (strncmp(type.c_str(), "TRA", 3) == 0) {
+			return 5;
 	} else {
 		std::cerr << "Unknown type! " << type << std::endl;
 	}
@@ -305,10 +307,29 @@ short get_type_bed(std::string type) {
 
 }
 
+void print_header(FILE *& file) {
+	fprintf(file, "%s", "##fileformat=VCFv4.1\n");
+	fprintf(file, "%s", "##source=SURVIVOR\n");
+	fprintf(file, "%s", "##ALT=<ID=DEL,Description=\"Deletion\">\n");
+	fprintf(file, "%s", "##ALT=<ID=DUP,Description=\"Duplication\">\n");
+	fprintf(file, "%s", "##ALT=<ID=INV,Description=\"Inversion\">\n");
+	fprintf(file, "%s", "##ALT=<ID=BND,Description=\"Translocation\">\n");
+	fprintf(file, "%s", "##ALT=<ID=INS,Description=\"Insertion\">\n");
+	fprintf(file, "%s", "##INFO=<ID=CHR2,Number=1,Type=String,Description=\"Chromosome for END coordinate in case of a translocation\">\n");
+	fprintf(file, "%s", "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position of the structural variant\">\n");
+	fprintf(file, "%s", "##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description=\"Imprecise structural variation\">\n");
+	fprintf(file, "%s", "##INFO=<ID=PRECISE,Number=0,Type=Flag,Description=\"Precise structural variation\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVLEN,Number=1,Type=Float,Description=\"Length of the SV\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVMETHOD,Number=1,Type=String,Description=\"Vector of samples supporting the SV.\">\n");
+	fprintf(file, "%s", "##INFO=<ID=SVTYPE,Number=1,Type=String,Description=\"Type of the SV.\">\n");
+	fprintf(file, "%s", "##INFO=<ID=STRANDS,Number=1,Type=String,Description=\"Indicating the direction of the reads with respect to the type and breakpoint.\">\n");
+	fprintf(file, "%s", "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n");
+	fprintf(file, "%s", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tSample\n");
+}
+
 std::string print_entry_bed(strvcfentry & region) {
 
 //	III     5104    DEL00000002     N       <DEL>   .       LowQual IMPRECISE;CIEND=-305,305;CIPOS=-305,305;SVTYPE=DEL;SVMETHOD=EMBL.DELLYv0.5.9;CHR2=III;END=15991;SVLEN=10887;CT=3to5;PE=2;MAPQ=60        GT:GL:GQ:FT:RC:DR:DV:RR:RV      1/1:-12,-0.602059,0:6:LowQual:816:0:2:0:0
-
 	std::ostringstream convert;   // stream used for the conversion
 	convert << region.start.chr;
 	convert << "\t";
@@ -318,22 +339,20 @@ std::string print_entry_bed(strvcfentry & region) {
 	convert << "00";
 	convert << "BED\tN\t<";
 	convert << trans_type(region.type);
-	convert << ">\t.\tLowQual\tIMPRECISE;SVTYPE=";
+	convert << ">\t.\tPASS\tIMPRECISE;SVTYPE=";
 	convert << trans_type(region.type);
 	convert << ";SVMETHOD=BEDFILE;CHR2=";
+
 	convert << region.stop.chr;
 	convert << ";END=";
-	convert << region.stop.pos;
-	convert << ";SVLEN=";
-	convert << region.stop.pos - region.start.pos;
-	convert << ";PE=";
-	convert << 1;
-	convert << "\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t";
-	std::stringstream s;
-	s << "1/1:0,0,0:0:PASS:0:0:";
-	s << 1;
-	s << ":0:0";
-	//std::cout<<convert.str()<<std::endl;
+	if (region.type==4) {
+		convert << region.start.pos;
+	} else {
+		convert << region.stop.pos;
+	}
+	convert << ";CIPOS=0,0;CIEND=0,0;SVLEN=";
+	convert << region.start.pos - region.stop.pos ;
+	convert << "\tGT\t.\/.";
 	return convert.str();
 }
 
@@ -350,27 +369,37 @@ void process_bed_file(std::string bedfile, std::string type, std::string output)
 	FILE *file;
 	file = fopen(output.c_str(), "w");
 
+	print_header(file);
+
 	myfile.getline(buffer, buffer_size);
 	while (!myfile.eof()) {
 		int count = 0;
 		strvcfentry region;
-		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
+		std::string t = "";
+		for (size_t i = 0; i < buffer_size && buffer[i] != '\0' && buffer[i] != '\n' && count < 4; i++) {
 			if (count == 0 && buffer[i] != '\t') {
 				region.start.chr += buffer[i];
 				region.stop.chr += buffer[i];
 			}
 			if (count == 1 && buffer[i - 1] == '\t') {
-				region.start.pos = atoi(&buffer[i]);
+				region.start.pos = atoi(&buffer[i]) + 1;
 			}
 			if (count == 2 && buffer[i - 1] == '\t') {
 				region.stop.pos = atoi(&buffer[i]);
-				break;
+				//break;
+			}
+			if (count == 3 && buffer[i] != '\t') {
+				t += buffer[i];
 			}
 			if (buffer[i] == '\t') {
 				count++;
 			}
 		}
-		region.type = get_type_bed(type);
+		if (strncmp(type.c_str(), "NA", 2) == 0) {
+			region.type = get_type_bed(t);
+		} else {
+			region.type = get_type_bed(type);
+		}
 		fprintf(file, "%s", print_entry_bed(region).c_str());
 		fprintf(file, "%c", '\n');
 		myfile.getline(buffer, buffer_size);
@@ -404,15 +433,15 @@ void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::stri
 			//	if ((entries[i].type == 0 && entries[i].sv_len < 3000) || (entries[i].type == 4 && entries[i].sv_len < 311)) {
 			fprintf(file, "%s", entries[i].start.chr.c_str());
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].start.pos);
+			fprintf(file, "%i", entries[i].start.pos - 1 + entries[i].cpos.first);
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].start.pos);
+			fprintf(file, "%i", entries[i].start.pos - 1 + entries[i].cpos.second);
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", entries[i].stop.chr.c_str());
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].stop.pos);
+			fprintf(file, "%i", entries[i].stop.pos + entries[i].cend.first);
 			fprintf(file, "%c", '\t');
-			fprintf(file, "%i", entries[i].stop.pos);
+			fprintf(file, "%i", entries[i].stop.pos + entries[i].cend.second);
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", entries[i].sv_id.c_str());
 			fprintf(file, "%c", '\t');
@@ -423,7 +452,14 @@ void parse_VCF_to_bed(std::string vcffile, int min_size, int max_size, std::stri
 			fprintf(file, "%c", trans_strands(entries[i].strands.second));
 			fprintf(file, "%c", '\t');
 			fprintf(file, "%s", trans_type(entries[i].type).c_str());
-
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%s", entries[i].start.chr.c_str());
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].start.pos - 1);
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%s", entries[i].stop.chr.c_str());
+			fprintf(file, "%c", '\t');
+			fprintf(file, "%i", entries[i].stop.pos);
 			fprintf(file, "%c", '\n');
 
 			//	fprintf(file, "%s", entries[i].stop.chr.c_str());

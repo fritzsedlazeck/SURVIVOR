@@ -4,7 +4,7 @@
  *  Created on: Feb 12, 2015
  *      Author: fsedlaze
  */
-
+#include "../GzipStream.h"
 #include "Merge_VCF.h"
 
 //read in all the vcf filenames:
@@ -16,8 +16,8 @@ std::vector<std::string> parse_filename(std::string filename) {
 
 	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "File Parser: could not open file: " << filename.c_str() << std::endl;
-		exit(0);
+		std::cerr << "File Parser: could not open file: " << filename.c_str() << std::endl;
+		exit(EXIT_FAILURE);
 	}
 	myfile.getline(buffer, buffer_size);
 	while (!myfile.eof()) {
@@ -31,19 +31,22 @@ std::vector<std::string> parse_filename(std::string filename) {
 
 strcoordinate parse_stop(const char * buffer) {
 	size_t i = 0;
+	if(buffer[i]=='\t'){
+		i++;
+	}
 	bool chr_flag = false;
 	strcoordinate pos;
 	pos.chr = "";
 	pos.pos = -1;
 	while (buffer[i] != '\t' && (buffer[i] != '\n' && buffer[i] != '\0')) {
-		if (strncmp(&buffer[i], ";END=", 5) == 0) {
-			pos.pos = atoi(&buffer[i + 5]);
-		}
-		if ((strncmp(&buffer[i], "END=", 4) == 0 && i == 0)) {
+
+		if (pos.pos==-1 && strncmp(&buffer[i], "END=", 4) == 0 ){
+			//if (pos.pos == -1) {
 			pos.pos = atoi(&buffer[i + 4]);
-			//std::cout<<"pos"<<pos.pos<<std::endl;
+			//}
+		//		std::cout<<"pos"<<pos.pos<<std::endl;
 		}
-		if (strncmp(&buffer[i], "CHR2=", 5) == 0) {
+		if (pos.chr.empty() && strncmp(&buffer[i], "CHR2=", 5) == 0) {
 			i = i + 5;
 			chr_flag = true;
 		}
@@ -146,6 +149,7 @@ std::string trans_type23(short type) {
 }
 
 strcoordinate parse_pos(char * buffer) {
+
 	strcoordinate pos;
 	pos.chr = "";
 	pos.pos = -1;
@@ -236,6 +240,34 @@ std::pair<int, int> parse_delly(char * buffer) {
 	return res;
 }
 
+std::pair<int, int> parse_sniffles(char * buffer) {
+	//GT:DR:DV        0/1:8:4
+	std::pair<int, int> res;
+	res.first = 0;
+	res.second = 0;
+	size_t i = 0;
+	while (buffer[i] != '\t') {
+		i++;
+	}
+	//std::cout<<buffer<<std::endl;
+	int count = 0;
+	while (buffer[i] != '\n' && buffer[i] != '\0') {
+		if ((count == 1) && buffer[i - 1] == ':') {
+			res.first += atoi(&buffer[i]);
+			//std::cout<<"first: "<< atoi(&buffer[i])<<std::endl;
+		}
+		if ((count == 2) && buffer[i - 1] == ':') {
+			res.second += atoi(&buffer[i]);
+			//	std::cout<<"second: "<< atoi(&buffer[i])<<std::endl;
+		}
+		if (buffer[i] == ':') {
+			count++;
+		}
+		i++;
+	}
+	return res;
+}
+
 int parse_support(char * buffer) {
 	size_t i = 0;
 	int support = 0;
@@ -276,6 +308,84 @@ std::pair<bool, bool> parse_strands_lumpy(char * buffer) {
 	}
 	return strand;
 }
+
+std::pair<int, int> parse_DR(char *buffer) {
+	std::pair<int, int> res;
+	res.first = 0;
+	res.second = 0;
+	//first identify which position DR is reported;
+
+	//AD/
+	int count_AD = -1;
+	int count_DR = -1;
+	int count_DV = -1;
+	size_t i = 0;
+	int count = 0;
+	while (buffer[i] != '\t' && (buffer[i] != '\n' && buffer[i] != '\0')) {
+		if (count_AD == -1 && (strncmp(":AD", &buffer[i], 3) == 0 || strncmp("AD:", &buffer[i], 3) == 0)) {
+			count_AD = count;
+			if (buffer[i] == ':') {
+				count_AD++;
+			}
+		}
+		if (count_DR == -1 && (strncmp(":DR", &buffer[i], 3) == 0 || strncmp("DR:", &buffer[i], 3) == 0)) {
+			count_DR = count;
+			if (buffer[i] == ':') {
+				count_DR++;
+			}
+		}
+		if (count_DV == -1 && (strncmp(":DV", &buffer[i], 3) == 0 || strncmp("DV:", &buffer[i], 3) == 0)) {
+
+			count_DV = count;
+			if (buffer[i] == ':') {
+				count_DV++;
+			}
+		}
+
+		if (buffer[i] == ':') {
+			count++;
+		}
+		i++;
+	}
+
+	//parse DR field
+//	cout << &buffer[i] << endl;
+	count = 0;
+	while (buffer[i] != '\n' && buffer[i] != '\0') {
+		if (count_AD != -1 && count_AD == count) {
+			//ref
+			res.first = atoi(&buffer[i]);
+			while (buffer[i] != ',') {
+				i++;
+			}
+			i++;
+			//alt;
+			res.second = atoi(&buffer[i]);
+			break;
+		}
+
+		if (count_DR != -1 && count_DR == count) {
+			//	cout << cout << " " << count_DR << " HIT DR: " << buffer[i] << buffer[i + 1] << buffer[i + 2] << endl;
+			res.first = atoi(&buffer[i]);
+			count_DR = -1;
+		}
+
+		if (count_DV != -1 && count_DV == count) {
+			//	cout << cout << " " << count_DV << " HIT DV: " << buffer[i] << buffer[i + 1] << buffer[i + 2] << endl;
+			res.second = atoi(&buffer[i]);
+			count_DV = -1;
+		}
+
+		if (buffer[i] == ':') {
+			count++;
+		}
+		i++;
+	}
+//	cout << "ref: " << res.first << " alt: " << res.second << endl;
+	return res;
+
+}
+
 std::string get_most_effect(std::string alt, int ref) {
 	size_t i = 0;
 	std::string most_alt = "";
@@ -344,11 +454,11 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 		tmp.genotype = "./.";
 		tmp.strands.first = true;
 		tmp.strands.second = true;
-		tmp.num_reads.first = 0;
-		tmp.num_reads.second = 0;
+		tmp.num_reads.first = -1;
+		tmp.num_reads.second = -1;
 		tmp.sv_len = -1;
 		tmp.af = -1;
-		float freq = 0;
+//		float freq = 0;
 		//std::cout<<buffer<<std::endl;
 		for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 			if (count == 0 && buffer[i] != '\t') {
@@ -380,10 +490,13 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 			if (count == 7 && strncmp(&buffer[i], ";RE=", 4) == 0) { //for sniffles!
 				tmp.num_reads.second = atoi(&buffer[i + 4]);
 			}
-
-			if (count == 7 && strncmp(&buffer[i], "EAS_AF=", 7) == 0) { //EAS_AF
-				freq = atof(&buffer[i + 7]);
+			if (count == 7 && strncmp(&buffer[i], ";AF=", 4) == 0) {
+				tmp.af = atof(&buffer[i + 4]);
 			}
+
+			//if (count == 7 && strncmp(&buffer[i], "EAS_AF=", 7) == 0) { //EAS_AF
+			//		freq = atof(&buffer[i + 7]);
+			//	}
 			if (count == 7 && strncmp(&buffer[i], ";CT=", 4) == 0) {
 				//parse strand delly:
 				set_strand = true;
@@ -405,12 +518,8 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 				tmp.strands.first = (bool) (buffer[i + 9] == '+');
 				tmp.strands.second = (bool) (buffer[i + 10] == '+');
 			}
-			if (count == 9 && buffer[i - 1] == '\t') {
-				tmp.af = parse_genotypes_vcf(buffer.substr(i - 1));
-			}
 
 			if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
-
 				size_t j = i;
 				tmp.genotype = "";
 				while (buffer[j] != '\0' && buffer[j] != ':') {
@@ -421,13 +530,11 @@ strvcfentry parse_vcf_entry(std::string buffer) {
 				}
 				//	std::cout<<"GO: "<<tmp.genotype<<std::endl;
 			}
-			if (count == 8 && strncmp(&buffer[i], "PR:SR", 5) == 0) {
-				//manta
-				tmp.num_reads = parse_manta(&buffer[i]);
-			}
-			if (count == 8 && strncmp(&buffer[i], "DR:DV:RR:RV", 11) == 0) {
-				//delly
-				tmp.num_reads = parse_delly(&buffer[i]);
+
+			if (count == 8 && buffer[i - 1] == '\t') {
+				if (tmp.num_reads.first == -1 || tmp.num_reads.second == -1) {
+					tmp.num_reads = parse_DR(&buffer[i]);
+				}
 			}
 
 			if (count == 4 && buffer[i - 1] == '<') {
@@ -515,6 +622,16 @@ std::string parse_supp_vec(char * buffer) {
 	return supp;
 }
 
+std::pair<int, int> parse_pair(char * buffer) {
+	std::pair<int, int> pos;
+	pos.first = atoi(buffer);
+	size_t i = 0;
+	while (buffer[i - 1] != ',') {
+		i++;
+	}
+	pos.second = atoi(&buffer[i]);
+	return pos;
+}
 //for each file parse the entries
 
 std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
@@ -526,9 +643,19 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 
 	myfile.open(filename.c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "VCF Parser: could not open file: " << filename.c_str() << std::endl;
+		std::cout << "Annotation Parser: could not open file: " << filename.c_str() << std::endl;
 		exit(0);
 	}
+	/*std::string buffer; There seems to be some problem with the parsing!
+	 GzipStreamBuf gzbuf(filename.c_str());
+	 std::istream myfile(&gzbuf);
+
+	 myfile.open(filename.c_str(), std::ifstream::in);
+
+	 if (!myfile.good()) {
+	 std::cerr << "VCF Parser: could not open file: " << filename.c_str() << " " << strerror(errno) << std::endl;
+	 exit(EXIT_FAILURE);
+	 }*/
 
 	std::vector<strvcfentry> calls;
 	getline(myfile, buffer);
@@ -555,19 +682,31 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 			num++;
 			int count = 0;
 			strvcfentry tmp;
+			tmp.start.chr = "";
+			tmp.stop.chr = "";
 			tmp.sup_lumpy = 0;
 			tmp.stop.pos = -1;
+			tmp.start.pos = -1;
 			tmp.type = -1;
+			tmp.supp = -1;
 			bool set_strand = false;
-			std::string ref;
-			std::string alt;
+			//	std::string ref;
+			//	std::string alt;
 			tmp.genotype = "./.";
 			tmp.strands.first = true;
 			tmp.strands.second = true;
 			tmp.num_reads.first = 0;
 			tmp.num_reads.second = 0;
+			tmp.alleles.first = "";
+			tmp.alleles.second = "";
+			tmp.sv_id = "";
 			tmp.sv_len = -1;
-			float freq = 0;
+			tmp.quality = -1;
+			tmp.cend.first = -1;
+			tmp.cend.second = -1;
+			tmp.cpos.first = -1;
+			tmp.cpos.second = -1;
+			//float freq = 0;
 			//std::cout<<buffer<<std::endl;
 			for (size_t i = 0; i < buffer.size() && buffer[i] != '\0' && buffer[i] != '\n'; i++) {
 
@@ -576,24 +715,50 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				}
 				if (count == 1 && buffer[i - 1] == '\t') {
 					tmp.start.pos = atoi(&buffer[i]);
-					//std::cout<<tmp.start.pos<<std::endl;
+					//	if(tmp.start.pos==55986511){
+					//		std::cout<<tmp.start.pos<<std::endl;
+					//	}
 				}
 				if (count == 2 && buffer[i] != '\t') {
 					tmp.sv_id += buffer[i];
 				}
 				if (count == 3 && buffer[i] != '\t') {
-					ref += buffer[i];
+					tmp.alleles.first += buffer[i];
+					//	ref += buffer[i];
 				}
 				if (count == 4 && buffer[i] != '\t') {
-					alt += buffer[i];
+					tmp.alleles.second += buffer[i];
+					//	alt += buffer[i];
 				}
+
+				if ((tmp.stop.pos == -1 && count == 4) && (buffer[i - 1] == '[' || buffer[i - 1] == ']')) {
+
+					tmp.stop = parse_pos(&buffer[i - 1]);
+
+				}
+
 				if (count == 4 && buffer[i - 1] == '\t') {
 					tmp.strands = parse_strands_lumpy(&buffer[i]);
 				}
-				if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
-					tmp.stop = parse_stop(&buffer[i]);
-					//std::cout<<"Stop:"<<tmp.stop.pos<<std::endl;
+
+				if (count == 5 && buffer[i - 1] == '\t') {
+					if (buffer[i] == '.') {
+						tmp.quality = -1;			//not set;
+					} else {
+						tmp.quality = atoi(&buffer[i]);
+					}
 				}
+
+				if ((tmp.stop.pos == -1 && count >=6 )&& (strncmp(&buffer[i], ";END=", 5) == 0 || (strncmp(&buffer[i], "\tEND=", 5) == 0))) {
+
+			//	if (tmp.stop.pos == -1 && (count == 7 && buffer[i - 1] == '\t')) {
+					tmp.stop = parse_stop(&buffer[i]);
+				//	cout<<"Parse Stop: "<<tmp.stop.pos<<endl;
+					//		if (tmp.start.pos == 1142719) {
+					//			std::cout << "Stop:" << tmp.stop.pos << std::endl;
+					//		}
+				}
+
 				if (count == 7 && strncmp(&buffer[i], "SVTYPE=", 7) == 0) {
 					tmp.type = get_type(std::string(&buffer[i + 7]));
 				}
@@ -603,10 +768,21 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				if (count == 7 && strncmp(&buffer[i], ";RE=", 4) == 0) { //for sniffles!
 					tmp.num_reads.second = atoi(&buffer[i + 4]);
 				}
-
-				if (count == 7 && strncmp(&buffer[i], "EUR_AF=", 7) == 0) { //EAS_AF
-					freq = atof(&buffer[i + 7]);
+				if (count == 7 && strncmp(&buffer[i], ";CIPOS=", 6) == 0) { //for sniffles!
+					tmp.cpos = parse_pair(&buffer[i + 6]);
 				}
+				if (count == 7 && strncmp(&buffer[i], ";CIEND=", 6) == 0) { //for sniffles!
+					tmp.cend = parse_pair(&buffer[i + 6]);
+				}
+				if (count == 7 && (strncmp(&buffer[i], "SUPP=", 5) == 0)) {
+					tmp.supp = atoi(&buffer[i + 5]);
+				}
+				if (count == 7 && (strncmp(&buffer[i], "AC=", 3) == 0)) {
+					tmp.supp = atoi(&buffer[i + 3]);
+				}
+				//	if (count == 7 && strncmp(&buffer[i], "EUR_AF=", 7) == 0) { //EAS_AF
+				//		freq = atof(&buffer[i + 7]);
+				//	}
 				if (count == 7 && strncmp(&buffer[i], ";CT=", 4) == 0) {
 					//parse strand delly:
 					set_strand = true;
@@ -614,28 +790,31 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					tmp.strands.second = (bool) (buffer[i + 7] != '5');
 				}
 
-				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i], "HOMLEN=", 7) == 0 || strncmp(&buffer[i], "AVGLEN=", 7) == 0)) {
-					tmp.sv_len = abs((int) atof(&buffer[i + 7]));
-					//		std::cout<<"LEN: "<<tmp.sv_len<<std::endl;
+				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i], ";AVGLEN=", 8) == 0)) {
+					tmp.sv_len = abs((int) atof(&buffer[i + 8]));
 				}
 
-				if (count == 7 && (strncmp(&buffer[i], "SVLEN=", 6) == 0)) {
-					tmp.sv_len = abs((int) atof(&buffer[i + 6]));
-					//	std::cout<<"LEN: "<<tmp.sv_len<<std::endl;
+				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i - 1], "\tSVLEN=", 7) == 0)) { //thanks to assemblytics!
+					tmp.sv_len = abs((int) atoi(&buffer[i + 8]));
 				}
-				if (count == 7 && (strncmp(&buffer[i], "SUPP=",5) == 0)) {
-					std::stringstream ss;
-					ss<<atoi(&buffer[i + 5]);
-					tmp.prev_support_vec =ss.str();
-					tmp.prev_support_vec +=",";
+				if ((tmp.sv_len == -1 && count == 7) && (strncmp(&buffer[i], ";SVLEN=", 7) == 0)) {
+					tmp.sv_len = abs((int) atoi(&buffer[i + 7]));
+				}
+				if (count == 7 && (strncmp(&buffer[i], "SUPP=", 5) == 0)) {
+
+					tmp.supp = atoi(&buffer[i + 5]);
+					//std::stringstream ss;
+					//ss << atoi(&buffer[i + 5]);
+					//tmp.prev_support_vec = ss.str();
+					//tmp.prev_support_vec += ",";
 
 				}
 				if (count == 7 && (strncmp(&buffer[i], "SUPP_VEC=", 9) == 0)) {
 					tmp.prev_support_vec = parse_supp_vec(&buffer[i + 9]);
 				}
-				if (count == 7 && strncmp(&buffer[i], "INSLEN=", 7) == 0) {
+				if ((tmp.sv_len == -1 && count == 7) && strncmp(&buffer[i], ";INSLEN=", 8) == 0) {
 					if (atof(&buffer[i + 7]) > 0) {
-						tmp.sv_len = abs((int) atof(&buffer[i + 7]));
+						tmp.sv_len = abs((int) atof(&buffer[i + 8]));
 					}
 				}
 				if (count == 7 && strncmp(&buffer[i], ";STRANDS=", 9) == 0) {
@@ -647,30 +826,37 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				if (count >= 9 && buffer[i - 1] == '\t' && (tmp.genotype[0] == '.')) { //parsing genotype;
 					size_t j = i;
 					tmp.genotype = "./.";
-					while (buffer[j] != '\0' && (tmp.genotype[0]=='.')) {
-						if (buffer[j-1] == '\t') {
-							tmp.genotype[0] = buffer[j];
-							tmp.genotype[1] = buffer[j+1];
-							tmp.genotype[2] = buffer[j+2];
+					if (buffer[j + 1] == '/' || buffer[j + 1] == '|') {
+						while (buffer[j] != '\0' && (tmp.genotype[0] == '.' || tmp.genotype[2] == '0')) {
+							if (buffer[j - 1] == '\t') {
+								tmp.genotype[0] = buffer[j];
+								tmp.genotype[1] = buffer[j + 1];
+								tmp.genotype[2] = buffer[j + 2];
+							}
+							j++;
 						}
-						j++;
 					}
-				//	std::cout<<"GO: "<<tmp.genotype<<std::endl;
+					//	std::cout<<"GO: "<<tmp.genotype<<std::endl;
 				}
-				if (count == 8 && strncmp(&buffer[i], "PR:SR", 5) == 0) {
-					//manta
-					tmp.num_reads = parse_manta(&buffer[i]);
+				if (count == 8 && buffer[i - 1] == '\t') {
+					tmp.num_reads = parse_DR(&buffer[i]);
 				}
-				if (count == 8 && strncmp(&buffer[i], "DR:DV:RR:RV", 11) == 0) {
-					//delly
-					tmp.num_reads = parse_delly(&buffer[i]);
-				}
+				/*
+				 if (count == 8 && strncmp(&buffer[i], "PR:SR", 5) == 0) {
+				 //manta
+				 tmp.num_reads = parse_manta(&buffer[i]);
+				 }
+				 if (count == 8 && strncmp(&buffer[i], "DR:DV:RR:RV", 11) == 0) {
+				 //delly
+				 tmp.num_reads = parse_delly(&buffer[i]);
+				 }
+				 if (count == 8 && strncmp(&buffer[i], "GT:DR:DV", 5) == 0) {
+				 //manta
+				 tmp.num_reads = parse_sniffles(&buffer[i]);
+				 }*/
 
 				if (count == 4 && buffer[i - 1] == '<') {
 					tmp.type = get_type(std::string(&buffer[i]));
-				}
-				if (tmp.stop.pos == -1 && (count == 4 && (buffer[i - 1] == '[' || buffer[i - 1] == ']'))) {
-					tmp.stop = parse_pos(&buffer[i - 1]);
 				}
 
 				if (count == 9 && buffer[i - 1] == '\t') {
@@ -698,31 +884,37 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 				}
 			}
 
-			if (tmp.stop.pos == -1 && tmp.sv_len != -1) {
-				tmp.stop.pos = tmp.start.pos + tmp.sv_len;
-			}
-			if (tmp.stop.pos == -1) {
-				std::size_t found = alt.find(",");
-				if (found != std::string::npos) {
-					alt = get_most_effect(alt, (int) ref.size());
-				}
-				tmp.stop.chr = tmp.start.chr;
-				tmp.sv_len = (int) ref.size() - (int) alt.size();
-				tmp.stop.pos = tmp.start.pos + abs(tmp.sv_len);
-				if (tmp.sv_len > 0) {
-					tmp.type = 0; //deletion
-				} else if (tmp.sv_len < 0) {
-					tmp.type = 4; //insertions
-					tmp.sv_len = abs(tmp.sv_len);
-					//	std::cout<<"INS: "<<tmp.sv_len <<std::endl;
-				}
-			}
 			if (tmp.stop.chr.empty()) {
 				tmp.stop.chr = tmp.start.chr;
 			}
-			if (tmp.sv_len <1) {
-				tmp.sv_len = abs(tmp.start.pos - tmp.stop.pos);
+
+			//	if (tmp.start.pos == 112179238 || tmp.start.pos == 112179329) {
+			//		std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
+			//	}
+
+			if (tmp.sv_len == -1) {
+				if (tmp.stop.pos != -1) {
+					tmp.sv_len = abs(tmp.start.pos - tmp.stop.pos);
+				} else if (tmp.alleles.second[0] != '<') {
+					std::size_t found = tmp.alleles.second.find(",");
+					if (found != std::string::npos) {
+						tmp.alleles.second = get_most_effect(tmp.alleles.second, (int) tmp.alleles.first.size());
+					}
+					tmp.sv_len = abs((int) tmp.alleles.first.size() - (int) tmp.alleles.second.size()) - 1; // because the sequences includ 1bp patting .
+				}
+				//cout<<"Test:  "<<tmp.start.pos<<" "<<tmp.sv_len<<endl;
 			}
+
+			if (tmp.stop.pos == -1 && tmp.sv_len != -1) {
+				tmp.stop.pos = tmp.start.pos + abs(tmp.sv_len);
+			}
+
+			//if(tmp.start.pos==112179329 || tmp.start.pos==112179238){
+			//	std::cout << "LEN2: " << tmp.start.chr << " " << tmp.start.pos << " " << tmp.stop.chr << " " << tmp.stop.pos << " " << tmp.sv_len << " " << tmp.type << std::endl;
+			//}
+
+			//std::cout<<"Call: "<<tmp.start.pos <<" "<<tmp.stop.pos<<" "<<tmp.type<<" "<<tmp.sv_len<<std::endl;
+
 			if ((strcmp(tmp.start.chr.c_str(), tmp.stop.chr.c_str()) != 0 || (tmp.sv_len >= min_svs))) { // || tmp.type==4
 				/*	std::size_t found = tmp.stop.chr.find("chr");
 				 if (found != std::string::npos) {
@@ -741,9 +933,10 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 					}
 
 				}
-				if (freq > Parameter::Instance()->min_freq) {
-					calls.push_back(tmp);
-				}
+				//	if (freq > Parameter::Instance()->min_freq) {
+
+				calls.push_back(tmp);
+				//	}
 
 			}
 			tmp.calls.clear();
@@ -752,7 +945,7 @@ std::vector<strvcfentry> parse_vcf(std::string & filename, int min_svs) {
 		}
 		getline(myfile, buffer);
 	}
-	myfile.close();
+
 //std::cout << calls.size() << std::endl;
 	return calls;
 }
@@ -797,8 +990,8 @@ std::string get_header(std::vector<std::string> names) {
 
 	myfile.open(names[0].c_str(), std::ifstream::in);
 	if (!myfile.good()) {
-		std::cout << "Annotation Parser: could not open file: " << names[0].c_str() << std::endl;
-		exit(0);
+		std::cerr << "Annotation Parser: could not open file: " << names[0].c_str() << std::endl;
+		exit(EXIT_FAILURE);
 	}
 	std::string header;
 	myfile.getline(buffer, buffer_size);
@@ -847,7 +1040,23 @@ void print_entry(FILE *&file, SVS_Node * entry, int id) {
 	fprintf(file, "%s", trans_type23(entry->type).c_str());
 	fprintf(file, "%c", '>');
 
-	fprintf(file, "%s", "\t.\tPASS\tIMPRECISE;SVMETHOD=SURVIVOR");
+	fprintf(file, "%s", "\t");
+	//quality!
+	int max_qual = -1;
+	for (size_t i = 0; i < entry->caller_info.size(); i++) {
+		for (size_t j = 0; j < entry->caller_info[i]->quality.size(); j++) {
+			if (max_qual < entry->caller_info[i]->quality[j]) {
+				max_qual = entry->caller_info[i]->quality[j];
+
+			}
+		}
+	}
+	if (max_qual == -1) {
+		fprintf(file, "%c", '.');
+	} else {
+		fprintf(file, "%i", max_qual);
+	}
+	fprintf(file, "%s", "\tPASS\tIMPRECISE;SVMETHOD=SURVIVOR");
 	fprintf(file, "%s", ";CHR2=");
 	fprintf(file, "%s", entry->second.chr.c_str());
 	fprintf(file, "%s", ";END=");
@@ -916,47 +1125,4 @@ void print_merged_vcf(std::string outputfile, std::string header, std::vector<st
 		}
 		fprintf(file, "%c", '\n');
 	}
-}
-
-//main:
-void merge_vcf(std::string filenames, int max_dist, int min_observed, std::string outputfile) {
-
-	Parameter::Instance()->use_strand = true;
-
-	Parameter::Instance()->max_dist = max_dist;
-	Parameter::Instance()->use_type = true;
-
-	std::vector<std::string> names = parse_filename(filenames);
-	std::cout << "found in file: " << names.size() << std::endl;
-	std::vector<strvcfentry> final_vcf;
-
-	/*for (size_t i = 0; i < names.size(); i++) {
-	 merge_entries(names[i], max_dist, final_vcf);
-	 std::cout << "merged: " << final_vcf.size() << std::endl;
-	 }*/
-
-	IntervallTree bst;
-	TNode *root = NULL;
-	Parameter::Instance()->max_caller = names.size();
-	for (size_t id = 0; id < names.size(); id++) {
-		std::vector<strvcfentry> entries = parse_vcf(names[id], 0);
-		std::cout << id << ": merging entries: " << names[id] << " size: " << entries.size() << std::endl;
-		for (size_t j = 0; j < entries.size(); j++) {
-			breakpoint_str start = convert_position(entries[j].start);
-			breakpoint_str stop = convert_position(entries[j].stop);
-			bst.insert(start, stop, entries[j].type, entries[j].num_reads, (int) id, entries[j].genotype, entries[j].strands, entries[j].sv_len, entries[j].prev_support_vec, root);
-		}
-		entries.clear();
-	}
-
-	std::vector<SVS_Node *> points;
-	bst.get_breakpoints(root, points);
-
-	std::cout << "Merged: " << points.size() << std::endl;
-
-	std::cout << "get header:" << std::endl;
-	std::string header = get_header(names);
-	std::cout << "print:" << std::endl;
-	print_merged_vcf(outputfile, header, points, names, min_observed);
-	//print_merged_vcf(outputfile, header, final_vcf, names);
 }
