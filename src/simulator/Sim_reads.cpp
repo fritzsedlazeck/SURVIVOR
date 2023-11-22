@@ -226,12 +226,14 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 	double prev = 0;
 //	cout << "\t\tReads simulated: " << prev << "%" << std::endl;
 
+
 	std::map<std::string, int> cov_reported;
 
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 
 		cov_reported[(*i).first]=(*i).second.size()*coverage;
 	}
+
 
 	for (int i = 0; i < num_reads; i++) { //start to simulate reads:
 		double bp = (rand() % 1000000);
@@ -248,9 +250,11 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 		}
 
 
+
 		// Issue that the reads are not normalized by the chr size!
 
 		//cout << size << ": " << bp << endl;
+
 		//std::cout<<"Read init: "<<size<<std::endl;
 		size_t len = 0;
 		std::string chr;
@@ -338,6 +342,7 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 				std::cout << "\t\tReads simulated: " << prev << "%" << '\r' << std::flush;
 				//cout << "\t\tReads simulated: " << prev << "%" << std::endl;
 			}
+
 			cov_reported[chr]-=final_read.size();
 		}
 	}

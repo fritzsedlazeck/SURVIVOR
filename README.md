@@ -1,7 +1,7 @@
 # SURVIVOR
 SURVIVOR is a tool set for simulating/evaluating SVs, merging and comparing SVs within and among samples, and includes various methods to reformat or summarize SVs.
 
-Please see our github wiki for more information (https://github.com/fritzsedlazeck/SURVIVOR/wiki ) 
+**Please see our github wiki for more information** (https://github.com/fritzsedlazeck/SURVIVOR/wiki ) 
 **************************************
 ## Cite:
 

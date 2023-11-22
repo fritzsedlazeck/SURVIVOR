@@ -14,6 +14,7 @@ CPP_DEPS += \
 
 
 # Each subdirectory must supply rules for building sources it contributes
+
 src/phasing/%.o: ../src/phasing/%.cpp src/phasing/subdir.mk
 	@echo 'Building file: $<'
 	@echo 'Invoking: Cross G++ Compiler'
