@@ -231,7 +231,7 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 
-		cov_reported[(*i).first]=(*i).second.size()*coverage;
+		cov_reported[(*i).first]=((int)(*i).second.size())*coverage;
 	}
 
 
@@ -251,23 +251,37 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 
 
 
-		// Issue that the reads are not normalized by the chr size!
-
 		//cout << size << ": " << bp << endl;
 
 		//std::cout<<"Read init: "<<size<<std::endl;
 		size_t len = 0;
-		std::string chr;
+		std::string chr="";
+		int counter=0;
 		while (size > len) {  //2: Pick a chromosome:
 			int pos = rand() % (int) (genome.size());
-			chr = (*genome.begin()).first; //check that again...
+			chr = "";//(*genome.begin()).first; //check that again...
 			for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end() && pos >= 0; j++) {
 				if (pos == 0 && cov_reported[(*j).first]>0) {
 					chr = (*j).first;
 				}
 				pos--;
 			}
-			len = genome[chr].size();
+			if(!chr.empty()){
+				len = genome[chr].size();
+
+			}else if(counter>30){
+				break;
+			}else{
+				counter++;
+			}
+		}
+		if(chr.empty()){
+			std::cerr<<"Nothing left to simulate from."<<std::endl;
+		//	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
+		//		cout<< (*i).first <<" left: "<<cov_reported[(*i).first]<<endl;
+		//	}
+
+			break;
 		}
 		//cout << "choose subregion" << chr << endl;
 		std::string read = "";
