@@ -232,6 +232,10 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 
 		cov_reported[(*i).first]=((long)(*i).second.size())*coverage;
+		if(cov_reported[(*i).first]<0){
+			cerr<<"Error in genome size * cov recording. Apport. Please report this!"<<endl;
+			exit(1);
+		}
 	}
 
 	std::map<std::string, std::string>::iterator current_chr = genome.begin(); // we just go one chr after another.
