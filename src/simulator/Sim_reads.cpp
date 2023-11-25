@@ -234,12 +234,11 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 		cov_reported[(*i).first]=((int)(*i).second.size())*coverage;
 	}
 
+	std::map<std::string, std::string>::iterator current_chr = genome.begin(); // we just go one chr after another.
 
-	for (int i = 0; i < num_reads; i++) { //start to simulate reads:
+	for (int i = 0; i < num_reads &&current_chr!= genome.end(); i++) { //start to simulate reads:
 		double bp = (rand() % 1000000);
-	//	if (bp / 1000000 < 0.0000001) {
-	//		cout << "BP " << bp << " " << bp / 1000000 << endl;
-	//	}
+
 		bp = bp / 1000000;
 		size_t size = 0;
 		while (size < error_profile.size()) { //1: Pick a read size based on the profile
@@ -256,12 +255,33 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 		//std::cout<<"Read init: "<<size<<std::endl;
 		size_t len = 0;
 		std::string chr="";
-		int counter=0;
+
+		//we need to skip chr that are too small or are alreayd sufficiently covered.
+		while (size > (*current_chr).second.size()) {
+			current_chr++;
+			cout<<"De: skip"<<endl;
+		}
+
+		chr=(*current_chr).first;
+		//cout<<"chr:  "<<chr<<endl;
+		len = genome[chr].size();
+
+	/*	int counter=0;
 		while (size > len) {  //2: Pick a chromosome:
 			int pos = rand() % (int) (genome.size());
+
+			//check if selected chr is not already covered enough:
+
+
 			chr = "";//(*genome.begin()).first; //check that again...
 			for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end() && pos >= 0; j++) {
-				if (pos == 0 && cov_reported[(*j).first]>0) {
+				if (pos == 0) {
+					while(cov_reported[(*j).first]<0){
+						j++;
+						if(j==genome.end()){
+							j=genome.begin();
+						}
+					}
 					chr = (*j).first;
 				}
 				pos--;
@@ -282,7 +302,8 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 		//	}
 
 			break;
-		}
+		}*/
+
 		//cout << "choose subregion" << chr << endl;
 		std::string read = "";
 		double num_N = 0;
@@ -324,6 +345,7 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 			attempts--;
 			//	cout << "Ns: " << num_N <<" size: "<<(double) read.size() << endl;
 		} while (num_N / (double) read.size() > 0.1 && attempts != 0);
+
 		if (attempts != 0) {
 			bool flag = true;
 			if (rand() % 100 < 51) {
@@ -358,6 +380,13 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 			}
 
 			cov_reported[chr]-=final_read.size();
+			if(cov_reported[chr]<0){
+				current_chr++; // we reached out targeted coverage lets select the next one.
+			}
+			if(current_chr==genome.end()){
+				std::cerr<<"End of genome"<<endl;
+				break;
+			}
 		}
 	}
 
