@@ -8,7 +8,7 @@
 #include "Sim_reads.h"
 std::map<std::string, std::string> parse_genome(std::string genome_file, int min_length) {
 	size_t buffer_size;
-	char*buffer;
+	char *buffer;
 	ifstream myfile;
 
 	myfile.open(genome_file.c_str(), ifstream::in);
@@ -153,7 +153,7 @@ double rand_normal(double mean, double stddev) {					//Box muller method
 }
 
 std::vector<read_position> parse_error_profile(std::string error_profile_file) {
-	char*buffer;
+	char *buffer;
 	ifstream myfile;
 
 	myfile.open(error_profile_file.c_str(), ifstream::in);
@@ -226,21 +226,20 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 	double prev = 0;
 //	cout << "\t\tReads simulated: " << prev << "%" << std::endl;
 
-
 	std::map<std::string, long> cov_reported;
 
 	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
 
-		cov_reported[(*i).first]=((long)(*i).second.size())*coverage;
-		if(cov_reported[(*i).first]<0){
-			cerr<<"Error in genome size * cov recording. Apport. Please report this!"<<endl;
+		cov_reported[(*i).first] = ((long) (*i).second.size()) * coverage;
+		if (cov_reported[(*i).first] < 0) {
+			cerr << "Error in genome size * cov recording. Apport. Please report this!" << endl;
 			exit(1);
 		}
 	}
 
 	std::map<std::string, std::string>::iterator current_chr = genome.begin(); // we just go one chr after another.
 
-	for (int i = 0; i < num_reads &&current_chr!= genome.end(); i++) { //start to simulate reads:
+	for (int i = 0; i < num_reads && current_chr != genome.end(); i++) { //start to simulate reads:
 		double bp = (rand() % 1000000);
 
 		bp = bp / 1000000;
@@ -252,61 +251,59 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 			size++;
 		}
 
-
-
 		//cout << size << ": " << bp << endl;
 
 		//std::cout<<"Read init: "<<size<<std::endl;
 		size_t len = 0;
-		std::string chr="";
+		std::string chr = "";
 
 		//we need to skip chr that are too small or are alreayd sufficiently covered.
 		while (size > (*current_chr).second.size()) {
 			current_chr++;
-			cout<<"De: skip"<<endl;
+			cout << "De: skip" << endl;
 		}
 
-		chr=(*current_chr).first;
+		chr = (*current_chr).first;
 		//cout<<"chr:  "<<chr<<endl;
 		len = genome[chr].size();
 
-	/*	int counter=0;
-		while (size > len) {  //2: Pick a chromosome:
-			int pos = rand() % (int) (genome.size());
+		/*	int counter=0;
+		 while (size > len) {  //2: Pick a chromosome:
+		 int pos = rand() % (int) (genome.size());
 
-			//check if selected chr is not already covered enough:
+		 //check if selected chr is not already covered enough:
 
 
-			chr = "";//(*genome.begin()).first; //check that again...
-			for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end() && pos >= 0; j++) {
-				if (pos == 0) {
-					while(cov_reported[(*j).first]<0){
-						j++;
-						if(j==genome.end()){
-							j=genome.begin();
-						}
-					}
-					chr = (*j).first;
-				}
-				pos--;
-			}
-			if(!chr.empty()){
-				len = genome[chr].size();
+		 chr = "";//(*genome.begin()).first; //check that again...
+		 for (std::map<std::string, std::string>::iterator j = genome.begin(); j != genome.end() && pos >= 0; j++) {
+		 if (pos == 0) {
+		 while(cov_reported[(*j).first]<0){
+		 j++;
+		 if(j==genome.end()){
+		 j=genome.begin();
+		 }
+		 }
+		 chr = (*j).first;
+		 }
+		 pos--;
+		 }
+		 if(!chr.empty()){
+		 len = genome[chr].size();
 
-			}else if(counter>30){
-				break;
-			}else{
-				counter++;
-			}
-		}
-		if(chr.empty()){
-			std::cerr<<"Nothing left to simulate from."<<std::endl;
-		//	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
-		//		cout<< (*i).first <<" left: "<<cov_reported[(*i).first]<<endl;
-		//	}
+		 }else if(counter>30){
+		 break;
+		 }else{
+		 counter++;
+		 }
+		 }
+		 if(chr.empty()){
+		 std::cerr<<"Nothing left to simulate from."<<std::endl;
+		 //	for (std::map<std::string, std::string>::iterator i = genome.begin(); i != genome.end(); i++) {
+		 //		cout<< (*i).first <<" left: "<<cov_reported[(*i).first]<<endl;
+		 //	}
 
-			break;
-		}*/
+		 break;
+		 }*/
 
 		//cout << "choose subregion" << chr << endl;
 		std::string read = "";
@@ -314,43 +311,76 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 		size_t start_pos = 0;
 
 		//Obtaining the sequence (avoid large regions of N's)
-		int attempts = 10;
 		std::string final_read;
-		do { //2: Pick a position on chromosome and obtain sequence avoiding too many N's:
-			final_read = "";
-			start_pos = (size_t) rand() % (genome[chr].size() - size + 2);
+		/*int attempts = 10;
+		 do { //2: Pick a position on chromosome and obtain sequence avoiding too many N's:
+		 final_read = "";
+		 start_pos = (size_t) rand() % (genome[chr].size() - size + 2);
 
-			//new attempt to make it faster:
-			//	cout << " Start2: " << chr << " " << start_pos  << endl;
-			read = genome[chr].substr(start_pos, size);
-			if (read.empty()) {
-				cerr << "ERROR! " << endl;
+		 //new attempt to make it faster:
+		 //	cout << " Start2: " << chr << " " << start_pos  << endl;
+		 read = genome[chr].substr(start_pos, size);
+		 if (read.empty()) {
+		 cerr << "ERROR! " << endl;
+		 }
+
+		 for (size_t j = 0; j < read.size(); j++) {
+		 if (read[j] == 'N' || read[j] == 'n') {
+		 num_N++;
+		 if (num_N / (double) read.size() > 0.1) {
+		 break;
+		 }
+		 read[j] = new_nuc('N');
+		 }
+		 double bp = (rand() % 1000000); //bp probability
+		 bp = bp / 1000000;
+		 if (bp < error_profile[j].match) {
+		 final_read += read[j];
+		 } else if (bp < error_profile[j].mismatch + error_profile[j].match) {
+		 final_read += new_nuc(read[j]);
+		 } else if (bp < error_profile[j].ins + error_profile[j].match + error_profile[j].mismatch) {
+		 final_read += read[j];
+		 final_read += new_nuc('N');
+		 }
+		 }
+		 attempts--;
+		 //	cout << "Ns: " << num_N <<" size: "<<(double) read.size() << endl;
+		 } while (num_N / (double) read.size() > 0.1 && attempts != 0);*/
+
+		//ignore if there are N's because of even out the coverage..
+		start_pos = (size_t) rand() % (genome[chr].size() - size + 2);
+		read = genome[chr].substr(start_pos, size);
+		if (read.empty()) {
+			cerr << "ERROR! Read is empty!" << endl;
+			exit(1);
+		}
+		//apply sequencing errors:
+		bool do_not_report = false;
+		for (size_t j = 0; j < read.size(); j++) {
+			if (read[j] == 'N' || read[j] == 'n') {
+				num_N++;
+				if (num_N / (double) read.size() > 0.1) {
+					do_not_report = true;
+					break;
+				}
+				//	read[j] = new_nuc('N');
 			}
 
-			for (size_t j = 0; j < read.size(); j++) {
-				if (read[j] == 'N' || read[j] == 'n') {
-					num_N++;
-					if (num_N / (double) read.size() > 0.1) {
-						break;
-					}
-					read[j] = new_nuc('N');
-				}
-				double bp = (rand() % 1000000); //bp probability
-				bp = bp / 1000000;
-				if (bp < error_profile[j].match) {
-					final_read += read[j];
-				} else if (bp < error_profile[j].mismatch + error_profile[j].match) {
-					final_read += new_nuc(read[j]);
-				} else if (bp < error_profile[j].ins + error_profile[j].match + error_profile[j].mismatch) {
-					final_read += read[j];
-					final_read += new_nuc('N');
-				}
+			double bp = (rand() % 1000000); //bp probability
+			bp = bp / 1000000;
+			if (bp < error_profile[j].match) {
+				final_read += read[j];
+			} else if (bp < error_profile[j].mismatch + error_profile[j].match) {
+				final_read += new_nuc(read[j]);
+			} else if (bp < error_profile[j].ins + error_profile[j].match + error_profile[j].mismatch) {
+				final_read += read[j];
+				final_read += new_nuc('N');
 			}
-			attempts--;
-			//	cout << "Ns: " << num_N <<" size: "<<(double) read.size() << endl;
-		} while (num_N / (double) read.size() > 0.1 && attempts != 0);
 
-		if (attempts != 0) {
+		}
+
+		if (!do_not_report) {
+			//if (attempts != 0) {
 			bool flag = true;
 			if (rand() % 100 < 51) {
 				flag = false;
@@ -382,16 +412,17 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 				std::cout << "\t\tReads simulated: " << prev << "%" << '\r' << std::flush;
 				//cout << "\t\tReads simulated: " << prev << "%" << std::endl;
 			}
-
-			cov_reported[chr]-=final_read.size();
-			if(cov_reported[chr]<0){
-				current_chr++; // we reached out targeted coverage lets select the next one.
-			}
-			if(current_chr==genome.end()){
-				std::cerr<<"End of genome"<<endl;
-				break;
-			}
 		}
+
+		cov_reported[chr] -= final_read.size();
+		if (cov_reported[chr] < 0) {
+			current_chr++; // we reached out targeted coverage lets select the next one.
+		}
+		if (current_chr == genome.end()) {
+			std::cerr << "End of genome" << endl;
+			break;
+		}
+		//	}
 	}
 
 	fclose(file);
