@@ -359,7 +359,7 @@ void simulate_reads(std::string genome_file, std::string error_profile_file, int
 		for (size_t j = 0; j < read.size(); j++) {
 			if (read[j] == 'N' || read[j] == 'n') {
 				num_N++;
-				if (num_N / (double) read.size() > 0.1) {
+				if (num_N / (double) read.size() > 0.8) {
 					do_not_report = true;
 					break;
 				}
