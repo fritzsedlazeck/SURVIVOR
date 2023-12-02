@@ -948,7 +948,7 @@ void print_snp_vcf(std::string chr, int pos, char old_allele, char new_allele, F
 	convert << "\t";
 	convert << new_allele;
 
-	convert << "\t.\tPASS\tPRECISE;SVMETHOD=SURVIVOR_sim;SVLEN=1\tGT:GL:GQ:FT:RC:DR:DV:RR:RV\t";
+	convert << "\t.\tPASS\tPRECISE;SVMETHOD=SURVIVOR_sim;SVLEN=1\tGT\t";
 	convert << gt;
 
 	fprintf(file, "%s", convert.str().c_str());
